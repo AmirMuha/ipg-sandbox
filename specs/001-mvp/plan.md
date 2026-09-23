@@ -1,113 +1,97 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Payment Gateway Sandbox (IPG Sandbox) MVP
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Branch**: `001-mvp` | **Date**: 2026-09-23 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit.plan` command; its definition describes the execution workflow.
+**Input**: Feature specification from `/specs/001-mvp/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Build a free, self-hostable payment-gateway sandbox: one Docker Compose stack (Python engine + Next.js dashboard + PostgreSQL) that emulates Zarinpal, IDPay, and Behpardakht (Mellat) so Iranian developers can run full payment lifecycles (approve/decline/timeout/refund/pending→settle/verify-fail) on localhost with drop-in URL/credential swapping, real per-gateway callback payload formats, webhook delivery to localhost, forced-scenario controls (dashboard + headless), a bilingual FA/EN RTL Linear-dark dashboard, a 1000-transaction per-project history cap, Rial-canonical amounts, and a free email-gated hosted demo — AGPL-3.0, public repo + demo at launch.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+**Language/Version**: Python 3.12 (engine), TypeScript / Node 20 (dashboard)
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Primary Dependencies**: FastAPI + httpx + Zeep (Behpardakht SOAP/WSDL); Next.js 14+ App Router, next-intl (FA/EN RTL); Docker Compose
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**Storage**: PostgreSQL 16 (transactions, deliveries, meters, projects, demo users); no other state stores in v1
 
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+**Testing**: pytest (engine unit/integration/contract), Playwright (dashboard smoke + RTL), scripted scenario matrix for SC-003 (18/18 outcome×adapter)
 
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**Target Platform**: Linux/macOS/Windows dev machines via Docker Compose; hosted demo on requester's personal Linux infra
 
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: web-service (multi-container: emulated gateway engine + dashboard SPA + database)
 
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]
+**Performance Goals**: SC-005 webhook ≥95% delivered to live localhost target within 5s; SC-004 full one-adapter scenario suite <5 min headless; checkout/verify responses feel instant (<100ms engine-side excluding forced delays)
 
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+**Constraints**: zero-cost local entry (no signup/paywall locally); simulation only — no real money, no card data, no production gateway calls; history cap 1000/project; forced delays bounded (timeout default seconds, pending→settle default 5s); demo gated by free email signup + rate limiting; AGPL-3.0
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
-
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Scale/Scope**: 3 adapters, ~6 entities, ~10 dashboard views, single-digit containers; 1 host, tens of demo visitors — not multi-tenant hardened (post-v1)
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+`.specify/memory/constitution.md` is an **unfilled template** (placeholder headings only — no ratified principles, constraints, or governance rules). No enforceable gates exist; the gate is vacuously **PASS**. Constraints applied instead come from the spec itself (FR-001…FR-015) and intake decisions (AGPL-3.0, stack, ~1-month appetite). If a constitution is ratified later, re-run this check.
+
+**Post-Phase-1 re-check**: PASS — design artifacts introduce no licenses, storage, or interfaces that contradict any project constraint (AGPL-3.0 preserved; simulation-only preserved; no billing/payments entity added).
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
+specs/001-mvp/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)
 ├── quickstart.md        # Phase 1 output (/speckit.plan command)
 ├── contracts/           # Phase 1 output (/speckit.plan command)
+│   ├── adapter-surfaces.md
+│   └── control-api.md
+├── checklists/
+│   └── requirements.md  # Spec quality checklist (from /speckit.specify)
 └── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
+engine/                      # Python gateway-simulation engine
 ├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+│   ├── api/                 # FastAPI app: control API + adapter route mounting
+│   ├── adapters/            # zarinpal/, idpay/, behpardakht/ (+ base interface)
+│   ├── scenarios/           # forced-outcome resolution + delayed transitions
+│   ├── webhooks/            # delivery worker, retry/backoff, real payload builders
+│   ├── models/              # SQLAlchemy models (see data-model.md)
+│   └── checkout/            # hosted checkout/redirect page rendering
+├── tests/
+│   ├── unit/
+│   ├── contract/            # per-adapter surface + callback-format contracts
+│   └── integration/         # 18/18 scenario matrix, webhook delivery
+└── pyproject.toml
 
-frontend/
+dashboard/                   # Next.js dashboard (FA/EN, RTL)
 ├── src/
+│   ├── app/                 # App Router pages (transactions, scenario, webhooks, settings)
 │   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+│   ├── i18n/                # next-intl messages fa.json / en.json, dir switching
+│   └── lib/                 # control-API client
+└── package.json
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
+demo/                        # hosted-demo glue: email signup gate, rate limit, visitor isolation
+├── src/
+└── ...
 
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+docker-compose.yml           # one-command bootstrap: engine + dashboard + postgres
+AGPL-3.0 LICENSE
+README.md                    # quickstart mirror for public repo
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Three deployable units sharing one compose file — `engine` (all emulation logic and control API), `dashboard` (UI only, talks to control API), `demo` (signup/rate-limit shell that wraps the same engine+dashboard images; the OSS images themselves stay login-free per FR-014). Monorepo matches intake.md's declared structure; adapters live behind one base interface so post-v1 gateways (Stripe etc.) plug in without touching the engine core.
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+> Fill ONLY if Constitution Check has violations that must be justified
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+No constitution violations (constitution is an unfilled template — see Constitution Check). No complexity entries.
