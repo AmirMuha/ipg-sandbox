@@ -71,10 +71,14 @@ async def _insert(session_factory, project_id, adapter_id, index: int, prefix: s
 async def _kept(session_factory, project_id) -> tuple[list[str], UsageMeter | None]:
     async with session_factory() as session:
         rows = (
-            await session.execute(
-                select(Transaction.authority).where(Transaction.project_id == project_id)
+            (
+                await session.execute(
+                    select(Transaction.authority).where(Transaction.project_id == project_id)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return list(rows), await session.get(UsageMeter, project_id)
 
 
