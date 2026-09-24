@@ -6,12 +6,15 @@ nothing else in the codebase raises `HTTPException` for a control-API error.
 """
 
 import enum
+import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+logger = logging.getLogger(__name__)
 
 # contracts/control-api.md "Error codes" — exactly these strings, no more.
 VALIDATION_ERROR = "validation_error"
@@ -21,6 +24,10 @@ NOT_FOUND = "not_found"
 RATE_LIMITED = "rate_limited"
 SCENARIO_INVALID = "scenario_invalid"
 SESSION_REQUIRED = "session_required"
+
+# Not one of the seven above: those are errors the API raises deliberately. This one marks an
+# unexpected server fault, which still has to reach the caller in the documented envelope shape.
+INTERNAL_ERROR = "internal_error"
 
 
 class ErrorCode(enum.StrEnum):
@@ -102,4 +109,25 @@ def install_error_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content={"code": code.value, "message": str(exc.detail)},
+        )
+
+    @app.exception_handler(Exception)
+    async def _unhandled(_: Request, exc: Exception) -> JSONResponse:
+        """Last resort: a bug must still emit the envelope, not FastAPI's plain-text 500.
+
+        Without this, an unhandled error returns `Internal Server Error` as text/plain, which
+        no CI client can parse — FR-010 requires machine-readable output on every path.
+
+        Code is `internal_error`, not one of the seven documented control-API codes: those
+        describe errors the API raises *deliberately*, and none of them means "server fault".
+        Reusing `validation_error` here would blame the caller for a server bug. The contract
+        header calls its list a "subset", so this is an addition, not a redefinition.
+        """
+        logger.exception("unhandled error", exc_info=exc)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "code": INTERNAL_ERROR,
+                "message": "internal error",
+            },
         )

@@ -251,3 +251,65 @@ def test_meters_reports_zeros_for_a_fresh_project(tmp_path):
         assert fresh.get("/api/v1/meters").json() == dict.fromkeys(routes_module.METER_FIELDS, 0)
 
     asyncio.run(async_engine.dispose())
+
+
+# --- unhandled errors still emit the envelope --------------------------------
+
+
+def test_unhandled_exception_returns_the_envelope_not_plain_text(tmp_path):
+    """A server bug must still be machine-readable (FR-010).
+
+    Regression: without an `Exception` handler this returned FastAPI's default
+    `Internal Server Error` as text/plain, which no CI client can parse.
+
+    Builds its own client so the throwing route is registered on the very app under test.
+    """
+    url = f"sqlite:///{tmp_path / 'boom.db'}"
+    sync_engine = create_engine(url)
+    Base.metadata.create_all(sync_engine)
+    sync_engine.dispose()
+
+    app = create_app()
+
+    @app.get("/_boom_for_test")
+    async def _boom():  # pragma: no cover - raised, never returned
+        raise RuntimeError("simulated internal failure")
+
+    async_engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'boom.db'}")
+    app.state.session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
+
+    with TestClient(app, raise_server_exceptions=False) as test_client:
+        response = test_client.get("/_boom_for_test")
+
+    asyncio.run(async_engine.dispose())
+
+    assert response.status_code == 500
+    body = response.json()  # raises if the body is not JSON
+    assert body["code"] == "internal_error"
+    assert "message" in body
+    assert "RuntimeError" not in response.text, "traceback leaked to the client"
+
+
+def test_documented_error_codes_are_unchanged():
+    """The seven contract codes must stay exactly as contracts/control-api.md lists them."""
+    from src.api import errors
+
+    assert {
+        errors.VALIDATION_ERROR,
+        errors.UNSUPPORTED_OPERATION,
+        errors.INVALID_CREDENTIALS,
+        errors.NOT_FOUND,
+        errors.RATE_LIMITED,
+        errors.SCENARIO_INVALID,
+        errors.SESSION_REQUIRED,
+    } == {
+        "validation_error",
+        "unsupported_operation",
+        "invalid_credentials",
+        "not_found",
+        "rate_limited",
+        "scenario_invalid",
+        "session_required",
+    }
+    # The 500 code is deliberately outside that set; it is not a caller-error code.
+    assert errors.INTERNAL_ERROR not in {m.value for m in errors.ErrorCode}

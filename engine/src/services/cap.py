@@ -25,6 +25,14 @@ async def record_transaction(
     if tx.project_id != project.id:
         raise ValueError(f"transaction belongs to {tx.project_id}, not project {project.id}")
 
+    # Lock the project row FIRST. This lock is the serialisation point for the whole
+    # function: without it, N concurrent inserts each run their DELETE against a snapshot
+    # that cannot see the others' uncommitted rows, so `OFFSET history_cap` finds nothing
+    # and no row is ever deleted — the cap silently goes unenforced while the meter still
+    # reports the capped value. Verified against real Postgres (SQLite serialises writers,
+    # so it cannot reproduce this).
+    await session.execute(select(Project.id).where(Project.id == project.id).with_for_update())
+
     session.add(tx)
     await session.flush()  # INSERT first, so the cap counts the new row
 
