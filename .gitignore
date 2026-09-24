@@ -30,3 +30,7 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+
+# Engine venv
+engine/.venv/
+.venv/
