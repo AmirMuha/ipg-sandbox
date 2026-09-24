@@ -82,3 +82,36 @@ All Technical Context fields are resolved (no NEEDS CLARIFICATION remained — i
 
 - Schedule the Behpardakht WSDL spike as the first task (R4) with its exit-criteria check.
 - Decide magic-link email transport for demo at deploy time (dev: log/link console; prod: any SMTP) — deploy config, not a code blocker.
+
+## R4 outcome (spike T007, 2026-09-24) — PASSED
+
+Artifacts: `engine/src/adapters/behpardakht/behpardakht.wsdl` (hand-authored, 3 operations only),
+`engine/tests/contract/test_behpardakht_spike.py` (6 tests, all pass).
+
+- **Result**: PASS against the reference client (`zeep` 4.3.3 — the standard Python SOAP client; no
+  Iranian Mellat SDK is installable here). zeep 4.3.3 parses the WSDL, reports exactly the three
+  in-scope operations, builds `bpPaymentRequest` / `bpPaymentVerification` / `bpReverseTransaction`
+  envelopes with correctly namespaced, correctly typed elements, and deserializes responses for all
+  three. Exit criteria met: a real client can construct and parse the in-scope surface.
+- **What zeep could not do**: (1) it does **not** type-check scalar arguments client-side —
+  `amount="not-a-number"` serializes happily against `xsd:long`, so type regressions cannot be caught
+  by a round-trip test; the suite asserts the schema's declared types directly instead. (2) It
+  requires the reply to be a real SOAP `Envelope`; a bare response element raises `XMLSyntaxError`.
+  (3) Missing required elements *are* enforced (`ValidationError`, "Missing element amount").
+- **Fidelity gaps found (documented, deferred to T023)**: the real Mellat/Behpardakht gateway
+  (`https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl`, namespace
+  `http://interfaces.core.sw.bps.com/`) does **not** use the operation names in contracts §3 — the
+  real names are `bpPayRequest`, `bpVerifyRequest`, `bpReversalRequest` (`bpSettleRequest` /
+  `bpInquiryRequest` are separate, out of scope). Real responses are also a single comma-joined
+  `return` string (`"0,<refId>"` for pay, a bare `ResCode` for verify) rather than structured
+  elements — which is what real SDKs such as `mellat-checkout` parse with `.split(',')`. Field names
+  and types for requests are confirmed accurate (`terminalId`, `userName`, `userPassword`, `orderId`,
+  `amount`, `localDate`, `localTime`, `additionalData`, `callBackUrl`, `payerId`; verify/reverse take
+  `orderId` + `saleOrderId` + `saleReferenceId`).
+- **Fallback needed?** Not for the spike's purpose — the documented subset is viable and the WSDL
+  parses. But T023 must decide, before serving: either keep the contract §3 operation names (simple,
+  but a real Mellat SDK pointed at the sandbox would fail on the operation name and on the
+  comma-string `return`), or rename to the real operations and emit the real comma-joined `return`.
+  The latter is what drop-in parity (FR-002) actually requires; the WSDL is already namespaced and
+  field-accurate, so the rename is a bounded change.
+
