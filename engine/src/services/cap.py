@@ -36,16 +36,23 @@ async def record_transaction(
     session.add(tx)
     await session.flush()  # INSERT first, so the cap counts the new row
 
-    # Newest-first, skip the cap worth of survivors, and everything left is past the cap. OFFSET
-    # rather than a keyset cut because `created_at` ties are real for rows written in one burst,
-    # and this matches the documented "delete oldest rows beyond history_cap" wording.
+    # Cap the OTHER rows to `cap - 1`, so the row just inserted always occupies the last slot.
+    #
+    # Two things this ordering must get right:
+    #  - The new row is excluded from the ranking entirely. Ranking it among the others lets it
+    #    fall past the offset when `created_at` ties and be deleted by its own call — handing the
+    #    caller a transaction that is already gone (reproduced on real Postgres: 10/12 inserts
+    #    lost this way when timestamps tied). Ties are real: `created_at` defaults to a Python
+    #    microsecond clock, so rows written in one burst can share it.
+    #  - Keeping `cap - 1` others (not `cap`) keeps the total at exactly `cap` even when ties make
+    #    the new row's rank ambiguous, instead of drifting one row over per tie burst.
     # ponytail: O(offset) per insert; swap for a keyset cut on (created_at, id) if a project ever
     # runs a big cap under heavy insert load.
     doomed = (
         select(Transaction.id)
-        .where(Transaction.project_id == project.id)
+        .where(Transaction.project_id == project.id, Transaction.id != tx.id)
         .order_by(Transaction.created_at.desc(), Transaction.id.desc())
-        .offset(project.history_cap)
+        .offset(max(project.history_cap - 1, 0))
     )
     await session.execute(delete(Transaction).where(Transaction.id.in_(doomed)))
 

@@ -18,6 +18,7 @@ Run it with, e.g.:
 import asyncio
 import os
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 import pytest_asyncio
@@ -86,6 +87,9 @@ async def _kept(session_factory, project_id) -> tuple[list[str], UsageMeter | No
 async def session_factory():
     engine = create_async_engine(TEST_DATABASE_URL)
     async with engine.begin() as conn:
+        # Drop first: these tests pin explicit ids, so residue from a previous run would collide
+        # on the primary key. Per-test isolation also keeps the cap assertions exact.
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     factory = async_sessionmaker(engine, expire_on_commit=False)
     try:
@@ -121,3 +125,68 @@ async def test_concurrent_inserts_hold_the_cap(session_factory):
     assert len(kept) == CAP, f"cap not enforced under concurrency: kept {sorted(kept)}"
     assert meter.transactions_total == INSERTS, "lifetime counter must still count every insert"
     assert meter.history_retained == CAP
+
+
+@pytest.mark.asyncio
+async def test_newest_inserts_survive_when_timestamps_tie(session_factory):
+    """A transaction must never be deleted by the same call that inserted it.
+
+    Regression: ranking the new row among the others let it fall past `OFFSET history_cap` when
+    `created_at` tied, so it was deleted by its own call while the meter still counted it — the
+    caller was handed a transaction that was already gone. Reproduced on real Postgres at 10/12
+    inserts lost. Ties are real: `created_at` defaults to a microsecond clock, so a burst can
+    share it, and `len(kept) == cap` alone cannot catch this (the count stays right either way).
+
+    Deterministic, not probabilistic: verified against Postgres, `(created_at DESC, id DESC)`
+    ranks the *largest* id first, so ids descend with insertion order to make the row just
+    inserted rank last — i.e. the row most exposed to being deleted by its own call. With random
+    UUIDs the new row's rank is a coin flip, which is how a vacuous version of this test can
+    pass against the bug.
+    """
+    project_id, adapter_id = await _seed(session_factory)
+
+    # One identical created_at for every row, so ranking falls through to `id DESC`.
+    tied_at = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+    for i in range(INSERTS):
+        authority = f"TIE-{i}"
+        # Descending ids: the newest row has the smallest id, so it ranks last under `id DESC`.
+        tx_id = uuid.UUID(int=INSERTS - i)
+        async with session_factory() as session:
+            project = await session.get(Project, project_id)
+            await record_transaction(
+                session,
+                project,
+                Transaction(
+                    id=tx_id,
+                    project_id=project_id,
+                    adapter_id=adapter_id,
+                    amount_rial=1_000 + i,
+                    authority=authority,
+                    created_at=tied_at,
+                ),
+            )
+            await session.commit()
+
+        # The invariant, checked the moment the caller would get the row back.
+        async with session_factory() as session:
+            still_there = (
+                await session.execute(
+                    select(Transaction.authority).where(Transaction.authority == authority)
+                )
+            ).scalar_one_or_none()
+        assert still_there == authority, (
+            f"{authority} was deleted by its own record_transaction call"
+        )
+
+    async with session_factory() as session:
+        kept = (
+            (
+                await session.execute(
+                    select(Transaction.authority).where(Transaction.project_id == project_id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    assert len(kept) == CAP, f"expected exactly {CAP} rows, got {len(kept)}"
