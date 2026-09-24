@@ -10,12 +10,17 @@ from typing import Any, ClassVar
 
 from src.models import AdapterConfig, ApiUnit, Provider, Transaction
 
-# contracts/adapter-surfaces.md stages. `callback_payload` switches on these.
+# contracts/adapter-surfaces.md stages + data-model.md's WebhookDelivery `stage` enum
+# (`notify | settle | refund`). `callback_payload` switches on these.
 CallbackStage = str
 STAGE_INITIATE = "initiate"
 STAGE_RETURN = "return"
 STAGE_VERIFY = "verify"
 STAGE_REFUND = "refund"
+# Async callback points: `settle` fires on pending→settled, `notify` is the plain result
+# notification. T038's per-adapter payload builders are keyed on these.
+STAGE_SETTLE = "settle"
+STAGE_NOTIFY = "notify"
 
 
 class PaymentAdapter(ABC):

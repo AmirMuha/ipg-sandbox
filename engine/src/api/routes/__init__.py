@@ -18,7 +18,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.db import get_session
 from src.api.errors import not_found
-from src.models import AdapterConfig, Project, Provider, Transaction, TransactionStatus, UsageMeter
+from src.models import (
+    AdapterConfig,
+    Project,
+    ProjectKind,
+    Provider,
+    Transaction,
+    TransactionStatus,
+    UsageMeter,
+)
 
 router = APIRouter(prefix="/api/v1")
 
@@ -58,17 +66,22 @@ def _project_body(project: Project) -> dict[str, Any]:
     }
 
 
-def _adapter_body(adapter: AdapterConfig) -> dict[str, Any]:
-    return {
+def _adapter_body(adapter: AdapterConfig, *, kind: ProjectKind) -> dict[str, Any]:
+    body: dict[str, Any] = {
         "id": adapter.id,
         "project_id": adapter.project_id,
         "provider": adapter.provider,
         "enabled": adapter.enabled,
-        # Test values only, never validated against a real gateway (FR-012) — safe to read back.
-        "credentials": adapter.credentials,
         "api_unit": adapter.api_unit,
         "endpoint_path_prefix": adapter.endpoint_path_prefix,
     }
+    # Local self-host: the operator entered these test values themselves, so reading them back is
+    # part of configuring (and debugging) the stack. Demo: the project is visitor-scoped and the
+    # route is reachable by that visitor, so the same read becomes a credential-display surface
+    # (FR-014). Omit rather than mask — a mask leaks length and invites false confidence.
+    if kind is ProjectKind.local:
+        body["credentials"] = adapter.credentials
+    return body
 
 
 def _transaction_body(tx: Transaction, *, include_raw: bool) -> dict[str, Any]:
@@ -114,7 +127,7 @@ async def list_adapters(
         .where(AdapterConfig.project_id == project.id)
         .order_by(AdapterConfig.provider)
     )
-    return [_adapter_body(adapter) for adapter in adapters]
+    return [_adapter_body(adapter, kind=project.kind) for adapter in adapters]
 
 
 @router.get("/transactions")

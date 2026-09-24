@@ -21,7 +21,15 @@ from sqlalchemy.orm import Session
 
 import src.api.routes as routes_module
 from src.api.app import create_app
-from src.models import AdapterConfig, Base, Project, Provider, Transaction, UsageMeter
+from src.models import (
+    AdapterConfig,
+    Base,
+    Project,
+    ProjectKind,
+    Provider,
+    Transaction,
+    UsageMeter,
+)
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 
@@ -120,7 +128,51 @@ def test_get_adapters_lists_configured_adapters(client):
     assert body[0]["provider"] == "zarinpal"
     assert body[0]["api_unit"] == "rial"
     assert body[0]["endpoint_path_prefix"] == "/zarinpal"
+    # Local self-host: the operator typed these test values in, so reading them back is how the
+    # stack gets configured and debugged (FR-014 only restricts the visitor-scoped demo path).
     assert body[0]["credentials"] == {"merchant_id": "test-merchant"}
+
+
+def test_get_adapters_omits_credentials_for_a_demo_project(tmp_path):
+    """FR-014: a visitor-scoped project must not read its adapter credentials back.
+
+    The route is reachable by that visitor, so echoing them turns the endpoint into a
+    credential-display surface.
+    """
+    url = f"sqlite:///{tmp_path / 'demo.db'}"
+    sync_engine = create_engine(url)
+    Base.metadata.create_all(sync_engine)
+    with Session(sync_engine) as session:
+        project = Project(id=uuid.uuid4(), name="visitor", kind=ProjectKind.demo)
+        session.add(project)
+        session.add(
+            AdapterConfig(
+                id=uuid.uuid4(),
+                project_id=project.id,
+                provider=Provider.zarinpal,
+                credentials={"merchant_id": "SECRET-MERCHANT"},
+                endpoint_path_prefix="/zarinpal",
+            )
+        )
+        session.commit()
+    sync_engine.dispose()
+
+    app = create_app()
+    async_engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'demo.db'}")
+    app.state.session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
+
+    with TestClient(app) as test_client:
+        response = test_client.get("/api/v1/adapters")
+
+    asyncio.run(async_engine.dispose())
+
+    body = response.json()
+    assert len(body) == 1
+    assert "credentials" not in body[0], "demo project leaked adapter credentials"
+    assert "SECRET-MERCHANT" not in response.text
+    # The non-secret fields still describe the adapter, so config views keep working.
+    assert body[0]["provider"] == "zarinpal"
+    assert body[0]["endpoint_path_prefix"] == "/zarinpal"
 
 
 # --- GET /api/v1/transactions -------------------------------------------------
