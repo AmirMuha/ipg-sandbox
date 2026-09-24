@@ -29,12 +29,12 @@ Per plan.md structure: `engine/` (Python), `dashboard/` (Next.js), `demo/` (host
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create monorepo structure per plan.md (`engine/`, `dashboard/`, `demo/`, `docker-compose.yml`, `.env.example`) at repository root
-- [ ] T002 Initialize engine Python 3.12 project at `engine/pyproject.toml` with FastAPI, SQLAlchemy 2, Alembic, httpx, zeep, pytest (research R1)
-- [ ] T003 [P] Initialize dashboard Next.js 14 App Router project at `dashboard/package.json` with next-intl and Tailwind (research R8)
-- [ ] T004 [P] Add AGPL-3.0 `LICENSE` at repository root and set license metadata in `engine/pyproject.toml` and `dashboard/package.json` (FR-015)
-- [ ] T005 [P] Configure linting/formatting: ruff config at `engine/ruff.toml`, eslint+prettier config at `dashboard/.eslintrc.json`
-- [ ] T006 Write `docker-compose.yml` at repository root: services `engine`, `dashboard`, `postgres:16`, with `extra_hosts: host.docker.internal:host-gateway` on engine (research R6/R11); commit `.env.example` with port/DB/delay overrides
+- [X] T001 Create monorepo structure per plan.md (`engine/`, `dashboard/`, `demo/`, `docker-compose.yml`, `.env.example`) at repository root
+- [X] T002 Initialize engine Python 3.12 project at `engine/pyproject.toml` with FastAPI, SQLAlchemy 2, Alembic, httpx, zeep, pytest (research R1)
+- [X] T003 [P] Initialize dashboard Next.js 14 App Router project at `dashboard/package.json` with next-intl and Tailwind (research R8)
+- [X] T004 [P] Add AGPL-3.0 `LICENSE` at repository root and set license metadata in `engine/pyproject.toml` and `dashboard/package.json` (FR-015)
+- [X] T005 [P] Configure linting/formatting: ruff config at `engine/ruff.toml`, eslint+prettier config at `dashboard/.eslintrc.json`
+- [X] T006 Write `docker-compose.yml` at repository root: services `engine`, `dashboard`, `postgres:16`, with `extra_hosts: host.docker.internal:host-gateway` on engine (research R6/R11); commit `.env.example` with port/DB/delay overrides
 
 **Checkpoint**: Repo skeleton exists; empty services defined
 
