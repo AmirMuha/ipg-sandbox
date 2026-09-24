@@ -3,3 +3,7 @@
 .agents/
 .opencode/
 .hermes/
+
+.worktrees/
+
+.pipeline/
