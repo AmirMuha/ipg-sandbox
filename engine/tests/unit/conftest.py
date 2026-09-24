@@ -42,7 +42,16 @@ def _array_bind_processor(self, dialect):
     return lambda value: None if value is None else json.dumps(value)
 
 
+def _array_result_processor(self, dialect, coltype):
+    """Read half: a JSON column comes back as its raw string, so ARRAY columns would
+    deserialize as `['[', '1', ...]`. Parse it back into a real list. Postgres stays native."""
+    if dialect.name != "sqlite":
+        return None
+    return lambda value: None if value is None else json.loads(value)
+
+
 ARRAY.bind_processor = _array_bind_processor
+ARRAY.result_processor = _array_result_processor
 
 
 @pytest.fixture
