@@ -13,6 +13,8 @@ dist/
 build/
 *.log
 .env*
+!.env.example
+.turbo/
 .next/
 out/
 
@@ -32,6 +34,4 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Engine venv
-engine/.venv/
 .venv/

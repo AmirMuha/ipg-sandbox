@@ -1,13 +1,30 @@
-node_modules/
+# VCS / workspace noise
 .git/
+.worktrees/
+.turbo/
+**/node_modules/
+**/.next/
+**/out/
+**/coverage/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.egg-info/
+**/.venv/
+**/venv/
+
+# Not needed to build the dashboard image
+.specify/
+.claude/
+.opencode/
+.pipeline/
+.tmp/
+specs/
+**/*.md
 Dockerfile*
-.dockerignore
+**/.dockerignore
 *.log*
 .env*
-coverage/
-__pycache__/
-*.pyc
-.venv/
-venv/
-.next/
-out/

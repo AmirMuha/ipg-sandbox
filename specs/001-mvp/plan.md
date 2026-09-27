@@ -57,38 +57,43 @@ specs/001-mvp/
 ### Source Code (repository root)
 
 ```text
-engine/                      # Python gateway-simulation engine
-├── src/
-│   ├── api/                 # FastAPI app: control API + adapter route mounting
-│   ├── adapters/            # zarinpal/, idpay/, behpardakht/ (+ base interface)
-│   ├── scenarios/           # forced-outcome resolution + delayed transitions
-│   ├── webhooks/            # delivery worker, retry/backoff, real payload builders
-│   ├── models/              # SQLAlchemy models (see data-model.md)
-│   └── checkout/            # hosted checkout/redirect page rendering
-├── tests/
-│   ├── unit/
-│   ├── contract/            # per-adapter surface + callback-format contracts
-│   └── integration/         # 18/18 scenario matrix, webhook delivery
-└── pyproject.toml
+apps/
+├── engine/                  # Python gateway-simulation engine
+│   ├── src/
+│   │   ├── api/             # FastAPI app: control API + adapter route mounting
+│   │   ├── adapters/        # zarinpal/, idpay/, behpardakht/ (+ base interface)
+│   │   ├── scenarios/       # forced-outcome resolution + delayed transitions
+│   │   ├── webhooks/        # delivery worker, retry/backoff, real payload builders
+│   │   ├── models/          # SQLAlchemy models (see data-model.md)
+│   │   └── checkout/        # hosted checkout/redirect page rendering
+│   ├── tests/
+│   │   ├── unit/
+│   │   ├── contract/        # per-adapter surface + callback-format contracts
+│   │   └── integration/     # 18/18 scenario matrix, webhook delivery
+│   ├── pyproject.toml
+│   └── package.json         # thin bridge for turbo task graph
+├── dashboard/               # Next.js dashboard (FA/EN, RTL)
+│   ├── src/
+│   │   ├── app/             # App Router pages (transactions, scenario, webhooks, settings)
+│   │   ├── components/
+│   │   ├── i18n/            # next-intl messages fa.json / en.json, dir switching
+│   │   └── lib/             # control-API client
+│   └── package.json
+└── demo/                    # hosted-demo glue: email signup gate, rate limit, visitor isolation
+    ├── src/
+    └── ...
 
-dashboard/                   # Next.js dashboard (FA/EN, RTL)
-├── src/
-│   ├── app/                 # App Router pages (transactions, scenario, webhooks, settings)
-│   ├── components/
-│   ├── i18n/                # next-intl messages fa.json / en.json, dir switching
-│   └── lib/                 # control-API client
-└── package.json
-
-demo/                        # hosted-demo glue: email signup gate, rate limit, visitor isolation
-├── src/
-└── ...
+packages/                    # reserved for shared TypeScript packages (e.g. control-api-client)
 
 docker-compose.yml           # one-command bootstrap: engine + dashboard + postgres
+package.json                 # root workspace root + turbo
+pnpm-workspace.yaml
+turbo.json
 AGPL-3.0 LICENSE
 README.md                    # quickstart mirror for public repo
 ```
 
-**Structure Decision**: Three deployable units sharing one compose file — `engine` (all emulation logic and control API), `dashboard` (UI only, talks to control API), `demo` (signup/rate-limit shell that wraps the same engine+dashboard images; the OSS images themselves stay login-free per FR-014). Monorepo matches intake.md's declared structure; adapters live behind one base interface so post-v1 gateways (Stripe etc.) plug in without touching the engine core.
+**Structure Decision**: Three deployable units under `apps/` sharing one compose file — `apps/engine` (all emulation logic and control API), `apps/dashboard` (UI only, talks to control API), `apps/demo` (signup/rate-limit shell that wraps the same engine+dashboard images; the OSS images themselves stay login-free per FR-014). pnpm-workspace Turborepo monorepo (apps/* deployables + packages/* shared TS) matches intake.md's declared structure; adapters live behind one base interface so post-v1 gateways (Stripe etc.) plug in without touching the engine core.
 
 ## Complexity Tracking
 

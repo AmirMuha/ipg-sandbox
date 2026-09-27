@@ -23,7 +23,7 @@ compose profile (`--profile demo`).
 ## Status
 
 Early. The engine foundation is in place — data model, migrations, control API, scenario
-resolution and history cap, with the three gateway adapters next. `engine/` and `postgres`
+resolution and history cap, with the three gateway adapters next. `apps/engine` and `postgres`
 run today; the dashboard is a placeholder shell.
 
 ## Behpardakht (Mellat) fidelity — known gap

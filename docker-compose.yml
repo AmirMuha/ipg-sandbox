@@ -1,7 +1,7 @@
 services:
   engine:
     build:
-      context: ./engine
+      context: ./apps/engine
     ports:
       - "${ENGINE_PORT:-8080}:8080"
     environment:
@@ -16,11 +16,13 @@ services:
 
   dashboard:
     build:
-      context: ./dashboard
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+      args:
+        # Baked into the client bundle at build time; must be a host-reachable URL.
+        NEXT_PUBLIC_API_URL: http://localhost:${ENGINE_PORT:-8080}
     ports:
       - "${DASHBOARD_PORT:-3000}:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:${ENGINE_PORT:-8080}
 
   postgres:
     image: postgres:16-alpine

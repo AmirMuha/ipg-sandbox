@@ -62,7 +62,7 @@ All Technical Context fields are resolved (no NEEDS CLARIFICATION remained — i
 
 ## R10. Hosted demo: email signup, rate limiting, isolation
 
-- **Decision**: `demo/` layer in front of engine+dashboard images: free email signup via magic link (tokenized, no passwords — spec assumption), session cookie scopes every request to a `visitor_session` → bound `project_id`; rate limiting as a reverse-proxy concern (fixed-window per IP + per session on simulate endpoints) plus signup-spam throttle per email. Visitor isolation = strict `project_id` scoping on every control-API query (tenant key already in the model). Data expires with the shared 1000-cap project each visitor owns.
+- **Decision**: `apps/demo/` layer in front of engine+dashboard images: free email signup via magic link (tokenized, no passwords — spec assumption), session cookie scopes every request to a `visitor_session` → bound `project_id`; rate limiting as a reverse-proxy concern (fixed-window per IP + per session on simulate endpoints) plus signup-spam throttle per email. Visitor isolation = strict `project_id` scoping on every control-API query (tenant key already in the model). Data expires with the shared 1000-cap project each visitor owns.
 - **Rationale**: spec clarification 1 (email + rate limit + isolation); magic-link avoids password storage/verification surface entirely on personal infra; project-scoped queries are the cheapest correct isolation (multi-tenant hardening post-v1 per spec assumption).
 - **Alternatives considered**: third-party auth provider (dependency + privacy overhead for a simulation tool), full user accounts with profiles (explicitly out per spec assumption), shared single demo project (fails isolation requirement).
 
@@ -85,8 +85,8 @@ All Technical Context fields are resolved (no NEEDS CLARIFICATION remained — i
 
 ## R4 outcome (spike T007, 2026-09-24) — PASSED
 
-Artifacts: `engine/src/adapters/behpardakht/behpardakht.wsdl` (hand-authored, 3 operations only),
-`engine/tests/contract/test_behpardakht_spike.py` (6 tests, all pass).
+Artifacts: `apps/engine/src/adapters/behpardakht/behpardakht.wsdl` (hand-authored, 3 operations only),
+`apps/engine/tests/contract/test_behpardakht_spike.py` (6 tests, all pass).
 
 - **Result**: PASS against the reference client (`zeep` 4.3.3 — the standard Python SOAP client; no
   Iranian Mellat SDK is installable here). zeep 4.3.3 parses the WSDL, reports exactly the three

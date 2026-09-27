@@ -6,7 +6,7 @@
 **Auth scoping**
 
 - Local self-host: no auth (FR-014).
-- Hosted demo: session cookie from `demo/` layer; every handler scopes queries by `project_id` from the session (FR-014 isolation).
+- Hosted demo: session cookie from `apps/demo/` layer; every handler scopes queries by `project_id` from the session (FR-014 isolation).
 
 ## Endpoints
 
@@ -44,7 +44,7 @@
 |---------------|---------|
 | `GET /meters` | `requests_total`, `transactions_total`, `history_retained`, `webhook_attempts` (FR-011 counters; no billing fields) |
 
-### Demo-only (served by `demo/` layer, not core engine)
+### Demo-only (served by `apps/demo/` layer, not core engine)
 
 | Method + path | Purpose |
 |---------------|---------|
