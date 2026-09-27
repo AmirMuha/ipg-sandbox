@@ -40,7 +40,7 @@ curl -s -X POST http://localhost:8080/zarinpal/payment/verification \
 ## 3. Scenario matrix — SC-003 (18/18)
 
 ```bash
-pytest engine/tests/integration/test_scenario_matrix.py -q   # or the compose-run equivalent
+(cd apps/engine && uv run --extra dev pytest tests/integration/test_scenario_matrix.py -q)   # or the compose-run equivalent
 ```
 
 **Expected**: exit 0 — 6 outcomes (`approve, decline, timeout, refund, pending_settle, verify_fail`) × 3 adapters (`zarinpal, idpay, behpardakht`), each asserting the contract-defined response for that (adapter × outcome) (contract: adapter-surfaces.md §1–3).

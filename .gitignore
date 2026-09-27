@@ -13,12 +13,15 @@ dist/
 build/
 *.log
 .env*
+!.env.example
+.turbo/
 .next/
 out/
 
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
 venv/
 *.egg-info/
