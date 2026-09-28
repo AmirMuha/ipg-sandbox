@@ -4,8 +4,8 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "scripts": {
-    "dev": "uv run --extra dev uvicorn src.api.app:app --reload --host 0.0.0.0 --port 8080",
-    "test": "uv run --extra dev pytest -q",
-    "lint": "uv run --extra dev ruff check . && uv run --extra dev ruff format --check ."
+    "dev": ".venv/bin/poe dev",
+    "test": ".venv/bin/poe test",
+    "lint": ".venv/bin/poe check"
   }
 }
