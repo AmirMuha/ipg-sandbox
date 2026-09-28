@@ -1,0 +1,184 @@
+"""Zarinpal emulated gateway routes (T021) — contracts/adapter-surfaces.md §1."""
+
+from typing import Annotated, Any
+from urllib.parse import parse_qs, urlencode
+
+from fastapi import APIRouter, Depends, Header, Query, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.adapters.base import to_rial
+from src.adapters.zarinpal.adapter import ZarinpalAdapter
+from src.api.db import get_session
+from src.api.errors import ApiError, ErrorCode, not_found
+from src.api.routes import current_project
+from src.models import (
+    AdapterConfig,
+    Project,
+    Provider,
+    TransactionStatus,
+)
+from src.services import transactions
+
+router = APIRouter(prefix="/zarinpal", tags=["zarinpal"])
+
+
+async def get_adapter(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+) -> ZarinpalAdapter:
+    stmt = select(AdapterConfig).where(
+        AdapterConfig.project_id == project.id,
+        AdapterConfig.provider == Provider.zarinpal,
+        AdapterConfig.enabled.is_(True),
+    )
+    config = await session.scalar(stmt)
+    if config is None:
+        raise not_found("adapter zarinpal")
+    return ZarinpalAdapter(config)
+
+
+def _append_query(base_url: str, params: dict[str, Any]) -> str:
+    qs = urlencode(params)
+    sep = "&" if "?" in base_url else "?"
+    return f"{base_url}{sep}{qs}"
+
+
+@router.post("/request/payment")
+async def initiate_payment(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[ZarinpalAdapter, Depends(get_adapter)],
+    x_sandbox_scenario: Annotated[str | None, Header()] = None,
+) -> dict[str, Any]:
+    body: dict[str, Any] = await request.json()
+
+    # Credential check
+    merchant_id = body.get("merchant_id")
+    if merchant_id is None:
+        merchant_id = body.get("MerchantID")
+    if merchant_id == "":
+        raise ApiError(ErrorCode.invalid_credentials, "Invalid or empty merchant_id", status=401)
+    adapter.check_credentials()
+
+    amount = body.get("amount") or body.get("Amount")
+    if amount is None:
+        raise ApiError(ErrorCode.validation_error, "amount is required", status=422)
+
+    amount_rial = to_rial(int(amount), adapter.api_unit)
+    callback_url = body.get("callback_url") or body.get("CallbackURL")
+    return_url = body.get("return_url") or body.get("ReturnURL") or callback_url
+    description = body.get("description") or body.get("Description")
+    currency = body.get("currency") or body.get("Currency") or "IRR"
+
+    tx = await transactions.initiate(
+        session,
+        project,
+        adapter.config,
+        amount_rial=amount_rial,
+        header=x_sandbox_scenario,
+        callback_url=callback_url,
+        return_url=return_url,
+        description=description,
+        currency=currency,
+        raw_request=body,
+    )
+
+    resp = await adapter.create_payment(tx, body)
+    tx.raw_response = resp
+    await session.commit()
+    return resp
+
+
+@router.get("/checkout/{authority}", response_class=HTMLResponse)
+async def checkout_view(
+    authority: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[ZarinpalAdapter, Depends(get_adapter)],
+    lang: str = "fa",
+) -> HTMLResponse:
+    tx = await transactions.load_by_authority(session, project, authority)
+    html = await adapter.checkout_page(tx, lang=lang)
+    return HTMLResponse(content=html)
+
+
+@router.post("/checkout/{authority}")
+async def checkout_action(
+    request: Request,
+    authority: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+) -> RedirectResponse:
+    body_bytes = await request.body()
+    parsed_form = parse_qs(body_bytes.decode("utf-8"))
+    action_list = parsed_form.get("action", ["confirm"])
+    action = action_list[0] if action_list else "confirm"
+
+    tx = await transactions.load_by_authority(session, project, authority)
+    target_url = tx.return_url or tx.callback_url or "/"
+
+    if action == "confirm":
+        await transactions.advance(session, tx, TransactionStatus.pending)
+        status_param = "OK"
+    elif action == "fail":
+        await transactions.advance(session, tx, TransactionStatus.declined)
+        status_param = "NOK"
+    else:  # abandon
+        status_param = "CANCELLED"
+
+    redirect_target = _append_query(target_url, {"Authority": tx.authority, "Status": status_param})
+    return RedirectResponse(url=redirect_target, status_code=302)
+
+
+@router.get("/callback/{authority}")
+async def callback_redirect(
+    authority: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    status: str = Query("OK", alias="Status"),
+) -> RedirectResponse:
+    tx = await transactions.load_by_authority(session, project, authority)
+    target_url = tx.return_url or tx.callback_url or "/"
+    redirect_target = _append_query(target_url, {"Authority": tx.authority, "Status": status})
+    return RedirectResponse(url=redirect_target, status_code=302)
+
+
+@router.post("/payment/verification")
+async def verify_payment(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[ZarinpalAdapter, Depends(get_adapter)],
+) -> dict[str, Any]:
+    body: dict[str, Any] = await request.json()
+    authority = body.get("authority") or body.get("Authority")
+    if not authority:
+        raise ApiError(ErrorCode.validation_error, "authority is required", status=422)
+
+    tx = await transactions.load_by_authority(session, project, authority)
+    resp = await adapter.verify(tx, body)
+    tx.raw_response = resp
+    await session.commit()
+    return resp
+
+
+@router.post("/payment/refund")
+async def refund_payment(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[ZarinpalAdapter, Depends(get_adapter)],
+) -> dict[str, Any]:
+    body: dict[str, Any] = await request.json()
+    authority = body.get("authority") or body.get("Authority")
+    if not authority:
+        raise ApiError(ErrorCode.validation_error, "authority is required", status=422)
+
+    tx = await transactions.load_by_authority(session, project, authority)
+    resp = await adapter.refund(tx, body)
+    tx.raw_response = resp
+    await session.commit()
+    return resp

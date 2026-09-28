@@ -71,3 +71,13 @@ class PaymentAdapter(ABC):
     def callback_payload(self, stage: CallbackStage, tx: Transaction) -> dict[str, Any]:
         """Payload the adapter POSTs to the app's callback URL, in the *real* gateway's field
         names for `stage` (clarification 2). Sync: it is pure shaping, no I/O."""
+
+
+def to_rial(amount: int, unit: ApiUnit) -> int:
+    """Convert boundary amount into canonical Rial (clarification 4)."""
+    return amount * 10 if unit == ApiUnit.toman else amount
+
+
+def from_rial(amount_rial: int, unit: ApiUnit) -> int:
+    """Convert canonical Rial to boundary unit (clarification 4)."""
+    return amount_rial // 10 if unit == ApiUnit.toman else amount_rial

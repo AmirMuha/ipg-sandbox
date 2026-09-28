@@ -10,10 +10,13 @@ from fastapi import FastAPI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from src.adapters.behpardakht import router as behpardakht_router
+from src.adapters.idpay import router as idpay_router
+from src.adapters.zarinpal import router as zarinpal_router
 from src.api.errors import install_error_handlers
 from src.api.routes import router
 from src.config import Settings
-from src.models import Project
+from src.models import AdapterConfig, ApiUnit, Project, Provider
 
 
 @asynccontextmanager
@@ -36,22 +39,53 @@ async def lifespan(app: FastAPI):
 
 
 async def _seed_default_project(session: AsyncSession, settings: Settings) -> None:
-    """Local self-host runs exactly one project; `GET /project` must answer on a bare stack (T016).
-
-    ponytail: seed only — adapters are seeded by the Phase 3 adapter dispatch. The schema itself
-    is alembic's job (`alembic upgrade head`), not this function's.
-    """
-    if await session.scalar(select(Project).limit(1)) is not None:
-        return
-    session.add(
-        Project(
+    """Local self-host runs one project; `GET /project` and `/adapters` answer on a bare stack."""
+    project = await session.scalar(select(Project).limit(1))
+    if project is None:
+        project = Project(
             name="default",
             history_cap=settings.history_cap,
             webhook_retry_max=settings.webhook_retry_max,
             pending_settle_delay_s=settings.pending_settle_delay_s,
             timeout_delay_s=settings.timeout_delay_s,
         )
-    )
+        session.add(project)
+        await session.flush()
+
+    # Seed default adapter configs if not present
+    existing_adapters = (
+        await session.scalars(select(AdapterConfig).where(AdapterConfig.project_id == project.id))
+    ).all()
+    if not existing_adapters:
+        session.add_all(
+            [
+                AdapterConfig(
+                    project_id=project.id,
+                    provider=Provider.zarinpal,
+                    endpoint_path_prefix="/zarinpal",
+                    api_unit=ApiUnit.rial,
+                    credentials={"merchant_id": "sandbox-merchant"},
+                ),
+                AdapterConfig(
+                    project_id=project.id,
+                    provider=Provider.idpay,
+                    endpoint_path_prefix="/idpay",
+                    api_unit=ApiUnit.toman,
+                    credentials={"api_key": "sandbox-key"},
+                ),
+                AdapterConfig(
+                    project_id=project.id,
+                    provider=Provider.behpardakht,
+                    endpoint_path_prefix="/behpardakht",
+                    api_unit=ApiUnit.rial,
+                    credentials={
+                        "terminal_id": 123456,
+                        "username": "sandbox",
+                        "password": "sandbox",
+                    },
+                ),
+            ]
+        )
     await session.commit()
 
 
@@ -59,6 +93,9 @@ def create_app() -> FastAPI:
     app = FastAPI(title="IPG Sandbox Engine", version="0.1.0", lifespan=lifespan)
     install_error_handlers(app)
     app.include_router(router)
+    app.include_router(zarinpal_router)
+    app.include_router(idpay_router)
+    app.include_router(behpardakht_router)
     return app
 
 

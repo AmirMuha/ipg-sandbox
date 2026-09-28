@@ -71,20 +71,20 @@ Per plan.md structure: `apps/engine/` (Python), `apps/dashboard/` (Next.js), `ap
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T017 [P] [US1] Contract tests for Zarinpal surface (initiate/checkout/callback/verify paths, in-scope-only errors) at `apps/engine/tests/contract/test_zarinpal_surface.py` per contracts/adapter-surfaces.md §1
-- [ ] T018 [P] [US1] Contract tests for IDPay surface at `apps/engine/tests/contract/test_idpay_surface.py` per contracts/adapter-surfaces.md §2
-- [ ] T019 [P] [US1] Contract tests for Behpardakht SOAP subset parsed by zeep client at `apps/engine/tests/contract/test_behpardakht_surface.py` per contracts/adapter-surfaces.md §3 (upgrades the T007 spike to full contract)
-- [ ] T020 [P] [US1] Integration test: first approved payment end-to-end (initiate → checkout confirm → redirect → verify success, transaction `settled`/`approved` recorded) at `apps/engine/tests/integration/test_first_payment.py` per quickstart §2
+- [X] T017 [P] [US1] Contract tests for Zarinpal surface (initiate/checkout/callback/verify paths, in-scope-only errors) at `apps/engine/tests/contract/test_zarinpal_surface.py` per contracts/adapter-surfaces.md §1
+- [X] T018 [P] [US1] Contract tests for IDPay surface at `apps/engine/tests/contract/test_idpay_surface.py` per contracts/adapter-surfaces.md §2
+- [X] T019 [P] [US1] Contract tests for Behpardakht SOAP subset parsed by zeep client at `apps/engine/tests/contract/test_behpardakht_surface.py` per contracts/adapter-surfaces.md §3 (upgrades the T007 spike to full contract)
+- [X] T020 [P] [US1] Integration test: first approved payment end-to-end (initiate → checkout confirm → redirect → verify success, transaction `settled`/`approved` recorded) at `apps/engine/tests/integration/test_first_payment.py` per quickstart §2
 
 ### Implementation for User Story 1
 
-- [ ] T021 [P] [US1] Implement Zarinpal adapter at `apps/engine/src/adapters/zarinpal/`: `POST {prefix}/request/payment`, `GET {prefix}/checkout/{authority}`, `GET {prefix}/callback/{authority}`, `POST {prefix}/payment/verification`; api_unit conversion at boundary, Rial canonical storage (contracts §1, clarification 4)
-- [ ] T022 [P] [US1] Implement IDPay adapter at `apps/engine/src/adapters/idpay/`: `POST {prefix}/payment`, `GET {prefix}/payment/start/{id}`, `POST {prefix}/payment/verify` per contracts §2
-- [ ] T023 [US1] Promote spike to full Behpardakht adapter at `apps/engine/src/adapters/behpardakht/`: `bpPaymentRequest`, `bpPaymentVerification`, `bpReverseTransaction` served as SOAP at `POST {prefix}/MellatPaymentGateway` (+ `?wsdl`); all other operations → SOAP fault `sandbox:UnsupportedOperation` (contracts §3, research R4 exit criteria)
-- [ ] T024 [US1] Implement hosted checkout page rendering at `apps/engine/src/checkout/`: confirm / fail / abandon controls, FA default with RTL, amount display only — never collects card data (contracts §5, FR-012)
-- [ ] T025 [US1] Implement Transaction initiation + state machine at `apps/engine/src/services/transactions.py`: `amount_rial ≥ 0` validation, legal transitions only per data-model.md, `effective_scenario` resolved via T013 at initiate, wire T014 cap+meters on insert
-- [ ] T026 [US1] Implement `POST /api/v1/transactions` (pre-seed with `forced_scenario?`) and `DELETE /api/v1/transactions/{id}` at `apps/engine/src/api/routes/transactions.py`; store raw_request/raw_response for dashboard detail (control-api.md, US4.4)
-- [ ] T027 [US1] Run independent validation: specs/001-mvp/quickstart.md §1–2 timed, T017–T020 all green — **STOP and VALIDATE US1 before proceeding**
+- [X] T021 [P] [US1] Implement Zarinpal adapter at `apps/engine/src/adapters/zarinpal/`: `POST {prefix}/request/payment`, `GET {prefix}/checkout/{authority}`, `GET {prefix}/callback/{authority}`, `POST {prefix}/payment/verification`; api_unit conversion at boundary, Rial canonical storage (contracts §1, clarification 4)
+- [X] T022 [P] [US1] Implement IDPay adapter at `apps/engine/src/adapters/idpay/`: `POST {prefix}/payment`, `GET {prefix}/payment/start/{id}`, `POST {prefix}/payment/verify` per contracts §2
+- [X] T023 [US1] Promote spike to full Behpardakht adapter at `apps/engine/src/adapters/behpardakht/`: `bpPaymentRequest`, `bpPaymentVerification`, `bpReverseTransaction` served as SOAP at `POST {prefix}/MellatPaymentGateway` (+ `?wsdl`); all other operations → SOAP fault `sandbox:UnsupportedOperation` (contracts §3, research R4 exit criteria)
+- [X] T024 [US1] Implement hosted checkout page rendering at `apps/engine/src/checkout/`: confirm / fail / abandon controls, FA default with RTL, amount display only — never collects card data (contracts §5, FR-012)
+- [X] T025 [US1] Implement Transaction initiation + state machine at `apps/engine/src/services/transactions.py`: `amount_rial ≥ 0` validation, legal transitions only per data-model.md, `effective_scenario` resolved via T013 at initiate, wire T014 cap+meters on insert
+- [X] T026 [US1] Implement `POST /api/v1/transactions` (pre-seed with `forced_scenario?`) and `DELETE /api/v1/transactions/{id}` at `apps/engine/src/api/routes/transactions.py`; store raw_request/raw_response for dashboard detail (control-api.md, US4.4)
+- [X] T027 [US1] Run independent validation: specs/001-mvp/quickstart.md §1–2 timed, T017–T020 all green — **STOP and VALIDATE US1 before proceeding**
 
 **Checkpoint**: User Story 1 fully functional and testable independently (MVP!)
 

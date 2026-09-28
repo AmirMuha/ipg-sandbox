@@ -10,10 +10,9 @@ matters here (meters exposing *only* counters, FR-011) is easier to guard with a
 """
 
 from typing import Annotated, Any
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.db import get_session
@@ -22,9 +21,6 @@ from src.models import (
     AdapterConfig,
     Project,
     ProjectKind,
-    Provider,
-    Transaction,
-    TransactionStatus,
     UsageMeter,
 )
 
@@ -84,32 +80,6 @@ def _adapter_body(adapter: AdapterConfig, *, kind: ProjectKind) -> dict[str, Any
     return body
 
 
-def _transaction_body(tx: Transaction, *, include_raw: bool) -> dict[str, Any]:
-    body: dict[str, Any] = {
-        "id": tx.id,
-        "project_id": tx.project_id,
-        "adapter_id": tx.adapter_id,
-        "amount_rial": tx.amount_rial,
-        "currency": tx.currency,
-        "status": tx.status,
-        "forced_scenario": tx.forced_scenario,
-        "effective_scenario": tx.effective_scenario,
-        "authority": tx.authority,
-        "app_reference": tx.app_reference,
-        "description": tx.description,
-        "callback_url": tx.callback_url,
-        "return_url": tx.return_url,
-        "due_at": tx.due_at,
-        "created_at": tx.created_at,
-        "updated_at": tx.updated_at,
-    }
-    if include_raw:
-        # US4.4 debugging detail — listed only, never in the list endpoint's payload.
-        body["raw_request"] = tx.raw_request
-        body["raw_response"] = tx.raw_response
-    return body
-
-
 @router.get("/project")
 async def get_project(
     project: Annotated[Project, Depends(current_project)],
@@ -130,61 +100,6 @@ async def list_adapters(
     return [_adapter_body(adapter, kind=project.kind) for adapter in adapters]
 
 
-@router.get("/transactions")
-async def list_transactions(
-    project: Annotated[Project, Depends(current_project)],
-    session: Annotated[AsyncSession, Depends(get_session)],
-    status: TransactionStatus | None = None,
-    adapter: Provider | None = None,
-    page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = 20,
-) -> dict[str, Any]:
-    """Newest first, pagination-safe (contracts/control-api.md Behavioral guarantees)."""
-    where = [Transaction.project_id == project.id]
-    if status is not None:
-        where.append(Transaction.status == status)
-    if adapter is not None:
-        where.append(
-            Transaction.adapter_id.in_(
-                select(AdapterConfig.id).where(
-                    AdapterConfig.project_id == project.id, AdapterConfig.provider == adapter
-                )
-            )
-        )
-
-    total = await session.scalar(select(func.count()).select_from(Transaction).where(*where))
-    # `id` breaks `created_at` ties so a page boundary cannot repeat or skip a row.
-    rows = await session.scalars(
-        select(Transaction)
-        .where(*where)
-        .order_by(Transaction.created_at.desc(), Transaction.id.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-    )
-    return {
-        "items": [_transaction_body(tx, include_raw=False) for tx in rows],
-        "page": page,
-        "page_size": page_size,
-        "total": total,
-    }
-
-
-@router.get("/transactions/{transaction_id}")
-async def get_transaction(
-    transaction_id: UUID,
-    project: Annotated[Project, Depends(current_project)],
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, Any]:
-    tx = await session.scalar(
-        select(Transaction).where(
-            Transaction.id == transaction_id, Transaction.project_id == project.id
-        )
-    )
-    if tx is None:
-        raise not_found("transaction")
-    return _transaction_body(tx, include_raw=True)
-
-
 @router.get("/meters")
 async def get_meters(
     project: Annotated[Project, Depends(current_project)],
@@ -193,3 +108,8 @@ async def get_meters(
     """Counters only — FR-011. A project with no rows yet reports zeros."""
     meter = await session.get(UsageMeter, project.id)
     return {field: (getattr(meter, field, 0) or 0) if meter else 0 for field in METER_FIELDS}
+
+
+from src.api.routes.transactions import router as transactions_router  # noqa: E402
+
+router.include_router(transactions_router)

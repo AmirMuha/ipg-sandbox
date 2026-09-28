@@ -365,3 +365,70 @@ def test_documented_error_codes_are_unchanged():
     }
     # The 500 code is deliberately outside that set; it is not a caller-error code.
     assert errors.INTERNAL_ERROR not in {m.value for m in errors.ErrorCode}
+
+
+# --- POST & DELETE /api/v1/transactions ---------------------------------------
+
+
+def test_pre_seed_transaction_success_and_delete(client):
+    """T026: pre-seed transaction with forced_scenario, then delete it."""
+    # 1. Pre-seed
+    resp = client.post(
+        "/api/v1/transactions",
+        json={
+            "adapter": "zarinpal",
+            "amount_rial": 350000,
+            "forced_scenario": "decline",
+            "app_reference": "order-pre-1",
+            "description": "Pre-seeded test tx",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["amount_rial"] == 350000
+    assert body["forced_scenario"] == "decline"
+    assert body["effective_scenario"] == "decline"
+    assert body["status"] == "initiated"
+    assert body["authority"] is not None
+    assert body["raw_request"] is not None
+    tx_id = body["id"]
+
+    # 2. Appears in GET /transactions
+    list_body = client.get("/api/v1/transactions").json()
+    assert any(item["id"] == tx_id for item in list_body["items"])
+
+    # 3. DELETE /transactions/{id}
+    del_resp = client.delete(f"/api/v1/transactions/{tx_id}")
+    assert del_resp.status_code == 200
+    assert del_resp.json()["id"] == tx_id
+
+    # 4. Subsequent GET returns 404
+    get_resp = client.get(f"/api/v1/transactions/{tx_id}")
+    assert get_resp.status_code == 404
+    assert get_resp.json()["code"] == "not_found"
+
+
+def test_pre_seed_transaction_validation_errors(client):
+    """T026: validation errors on pre-seed endpoint."""
+    # Missing adapter -> 422
+    r1 = client.post("/api/v1/transactions", json={"amount_rial": 1000})
+    assert r1.status_code == 422
+    assert r1.json()["code"] == "validation_error"
+
+    # Unknown adapter -> 404
+    r2 = client.post("/api/v1/transactions", json={"adapter": "unknown_gw", "amount_rial": 1000})
+    assert r2.status_code == 404
+    assert r2.json()["code"] == "not_found"
+
+    # Negative amount -> 422
+    r3 = client.post("/api/v1/transactions", json={"adapter": "zarinpal", "amount_rial": -50})
+    assert r3.status_code == 422
+    assert r3.json()["code"] == "validation_error"
+
+    # Invalid scenario -> 422
+    r4 = client.post(
+        "/api/v1/transactions",
+        json={"adapter": "zarinpal", "amount_rial": 1000, "forced_scenario": "non_existent"},
+    )
+    assert r4.status_code == 422
+    assert r4.json()["code"] == "scenario_invalid"
