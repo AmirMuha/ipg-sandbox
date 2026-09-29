@@ -9,6 +9,7 @@ import contextlib
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -100,6 +101,12 @@ async def _seed_default_project(session: AsyncSession, settings: Settings) -> No
 
 def create_app() -> FastAPI:
     app = FastAPI(title="IPG Sandbox Engine", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     install_error_handlers(app)
     app.include_router(router)
     app.include_router(zarinpal_router)

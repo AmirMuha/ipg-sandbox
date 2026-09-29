@@ -543,3 +543,39 @@ def test_patch_project_settings(client):
     r_scen = client.patch("/api/v1/project", json={"default_scenario": "bogus_scenario"})
     assert r_scen.status_code == 422
     assert r_scen.json()["code"] == "scenario_invalid"
+
+
+def test_patch_and_test_adapter(client):
+    """T048: PATCH /api/v1/adapters/{id} and POST /api/v1/adapters/{id}/test."""
+    adapter_id = client.seeded["adapter_id"]
+
+    # 1. Test credentials with seeded valid credentials
+    t_resp = client.post(f"/api/v1/adapters/{adapter_id}/test")
+    assert t_resp.status_code == 200
+    assert t_resp.json()["ok"] is True
+
+    # 2. Patch credentials to empty -> test fails
+    p_resp = client.patch(
+        f"/api/v1/adapters/{adapter_id}",
+        json={"credentials": {"merchant_id": ""}},
+    )
+    assert p_resp.status_code == 200
+    assert p_resp.json()["credentials"]["merchant_id"] == ""
+
+    # Test now fails with 401 invalid_credentials
+    t_bad = client.post(f"/api/v1/adapters/{adapter_id}/test")
+    assert t_bad.status_code == 401
+    assert t_bad.json()["code"] == "invalid_credentials"
+
+    # 3. Patch back to valid and disable
+    p_resp2 = client.patch(
+        f"/api/v1/adapters/{adapter_id}",
+        json={"enabled": False, "credentials": {"merchant_id": "test-merchant"}},
+    )
+    assert p_resp2.status_code == 200
+    assert p_resp2.json()["enabled"] is False
+
+    # 4. Unknown fields -> 422
+    p_unk = client.patch(f"/api/v1/adapters/{adapter_id}", json={"bogus": 123})
+    assert p_unk.status_code == 422
+    assert p_unk.json()["code"] == "validation_error"

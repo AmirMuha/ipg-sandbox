@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "title": "محیط آزمایشی درگاه پرداخت",
+    "transactions": "تراکنش‌ها",
+    "webhooks": "وب‌هوک‌ها",
+    "settings": "تنظیمات",
+    "switch_lang": "English"
+  },
+  "common": {
+    "save": "ذخیره",
+    "cancel": "انصراف",
+    "retry": "تلاش مجدد",
+    "loading": "در حال بارگذاری...",
+    "error": "خطا",
+    "refresh": "تازه‌سازی",
+    "test": "تست اتصال",
+    "enabled": "فعال",
+    "disabled": "غیرفعال",
+    "back": "بازگشت"
+  },
+  "transactions": {
+    "title": "تراکنش‌ها",
+    "subtitle": "فهرست تراکنش‌های شبیه‌سازی‌شده درگاه‌های پرداخت",
+    "empty": "هیچ تراکنشی یافت نشد.",
+    "id": "شناسه",
+    "adapter": "درگاه",
+    "amount": "مبلغ (ریال)",
+    "status": "وضعیت",
+    "scenario": "سناریو",
+    "authority": "شناسه پرداخت / Authority",
+    "app_ref": "کد سفارش مرجع",
+    "date": "تاریخ و زمان",
+    "details_title": "جزئیات تراکنش",
+    "raw_request": "درخواست خام (Request)",
+    "raw_response": "پاسخ خام (Response)"
+  },
+  "webhooks": {
+    "title": "ارسال‌های وب‌هوک",
+    "subtitle": "تاریخچه ارسال فراخوانی‌ها و بازگشت‌های درگاه به میزبان",
+    "empty": "هیچ ارسالی ثبت نشده است.",
+    "target_url": "آدرس مقصد",
+    "stage": "مرحله",
+    "attempt": "تلاش",
+    "result": "نتیجه",
+    "response_status": "کد HTTP",
+    "timestamp": "زمان",
+    "payload": "محتوای ارسالی (Payload)",
+    "error": "پیام خطا"
+  },
+  "settings": {
+    "title": "تنظیمات",
+    "subtitle": "پیکربندی سناریوهای پیش‌فرض و درگاه‌های فعال",
+    "project_settings": "تنظیمات عمومی پروژه",
+    "adapter_settings": "پیکربندی درگاه‌ها",
+    "default_scenario": "سناریوی پیش‌فرض",
+    "pending_settle_delay": "تاخیر تسویه در انتظار (ثانیه)",
+    "timeout_delay": "تاخیر پایان مهلت (ثانیه)",
+    "history_cap": "حداکثر سابقه تراکنش‌ها",
+    "webhook_retry_max": "حداکثر دفعات تلاش وب‌هوک",
+    "test_credentials": "تست اعتبار",
+    "credentials_valid": "اعتبار درگاه با موفقیت تایید شد.",
+    "test_failed": "خطا در بررسی اعتبار درگاه"
+  },
+  "scenario_controls": {
+    "title": "کنترل سناریو",
+    "per_tx_title": "اجبار سناریوی این تراکنش",
+    "force_scenario": "اعمال سناریو",
+    "clear_force": "پیش‌فرض پروژه (بدون اجبار)",
+    "project_default_title": "سناریوی پیش‌فرض پروژه",
+    "save_project": "بروزرسانی تنظیمات پروژه"
+  },
+  "status": {
+    "initiated": "شروع شده",
+    "pending": "در انتظار",
+    "settled": "تسویه شده",
+    "approved": "تایید شده",
+    "refunded": "مسترد شده",
+    "expired": "منقضی شده",
+    "declined": "رد شده",
+    "failed": "ناموفق"
+  },
+  "scenario": {
+    "approve": "تایید (approve)",
+    "decline": "رد پرداخت (decline)",
+    "timeout": "پایان مهلت (timeout)",
+    "refund": "استرداد وجه (refund)",
+    "pending_settle": "در انتظار تا تسویه (pending_settle)",
+    "verify_fail": "شکست تایید (verify_fail)"
+  }
+}

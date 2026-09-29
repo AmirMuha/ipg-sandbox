@@ -150,17 +150,17 @@ Per plan.md structure: `apps/engine/` (Python), `apps/dashboard/` (Next.js), `ap
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T042 [P] [US4] Playwright smoke: FA/EN switch with RTL flip, transactions list renders, force scenario from UI affects next payment, delivery detail visible at `apps/dashboard/tests/smoke.spec.ts` (SC-006, quickstart §7)
+- [X] T042 [P] [US4] Playwright smoke: FA/EN switch with RTL flip, transactions list renders, force scenario from UI affects next payment, delivery detail visible at `apps/dashboard/tests/smoke.spec.ts` (SC-006, quickstart §7)
 
 ### Implementation for User Story 4
 
-- [ ] T043 [P] [US4] Scaffold dashboard app shell + Linear-dark theme tokens (CSS variables) + typed control-API client (NO direct DB access) at `apps/dashboard/src/app/layout.tsx`, `apps/dashboard/src/styles/theme.css`, `apps/dashboard/src/lib/api.ts` (research R8)
-- [ ] T044 [P] [US4] Implement i18n with next-intl: `fa.json`/`en.json` catalogs, locale middleware, document `dir` swap (RTL for `fa`), Tailwind logical properties (ms/me/start/end) at `apps/dashboard/src/i18n/` and `apps/dashboard/src/middleware.ts` (FR-009, research R8)
-- [ ] T045 [US4] Implement transactions list + detail pages at `apps/dashboard/src/app/transactions/`: columns adapter, amount (Rial canonical), status, scenario applied, timestamps; detail shows raw_request/raw_response + delivery summaries (US4 acceptance 1 & 4)
-- [ ] T046 [P] [US4] Implement scenario controls UI (per-transaction force + project default + delay knobs) at `apps/dashboard/src/components/ScenarioControls.tsx` calling `PATCH /transactions/{id}` and `PATCH /project` (US4 acceptance 3, FR-005)
-- [ ] T047 [P] [US4] Implement webhook deliveries view (target, timestamp, outcome, payload, attempt) at `apps/dashboard/src/app/webhooks/` with retry button (US3.3 via UI, FR-008)
-- [ ] T048 [US4] Implement settings/adapters page (enable, test credentials, `POST /adapters/{id}/test` self-check with clear misconfig errors) at `apps/dashboard/src/app/settings/` (FR-008, edge case)
-- [ ] T049 [US4] Run independent validation: specs/001-mvp/quickstart.md §7 all four checks — **STOP and VALIDATE US4**
+- [X] T043 [P] [US4] Scaffold dashboard app shell + Linear-dark theme tokens (CSS variables) + typed control-API client (NO direct DB access) at `apps/dashboard/src/app/layout.tsx`, `apps/dashboard/src/styles/theme.css`, `apps/dashboard/src/lib/api.ts` (research R8)
+- [X] T044 [P] [US4] Implement i18n with next-intl: `fa.json`/`en.json` catalogs, locale middleware, document `dir` swap (RTL for `fa`), Tailwind logical properties (ms/me/start/end) at `apps/dashboard/src/i18n/` and `apps/dashboard/src/middleware.ts` (FR-009, research R8)
+- [X] T045 [US4] Implement transactions list + detail pages at `apps/dashboard/src/app/transactions/`: columns adapter, amount (Rial canonical), status, scenario applied, timestamps; detail shows raw_request/raw_response + delivery summaries (US4 acceptance 1 & 4)
+- [X] T046 [P] [US4] Implement scenario controls UI (per-transaction force + project default + delay knobs) at `apps/dashboard/src/components/ScenarioControls.tsx` calling `PATCH /transactions/{id}` and `PATCH /project` (US4 acceptance 3, FR-005)
+- [X] T047 [P] [US4] Implement webhook deliveries view (target, timestamp, outcome, payload, attempt) at `apps/dashboard/src/app/webhooks/` with retry button (US3.3 via UI, FR-008)
+- [X] T048 [US4] Implement settings/adapters page (enable, test credentials, `POST /adapters/{id}/test` self-check with clear misconfig errors) at `apps/dashboard/src/app/settings/` (FR-008, edge case)
+- [X] T049 [US4] Run independent validation: specs/001-mvp/quickstart.md §7 all four checks — **STOP and VALIDATE US4**
 
 **Checkpoint**: US1–US4 independently functional; bilingual dashboard usable
 

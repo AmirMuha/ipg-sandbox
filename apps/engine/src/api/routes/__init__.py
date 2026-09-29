@@ -10,6 +10,7 @@ matters here (meters exposing *only* counters, FR-011) is easier to guard with a
 """
 
 from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
@@ -175,6 +176,72 @@ async def list_adapters(
         .order_by(AdapterConfig.provider)
     )
     return [_adapter_body(adapter, kind=project.kind) for adapter in adapters]
+
+
+_PATCHABLE_ADAPTER = {"enabled", "credentials"}
+
+
+@router.patch("/adapters/{adapter_id}")
+async def patch_adapter(
+    request: Request,
+    adapter_id: UUID,
+    project: Annotated[Project, Depends(current_project)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    body: dict[str, Any] = await request.json()
+    unknown = set(body) - _PATCHABLE_ADAPTER
+    if unknown:
+        raise ApiError(
+            ErrorCode.validation_error,
+            f"unknown field(s): {sorted(unknown)}",
+            status=422,
+            details={"allowed": sorted(_PATCHABLE_ADAPTER)},
+        )
+
+    stmt = select(AdapterConfig).where(
+        AdapterConfig.id == adapter_id,
+        AdapterConfig.project_id == project.id,
+    )
+    adapter = await session.scalar(stmt)
+    if adapter is None:
+        raise not_found("adapter")
+
+    if "enabled" in body:
+        val = body["enabled"]
+        if not isinstance(val, bool):
+            raise ApiError(ErrorCode.validation_error, "enabled must be a boolean", status=422)
+        adapter.enabled = val
+
+    if "credentials" in body:
+        val = body["credentials"]
+        if not isinstance(val, dict):
+            raise ApiError(ErrorCode.validation_error, "credentials must be an object", status=422)
+        adapter.credentials = val
+
+    await session.commit()
+    return _adapter_body(adapter, kind=project.kind)
+
+
+@router.post("/adapters/{adapter_id}/test")
+async def test_adapter(
+    adapter_id: UUID,
+    project: Annotated[Project, Depends(current_project)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    stmt = select(AdapterConfig).where(
+        AdapterConfig.id == adapter_id,
+        AdapterConfig.project_id == project.id,
+    )
+    adapter = await session.scalar(stmt)
+    if adapter is None:
+        raise not_found("adapter")
+
+    from src.webhooks.payloads import ADAPTER_CLASSES
+
+    adapter_cls = ADAPTER_CLASSES[adapter.provider]
+    instance = adapter_cls(adapter)
+    instance.check_credentials()
+    return {"provider": adapter.provider, "ok": True}
 
 
 @router.get("/meters")

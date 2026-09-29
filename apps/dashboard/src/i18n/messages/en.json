@@ -1,0 +1,90 @@
+{
+  "nav": {
+    "title": "IPG Sandbox",
+    "transactions": "Transactions",
+    "webhooks": "Webhooks",
+    "settings": "Settings",
+    "switch_lang": "فارسی"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "loading": "Loading...",
+    "error": "Error",
+    "refresh": "Refresh",
+    "test": "Test",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "back": "Back"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "subtitle": "Simulated payment gateway transactions",
+    "empty": "No transactions found.",
+    "id": "ID",
+    "adapter": "Adapter",
+    "amount": "Amount (Rial)",
+    "status": "Status",
+    "scenario": "Scenario",
+    "authority": "Authority / Payment ID",
+    "app_ref": "Order Reference",
+    "date": "Date & Time",
+    "details_title": "Transaction Details",
+    "raw_request": "Raw Request",
+    "raw_response": "Raw Response"
+  },
+  "webhooks": {
+    "title": "Webhook Deliveries",
+    "subtitle": "Delivery history of callbacks and webhooks to the host application",
+    "empty": "No webhook deliveries recorded.",
+    "target_url": "Target URL",
+    "stage": "Stage",
+    "attempt": "Attempt",
+    "result": "Result",
+    "response_status": "HTTP Status",
+    "timestamp": "Timestamp",
+    "payload": "Payload",
+    "error": "Error"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure default simulation scenarios and payment adapters",
+    "project_settings": "Project Configuration",
+    "adapter_settings": "Gateway Adapters",
+    "default_scenario": "Default Scenario",
+    "pending_settle_delay": "Pending Settle Delay (seconds)",
+    "timeout_delay": "Timeout Delay (seconds)",
+    "history_cap": "History Cap",
+    "webhook_retry_max": "Webhook Retry Max",
+    "test_credentials": "Test Credentials",
+    "credentials_valid": "Adapter credentials verified successfully.",
+    "test_failed": "Credential test failed"
+  },
+  "scenario_controls": {
+    "title": "Scenario Controls",
+    "per_tx_title": "Force This Transaction's Scenario",
+    "force_scenario": "Apply Scenario",
+    "clear_force": "Project Default (No Force)",
+    "project_default_title": "Project Default Scenario",
+    "save_project": "Update Project Settings"
+  },
+  "status": {
+    "initiated": "Initiated",
+    "pending": "Pending",
+    "settled": "Settled",
+    "approved": "Approved",
+    "refunded": "Refunded",
+    "expired": "Expired",
+    "declined": "Declined",
+    "failed": "Failed"
+  },
+  "scenario": {
+    "approve": "approve",
+    "decline": "decline",
+    "timeout": "timeout",
+    "refund": "refund",
+    "pending_settle": "pending_settle",
+    "verify_fail": "verify_fail"
+  }
+}

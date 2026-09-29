@@ -1,0 +1,226 @@
+/**
+ * Typed control-API client (T043) — specs/001-mvp/contracts/control-api.md.
+ * Pure control API client; no direct database access (FR-010).
+ */
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+
+export type ScenarioOutcome =
+  | "approve"
+  | "decline"
+  | "timeout"
+  | "refund"
+  | "pending_settle"
+  | "verify_fail";
+
+export type TransactionStatus =
+  | "initiated"
+  | "pending"
+  | "settled"
+  | "approved"
+  | "refunded"
+  | "expired"
+  | "declined"
+  | "failed";
+
+export type DeliveryResult = "delivered" | "failed" | "pending";
+
+export interface Transaction {
+  id: string;
+  project_id: string;
+  adapter_id: string;
+  amount_rial: number;
+  currency: string;
+  status: TransactionStatus;
+  forced_scenario: ScenarioOutcome | null;
+  effective_scenario: ScenarioOutcome;
+  authority: string;
+  app_reference?: string;
+  description?: string;
+  callback_url?: string;
+  return_url?: string;
+  due_at?: string;
+  created_at: string;
+  updated_at: string;
+  raw_request?: Record<string, unknown>;
+  raw_response?: Record<string, unknown>;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  kind: "local" | "demo";
+  default_scenario: ScenarioOutcome;
+  history_cap: number;
+  webhook_retry_max: number;
+  webhook_retry_backoff_s: number[];
+  pending_settle_delay_s: number;
+  timeout_delay_s: number;
+  webhook_url?: string | null;
+  created_at: string;
+}
+
+export interface AdapterConfig {
+  id: string;
+  project_id: string;
+  provider: "zarinpal" | "idpay" | "behpardakht";
+  enabled: boolean;
+  api_unit: "rial" | "toman";
+  endpoint_path_prefix: string;
+  credentials?: Record<string, unknown>;
+}
+
+export interface WebhookDelivery {
+  id: string;
+  transaction_id: string;
+  target_url: string;
+  stage: string;
+  payload: Record<string, unknown>;
+  attempt: number;
+  result: DeliveryResult;
+  response_status?: number | null;
+  error?: string | null;
+  created_at: string;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE}/api/v1${path}`;
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    let errorData: { code?: string; message?: string; details?: Record<string, unknown> } = {};
+    try {
+      errorData = await res.json();
+    } catch {
+      // ignore JSON parse error
+    }
+    throw new ApiError(
+      res.status,
+      errorData.code || "unknown_error",
+      errorData.message || `Request failed with status ${res.status}`,
+      errorData.details
+    );
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export async function listTransactions(params?: {
+  page?: number;
+  page_size?: number;
+  status?: string;
+}): Promise<Paginated<Transaction>> {
+  const sp = new URLSearchParams();
+  if (params?.page) sp.set("page", String(params.page));
+  if (params?.page_size) sp.set("page_size", String(params.page_size));
+  if (params?.status) sp.set("status", params.status);
+  const qs = sp.toString();
+  return fetchApi<Paginated<Transaction>>(`/transactions${qs ? `?${qs}` : ""}`);
+}
+
+export async function getTransaction(id: string): Promise<Transaction> {
+  return fetchApi<Transaction>(`/transactions/${id}`);
+}
+
+export async function patchTransaction(
+  id: string,
+  forced_scenario: ScenarioOutcome | null
+): Promise<Transaction> {
+  return fetchApi<Transaction>(`/transactions/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ forced_scenario }),
+  });
+}
+
+export async function deleteTransaction(id: string): Promise<Transaction> {
+  return fetchApi<Transaction>(`/transactions/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getProject(): Promise<Project> {
+  return fetchApi<Project>("/project");
+}
+
+export async function patchProject(updates: Partial<Project>): Promise<Project> {
+  return fetchApi<Project>("/project", {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function getAdapters(): Promise<AdapterConfig[]> {
+  return fetchApi<AdapterConfig[]>("/adapters");
+}
+
+export async function patchAdapter(
+  id: string,
+  updates: { enabled?: boolean; credentials?: Record<string, unknown> }
+): Promise<AdapterConfig> {
+  return fetchApi<AdapterConfig>(`/adapters/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function testAdapter(id: string): Promise<{ provider: string; ok: boolean }> {
+  return fetchApi<{ provider: string; ok: boolean }>(`/adapters/${id}/test`, {
+    method: "POST",
+  });
+}
+
+export async function listDeliveries(params?: {
+  transaction_id?: string;
+  result?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<Paginated<WebhookDelivery>> {
+  const sp = new URLSearchParams();
+  if (params?.transaction_id) sp.set("transaction_id", params.transaction_id);
+  if (params?.result) sp.set("result", params.result);
+  if (params?.page) sp.set("page", String(params.page));
+  if (params?.page_size) sp.set("page_size", String(params.page_size));
+  const qs = sp.toString();
+  return fetchApi<Paginated<WebhookDelivery>>(`/deliveries${qs ? `?${qs}` : ""}`);
+}
+
+export async function retryDelivery(id: string): Promise<WebhookDelivery> {
+  return fetchApi<WebhookDelivery>(`/deliveries/${id}/retry`, {
+    method: "POST",
+  });
+}
+
+export async function updateProjectWebhookUrl(webhook_url: string | null): Promise<Project> {
+  return fetchApi<Project>("/project/webhook-url", {
+    method: "PUT",
+    body: JSON.stringify({ webhook_url }),
+  });
+}

@@ -7,7 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "bash tests/run_smoke.sh",
+    "test:playwright": "playwright test"
   },
   "dependencies": {
     "next": "^14.2.0",
