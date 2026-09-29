@@ -127,7 +127,15 @@ class IDPayAdapter(PaymentAdapter):
         """Return golden callback payload matching real IDPay fields."""
         track_id = 100000 + (tx.amount_rial % 900000)
         status_num = (
-            100 if tx.status in (TransactionStatus.settled, TransactionStatus.pending) else 50
+            100
+            if tx.status
+            in (
+                TransactionStatus.settled,
+                TransactionStatus.pending,
+                TransactionStatus.approved,
+                TransactionStatus.refunded,
+            )
+            else 50
         )
         amount_toman = from_rial(tx.amount_rial, self.api_unit)
         payload: dict[str, Any] = {

@@ -125,16 +125,16 @@ Per plan.md structure: `apps/engine/` (Python), `apps/dashboard/` (Next.js), `ap
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T035 [P] [US3] Snapshot contract tests: one golden payload per (adapter × stage) with real gateway field names at `apps/engine/tests/contract/test_callback_payloads.py`; drift fails CI (research R7, clarification 2)
-- [ ] T036 [P] [US3] Integration test: delivery latency ≥95% < 5 s to live receiver, unreachable target → `failed` row + retries per project policy, all attempts visible at `apps/engine/tests/integration/test_webhook_delivery.py` (SC-005, no-silent-loss edge case)
+- [X] T035 [P] [US3] Snapshot contract tests: one golden payload per (adapter × stage) with real gateway field names at `apps/engine/tests/contract/test_callback_payloads.py`; drift fails CI (research R7, clarification 2)
+- [X] T036 [P] [US3] Integration test: delivery latency ≥95% < 5 s to live receiver, unreachable target → `failed` row + retries per project policy, all attempts visible at `apps/engine/tests/integration/test_webhook_delivery.py` (SC-005, no-silent-loss edge case)
 
 ### Implementation for User Story 3
 
-- [ ] T037 [US3] Add WebhookDelivery model (fields: target_url, stage, payload, attempt, result `delivered|failed|pending`, response_status, error) at `apps/engine/src/models/webhook.py` + Alembic migration at `apps/engine/alembic/versions/`; every attempt INSERTed pending then UPDATEd with result (data-model.md)
-- [ ] T038 [US3] Implement per-adapter payload builders `callback_payload(stage, tx)` at `apps/engine/src/webhooks/payloads.py` emitting each real gateway's callback field names for in-scope stages (research R7)
-- [ ] T039 [US3] Implement delivery worker at `apps/engine/src/webhooks/worker.py`: async POST to callback_url / project webhook URL (incl. `host.docker.internal`), bounded retry with backoff from `Project.webhook_retry_max`/`webhook_retry_backoff_s`, persistent attempt rows (research R6, FR-007)
-- [ ] T040 [US3] Implement delivery endpoints at `apps/engine/src/api/routes/deliveries.py`: `GET /api/v1/deliveries?transaction_id=&result=`, `POST /api/v1/deliveries/{id}/retry`, `PUT /api/v1/project/webhook-url` per contracts/control-api.md
-- [ ] T041 [US3] Trigger deliveries from outcome transitions in `apps/engine/src/scenarios/outcomes.py` (settle/refund/notify stages) and run independent validation: quickstart.md §5 — **STOP and VALIDATE US3**
+- [X] T037 [US3] Add WebhookDelivery model (fields: target_url, stage, payload, attempt, result `delivered|failed|pending`, response_status, error) at `apps/engine/src/models/webhook.py` + Alembic migration at `apps/engine/alembic/versions/`; every attempt INSERTed pending then UPDATEd with result (data-model.md)
+- [X] T038 [US3] Implement per-adapter payload builders `callback_payload(stage, tx)` at `apps/engine/src/webhooks/payloads.py` emitting each real gateway's callback field names for in-scope stages (research R7)
+- [X] T039 [US3] Implement delivery worker at `apps/engine/src/webhooks/worker.py`: async POST to callback_url / project webhook URL (incl. `host.docker.internal`), bounded retry with backoff from `Project.webhook_retry_max`/`webhook_retry_backoff_s`, persistent attempt rows (research R6, FR-007)
+- [X] T040 [US3] Implement delivery endpoints at `apps/engine/src/api/routes/deliveries.py`: `GET /api/v1/deliveries?transaction_id=&result=`, `POST /api/v1/deliveries/{id}/retry`, `PUT /api/v1/project/webhook-url` per contracts/control-api.md
+- [X] T041 [US3] Trigger deliveries from outcome transitions in `apps/engine/src/scenarios/outcomes.py` (settle/refund/notify stages) and run independent validation: quickstart.md §5 — **STOP and VALIDATE US3**
 
 **Checkpoint**: US1–US3 independently functional; async settlement flows testable
 

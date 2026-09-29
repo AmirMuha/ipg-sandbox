@@ -82,7 +82,17 @@ class BehpardakhtAdapter(PaymentAdapter):
 
     def callback_payload(self, stage: CallbackStage, tx: Transaction) -> dict[str, Any]:
         """Return golden callback payload matching real Mellat fields."""
-        res_code = 0 if tx.status in (TransactionStatus.settled, TransactionStatus.pending) else 11
+        res_code = (
+            0
+            if tx.status
+            in (
+                TransactionStatus.settled,
+                TransactionStatus.pending,
+                TransactionStatus.approved,
+                TransactionStatus.refunded,
+            )
+            else 11
+        )
         sale_ref_id = 100000 + (tx.amount_rial % 900000)
         sale_order_id = (
             int(tx.app_reference) if tx.app_reference and tx.app_reference.isdigit() else 0

@@ -4,6 +4,7 @@ import uuid
 from typing import Any
 
 from src.adapters.base import (
+    STAGE_NOTIFY,
     STAGE_SETTLE,
     CallbackStage,
     PaymentAdapter,
@@ -116,13 +117,21 @@ class ZarinpalAdapter(PaymentAdapter):
         """Return golden callback payload matching real Zarinpal fields."""
         ref_id = 100000 + (tx.amount_rial % 900000)
         status_str = (
-            "OK" if tx.status in (TransactionStatus.settled, TransactionStatus.pending) else "NOK"
+            "OK"
+            if tx.status
+            in (
+                TransactionStatus.settled,
+                TransactionStatus.pending,
+                TransactionStatus.approved,
+                TransactionStatus.refunded,
+            )
+            else "NOK"
         )
         payload: dict[str, Any] = {
             "Status": status_str,
             "Authority": tx.authority,
             "RefID": ref_id,
         }
-        if stage == STAGE_SETTLE:
+        if stage in (STAGE_SETTLE, STAGE_NOTIFY):
             payload["PaymentID"] = f"PID-{tx.id}"
         return payload

@@ -11,7 +11,9 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from src.adapters.base import STAGE_SETTLE
 from src.models import ScenarioOutcome, Transaction, TransactionStatus, utcnow
+from src.webhooks.worker import schedule_delivery
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,10 @@ SWEEP_INTERVAL_S = 1.0
 BATCH = 100
 
 
-async def sweep_once(session: AsyncSession) -> int:
+async def sweep_once(
+    session: AsyncSession,
+    session_factory: async_sessionmaker[AsyncSession] | None = None,
+) -> int:
     """Settle due `pending_settle` rows. Returns the number transitioned."""
     rows = (
         await session.scalars(
@@ -34,13 +39,18 @@ async def sweep_once(session: AsyncSession) -> int:
         )
     ).all()
     count = 0
+    settled_txs: list[Transaction] = []
     for tx in rows:
         if tx.effective_scenario is not ScenarioOutcome.pending_settle:
             continue
         tx.transition_to(TransactionStatus.settled)
+        settled_txs.append(tx)
         count += 1
     if count > 0:
         await session.commit()
+        if session_factory is not None:
+            for tx in settled_txs:
+                schedule_delivery(session_factory, tx.project_id, tx.id, STAGE_SETTLE)
     return count
 
 
@@ -49,7 +59,7 @@ async def run(session_factory: async_sessionmaker[AsyncSession]) -> None:
     while True:
         try:
             async with session_factory() as session:
-                await sweep_once(session)
+                await sweep_once(session, session_factory=session_factory)
         except asyncio.CancelledError:
             raise
         except Exception:

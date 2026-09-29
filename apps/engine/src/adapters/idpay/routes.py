@@ -8,7 +8,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.adapters.base import to_rial
+from src.adapters.base import (
+    STAGE_NOTIFY,
+    STAGE_REFUND,
+    STAGE_SETTLE,
+    to_rial,
+)
 from src.adapters.idpay.adapter import IDPayAdapter
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode, not_found
@@ -26,6 +31,7 @@ from src.scenarios.outcomes import (
     set_due_at,
 )
 from src.services import transactions
+from src.webhooks.worker import schedule_delivery
 
 router = APIRouter(prefix="/idpay", tags=["idpay"])
 
@@ -177,6 +183,10 @@ async def verify_payment(
     resp = await adapter.verify(tx, body)
     tx.raw_response = resp
     await session.commit()
+    if tx.status == TransactionStatus.settled:
+        schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_SETTLE)
+    elif tx.status == TransactionStatus.declined:
+        schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_NOTIFY)
     return resp
 
 
@@ -196,4 +206,6 @@ async def refund_payment(
     resp = await adapter.refund(tx, body)
     tx.raw_response = resp
     await session.commit()
+    if tx.status == TransactionStatus.refunded:
+        schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_REFUND)
     return resp

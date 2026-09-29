@@ -10,6 +10,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.adapters.base import (
+    STAGE_NOTIFY,
+    STAGE_REFUND,
+    STAGE_SETTLE,
+)
 from src.adapters.behpardakht.adapter import BehpardakhtAdapter
 from src.api.db import get_session
 from src.api.errors import not_found
@@ -28,6 +33,7 @@ from src.scenarios.outcomes import (
     set_due_at,
 )
 from src.services import transactions
+from src.webhooks.worker import schedule_delivery
 
 router = APIRouter(prefix="/behpardakht", tags=["behpardakht"])
 WSDL_PATH = Path(__file__).parent / "behpardakht.wsdl"
@@ -225,6 +231,10 @@ async def handle_soap(
         resp_dict = await adapter.verify(tx, params)
         tx.raw_response = resp_dict
         await session.commit()
+        if tx.status == TransactionStatus.settled:
+            schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_SETTLE)
+        elif tx.status == TransactionStatus.declined:
+            schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_NOTIFY)
 
         resp_xml = _BP_VERIFY_RESPONSE.format(res_code=resp_dict["ResCode"])
         return Response(content=resp_xml, media_type="text/xml; charset=utf-8")
@@ -255,6 +265,8 @@ async def handle_soap(
         resp_dict = await adapter.refund(tx, params)
         tx.raw_response = resp_dict
         await session.commit()
+        if tx.status == TransactionStatus.refunded:
+            schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_REFUND)
 
         resp_xml = _BP_REVERSE_RESPONSE.format(res_code=resp_dict["ResCode"])
         return Response(content=resp_xml, media_type="text/xml; charset=utf-8")

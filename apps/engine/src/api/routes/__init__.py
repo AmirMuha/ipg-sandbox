@@ -60,6 +60,7 @@ def _project_body(project: Project) -> dict[str, Any]:
         "webhook_retry_backoff_s": list(project.webhook_retry_backoff_s),
         "pending_settle_delay_s": project.pending_settle_delay_s,
         "timeout_delay_s": project.timeout_delay_s,
+        "webhook_url": project.webhook_url,
         "created_at": project.created_at,
     }
 
@@ -186,6 +187,8 @@ async def get_meters(
     return {field: (getattr(meter, field, 0) or 0) if meter else 0 for field in METER_FIELDS}
 
 
+from src.api.routes.deliveries import router as deliveries_router  # noqa: E402
 from src.api.routes.transactions import router as transactions_router  # noqa: E402
 
 router.include_router(transactions_router)
+router.include_router(deliveries_router)

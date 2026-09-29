@@ -103,6 +103,7 @@ class Project(Base):
     timeout_delay_s: Mapped[int] = mapped_column(
         Integer, default=30, server_default=text("30"), nullable=False
     )
+    webhook_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=text("now()"), nullable=False
     )
