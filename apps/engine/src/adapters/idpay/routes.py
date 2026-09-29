@@ -17,7 +17,13 @@ from src.models import (
     AdapterConfig,
     Project,
     Provider,
+    ScenarioOutcome,
     TransactionStatus,
+)
+from src.scenarios.outcomes import (
+    apply_initiate_outcome,
+    checkout_confirm_status,
+    set_due_at,
 )
 from src.services import transactions
 
@@ -85,6 +91,15 @@ async def initiate_payment(
         raw_request=body,
     )
 
+    if await apply_initiate_outcome(tx, project) is ScenarioOutcome.timeout:
+        timeout_resp = {
+            "error_code": 51,
+            "error_message": "Payment session expired",
+        }
+        tx.raw_response = timeout_resp
+        await session.commit()
+        return timeout_resp
+
     resp = await adapter.create_payment(tx, body)
     tx.raw_response = resp
     await session.commit()
@@ -121,12 +136,17 @@ async def checkout_action(
     track_id = 100000 + (tx.amount_rial % 900000)
 
     if action == "confirm":
-        await transactions.advance(session, tx, TransactionStatus.pending)
+        if (target := checkout_confirm_status(tx)) is not None:
+            if tx.effective_scenario is ScenarioOutcome.pending_settle:
+                set_due_at(tx, project)
+            await transactions.advance(session, tx, target)
         status_code = "10"
     elif action == "fail":
         await transactions.advance(session, tx, TransactionStatus.declined)
         status_code = "7"
     else:  # abandon
+        await transactions.advance(session, tx, TransactionStatus.pending)
+        await transactions.advance(session, tx, TransactionStatus.expired)
         status_code = "2"
 
     redirect_target = _append_query(

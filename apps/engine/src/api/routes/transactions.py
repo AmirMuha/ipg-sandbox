@@ -20,6 +20,7 @@ from src.models import (
     Transaction,
     TransactionStatus,
 )
+from src.scenarios.resolve import resolve_scenario
 from src.services import transactions
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -200,6 +201,45 @@ async def delete_transaction(
     await session.delete(tx)
     await session.commit()
     return body
+
+
+@router.patch("/{transaction_id}")
+async def patch_transaction(
+    request: Request,
+    transaction_id: UUID,
+    project: Annotated[Project, Depends(current_project)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    """T032: force (or clear) the per-transaction scenario. Affects this row's future processing."""
+    body: dict[str, Any] = await request.json()
+
+    if "forced_scenario" not in body:
+        raise ApiError(ErrorCode.validation_error, "forced_scenario is required", status=422)
+
+    raw = body["forced_scenario"]
+    forced: ScenarioOutcome | None = None
+    if raw is not None:
+        try:
+            forced = ScenarioOutcome(raw)
+        except ValueError:
+            raise ApiError(
+                ErrorCode.scenario_invalid,
+                f"Invalid scenario: {raw}",
+                status=422,
+            ) from None
+
+    tx = await session.scalar(
+        select(Transaction).where(
+            Transaction.id == transaction_id, Transaction.project_id == project.id
+        )
+    )
+    if tx is None:
+        raise not_found("transaction")
+
+    tx.forced_scenario = forced
+    tx.effective_scenario = resolve_scenario(forced, project_default=project.default_scenario)
+    await session.commit()
+    return _transaction_body(tx, include_raw=True)
 
 
 def _is_valid_uuid(val: Any) -> bool:

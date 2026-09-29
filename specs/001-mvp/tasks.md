@@ -100,16 +100,16 @@ Per plan.md structure: `apps/engine/` (Python), `apps/dashboard/` (Next.js), `ap
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T028 [P] [US2] Integration test: full scenario matrix — 6 outcomes (`approve, decline, timeout, refund, pending_settle, verify_fail`) × 3 adapters, assert contract-defined response per cell, machine-readable PASS/FAIL exit code at `apps/engine/tests/integration/test_scenario_matrix.py` (SC-003)
-- [ ] T029 [P] [US2] Unit tests: scenario precedence (per-transaction force beats project default beats built-in approve), illegal state transitions raise, timeout delay bounded `< 300` at `apps/engine/tests/unit/test_scenarios.py`
+- [X] T028 [P] [US2] Integration test: full scenario matrix — 6 outcomes (`approve, decline, timeout, refund, pending_settle, verify_fail`) × 3 adapters, assert contract-defined response per cell, machine-readable PASS/FAIL exit code at `apps/engine/tests/integration/test_scenario_matrix.py` (SC-003)
+- [X] T029 [P] [US2] Unit tests: scenario precedence (per-transaction force beats project default beats built-in approve), illegal state transitions raise, timeout delay bounded `< 300` at `apps/engine/tests/unit/test_scenarios.py`
 
 ### Implementation for User Story 2
 
-- [ ] T030 [US2] Implement outcome logic shared across adapters at `apps/engine/src/scenarios/outcomes.py`: decline → failure codes at verify; verify_fail → checkout succeeds, verify fails; timeout → bounded delay then timeout/exception response; refund → settle then `refunded`; pending_settle → `pending` then settled after `due_at` (FR-004, spec US2 acceptance 1–4)
-- [ ] T031 [US2] Implement in-process scheduler over DB-backed `due_at` at `apps/engine/src/scenarios/scheduler.py`: sweep `(status, due_at)` index for pending→settle (default +5 s), timeout completion, and abandoned-checkout expiry → `expired` (persisted due-times survive restart; research R5, data-model.md state machine)
-- [ ] T032 [US2] Implement scenario/delay controls at `apps/engine/src/api/routes/`: `PATCH /api/v1/transactions/{id}` (`forced_scenario`) and `PATCH /api/v1/project` (`default_scenario`, `pending_settle_delay_s`, `timeout_delay_s`, `webhook_retry_*`, `history_cap`) per contracts/control-api.md; PATCH affects only future initiations
-- [ ] T033 [US2] Wire `X-Sandbox-Scenario` header into adapter initiate path (`apps/engine/src/adapters/base.py` → `apps/engine/src/scenarios/resolve.py`) so CI can force a scenario without a pre-created row (research R5, control-api.md)
-- [ ] T034 [US2] Run independent validation: specs/001-mvp/quickstart.md §3 (18/18 green) and §4 (pending ≈5 s, overridable) — **STOP and VALIDATE US2**
+- [X] T030 [US2] Implement outcome logic shared across adapters at `apps/engine/src/scenarios/outcomes.py`: decline → failure codes at verify; verify_fail → checkout succeeds, verify fails; timeout → bounded delay then timeout/exception response; refund → settle then `refunded`; pending_settle → `pending` then settled after `due_at` (FR-004, spec US2 acceptance 1–4)
+- [X] T031 [US2] Implement in-process scheduler over DB-backed `due_at` at `apps/engine/src/scenarios/scheduler.py`: sweep `(status, due_at)` index for pending→settle (default +5 s), timeout completion, and abandoned-checkout expiry → `expired` (persisted due-times survive restart; research R5, data-model.md state machine)
+- [X] T032 [US2] Implement scenario/delay controls at `apps/engine/src/api/routes/`: `PATCH /api/v1/transactions/{id}` (`forced_scenario`) and `PATCH /api/v1/project` (`default_scenario`, `pending_settle_delay_s`, `timeout_delay_s`, `webhook_retry_*`, `history_cap`) per contracts/control-api.md; PATCH affects only future initiations
+- [X] T033 [US2] Wire `X-Sandbox-Scenario` header into adapter initiate path (`apps/engine/src/adapters/base.py` → `apps/engine/src/scenarios/resolve.py`) so CI can force a scenario without a pre-created row (research R5, control-api.md)
+- [X] T034 [US2] Run independent validation: specs/001-mvp/quickstart.md §3 (18/18 green) and §4 (pending ≈5 s, overridable) — **STOP and VALIDATE US2**
 
 **Checkpoint**: US1 + US2 both work independently; scenario coverage metric (SC-003) demonstrably met
 

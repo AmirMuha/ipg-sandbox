@@ -16,6 +16,7 @@ from src.models import (
     Transaction,
     TransactionStatus,
 )
+from src.scenarios.outcomes import apply_verify_outcome
 
 
 class BehpardakhtAdapter(PaymentAdapter):
@@ -56,16 +57,11 @@ class BehpardakhtAdapter(PaymentAdapter):
         if tx.status == TransactionStatus.settled:
             return {"ResCode": 0}
 
-        if tx.effective_scenario == ScenarioOutcome.decline:
-            tx.transition_to(TransactionStatus.declined)
+        await apply_verify_outcome(tx)
+
+        if tx.effective_scenario in (ScenarioOutcome.decline, ScenarioOutcome.verify_fail):
             return {"ResCode": 11}
 
-        if tx.effective_scenario == ScenarioOutcome.refund:
-            tx.transition_to(TransactionStatus.approved)
-            return {"ResCode": 0}
-
-        # default approve
-        tx.transition_to(TransactionStatus.settled)
         return {"ResCode": 0}
 
     async def refund(self, tx: Transaction, request: dict[str, Any]) -> dict[str, Any]:

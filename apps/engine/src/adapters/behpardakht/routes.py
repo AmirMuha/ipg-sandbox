@@ -18,8 +18,14 @@ from src.models import (
     AdapterConfig,
     Project,
     Provider,
+    ScenarioOutcome,
     Transaction,
     TransactionStatus,
+)
+from src.scenarios.outcomes import (
+    apply_initiate_outcome,
+    checkout_confirm_status,
+    set_due_at,
 )
 from src.services import transactions
 
@@ -171,6 +177,16 @@ async def handle_soap(
             raw_request=params,
         )
 
+        if await apply_initiate_outcome(tx, project) is ScenarioOutcome.timeout:
+            resp_xml = _BP_PAY_RESPONSE.format(
+                res_code=59,
+                ref_id="",
+                redirect_url="",
+            )
+            tx.raw_response = {"ResCode": 59, "RefId": "", "RedirectUrl": ""}
+            await session.commit()
+            return Response(content=resp_xml, media_type="text/xml; charset=utf-8")
+
         resp_dict = await adapter.create_payment(tx, params)
         tx.raw_response = resp_dict
         await session.commit()
@@ -278,12 +294,17 @@ async def checkout_action(
     sale_ref_id = 100000 + (tx.amount_rial % 900000)
 
     if action == "confirm":
-        await transactions.advance(session, tx, TransactionStatus.pending)
+        if (target := checkout_confirm_status(tx)) is not None:
+            if tx.effective_scenario is ScenarioOutcome.pending_settle:
+                set_due_at(tx, project)
+            await transactions.advance(session, tx, target)
         res_code = "0"
     elif action == "fail":
         await transactions.advance(session, tx, TransactionStatus.declined)
         res_code = "11"
     else:  # abandon
+        await transactions.advance(session, tx, TransactionStatus.pending)
+        await transactions.advance(session, tx, TransactionStatus.expired)
         res_code = "17"
 
     redirect_target = _append_query(

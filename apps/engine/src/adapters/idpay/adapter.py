@@ -18,6 +18,7 @@ from src.models import (
     Transaction,
     TransactionStatus,
 )
+from src.scenarios.outcomes import apply_verify_outcome
 
 
 class IDPayAdapter(PaymentAdapter):
@@ -65,8 +66,9 @@ class IDPayAdapter(PaymentAdapter):
                 "date": datetime.now(timezone.utc).isoformat(),
             }
 
-        if tx.effective_scenario == ScenarioOutcome.decline:
-            tx.transition_to(TransactionStatus.declined)
+        await apply_verify_outcome(tx)
+
+        if tx.effective_scenario in (ScenarioOutcome.decline, ScenarioOutcome.verify_fail):
             return {
                 "status": 50,
                 "error_code": 50,
@@ -74,7 +76,6 @@ class IDPayAdapter(PaymentAdapter):
             }
 
         if tx.effective_scenario == ScenarioOutcome.refund:
-            tx.transition_to(TransactionStatus.approved)
             return {
                 "status": 100,
                 "track_id": track_id,
@@ -86,8 +87,6 @@ class IDPayAdapter(PaymentAdapter):
                 "date": datetime.now(timezone.utc).isoformat(),
             }
 
-        # default approve
-        tx.transition_to(TransactionStatus.settled)
         return {
             "status": 100,
             "track_id": track_id,

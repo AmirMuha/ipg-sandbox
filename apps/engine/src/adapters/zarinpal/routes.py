@@ -17,7 +17,13 @@ from src.models import (
     AdapterConfig,
     Project,
     Provider,
+    ScenarioOutcome,
     TransactionStatus,
+)
+from src.scenarios.outcomes import (
+    apply_initiate_outcome,
+    checkout_confirm_status,
+    set_due_at,
 )
 from src.services import transactions
 
@@ -86,6 +92,12 @@ async def initiate_payment(
         raw_request=body,
     )
 
+    if await apply_initiate_outcome(tx, project) is ScenarioOutcome.timeout:
+        timeout_resp = {"code": -33, "message": "Payment session expired"}
+        tx.raw_response = timeout_resp
+        await session.commit()
+        return timeout_resp
+
     resp = await adapter.create_payment(tx, body)
     tx.raw_response = resp
     await session.commit()
@@ -121,12 +133,17 @@ async def checkout_action(
     target_url = tx.return_url or tx.callback_url or "/"
 
     if action == "confirm":
-        await transactions.advance(session, tx, TransactionStatus.pending)
+        if (target := checkout_confirm_status(tx)) is not None:
+            if tx.effective_scenario is ScenarioOutcome.pending_settle:
+                set_due_at(tx, project)
+            await transactions.advance(session, tx, target)
         status_param = "OK"
     elif action == "fail":
         await transactions.advance(session, tx, TransactionStatus.declined)
         status_param = "NOK"
     else:  # abandon
+        await transactions.advance(session, tx, TransactionStatus.pending)
+        await transactions.advance(session, tx, TransactionStatus.expired)
         status_param = "CANCELLED"
 
     redirect_target = _append_query(target_url, {"Authority": tx.authority, "Status": status_param})

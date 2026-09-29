@@ -17,6 +17,7 @@ from src.models import (
     Transaction,
     TransactionStatus,
 )
+from src.scenarios.outcomes import apply_verify_outcome
 
 
 class ZarinpalAdapter(PaymentAdapter):
@@ -61,16 +62,16 @@ class ZarinpalAdapter(PaymentAdapter):
                 "card_hash": "21EC2020-3AEA-4069-A2DD-08002B30309D",
             }
 
-        if tx.effective_scenario == ScenarioOutcome.decline:
-            tx.transition_to(TransactionStatus.declined)
+        await apply_verify_outcome(tx)
+
+        if tx.effective_scenario in (ScenarioOutcome.decline, ScenarioOutcome.verify_fail):
             return {
                 "code": -51,
                 "message": "Payment failed / declined",
             }
 
+        ref_id = 100000 + (tx.amount_rial % 900000)
         if tx.effective_scenario == ScenarioOutcome.refund:
-            tx.transition_to(TransactionStatus.approved)
-            ref_id = 100000 + (tx.amount_rial % 900000)
             return {
                 "code": 100,
                 "message": "Approved for refund",
@@ -79,9 +80,6 @@ class ZarinpalAdapter(PaymentAdapter):
                 "card_hash": "21EC2020-3AEA-4069-A2DD-08002B30309D",
             }
 
-        # default approve
-        tx.transition_to(TransactionStatus.settled)
-        ref_id = 100000 + (tx.amount_rial % 900000)
         return {
             "code": 100,
             "message": "Verified",

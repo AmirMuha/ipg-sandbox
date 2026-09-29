@@ -432,3 +432,114 @@ def test_pre_seed_transaction_validation_errors(client):
     )
     assert r4.status_code == 422
     assert r4.json()["code"] == "scenario_invalid"
+
+
+# --- PATCH /api/v1/transactions/{id} & PATCH /api/v1/project ------------------
+
+
+def test_patch_transaction_forced_scenario(client):
+    """T032: PATCH /api/v1/transactions/{id} updates forced_scenario and re-resolves."""
+    resp = client.post(
+        "/api/v1/transactions",
+        json={"adapter": "zarinpal", "amount_rial": 10000},
+    )
+    assert resp.status_code == 201
+    tx_id = resp.json()["id"]
+
+    # 1. Force decline
+    patch_resp = client.patch(
+        f"/api/v1/transactions/{tx_id}",
+        json={"forced_scenario": "decline"},
+    )
+    assert patch_resp.status_code == 200
+    body = patch_resp.json()
+    assert body["forced_scenario"] == "decline"
+    assert body["effective_scenario"] == "decline"
+
+    # 2. Clear force with null
+    clear_resp = client.patch(
+        f"/api/v1/transactions/{tx_id}",
+        json={"forced_scenario": None},
+    )
+    assert clear_resp.status_code == 200
+    assert clear_resp.json()["forced_scenario"] is None
+    assert clear_resp.json()["effective_scenario"] == "approve"
+
+    # 3. Invalid scenario -> 422
+    inv_resp = client.patch(
+        f"/api/v1/transactions/{tx_id}",
+        json={"forced_scenario": "bogus"},
+    )
+    assert inv_resp.status_code == 422
+    assert inv_resp.json()["code"] == "scenario_invalid"
+
+    # 4. Missing key -> 422
+    miss_resp = client.patch(
+        f"/api/v1/transactions/{tx_id}",
+        json={},
+    )
+    assert miss_resp.status_code == 422
+    assert miss_resp.json()["code"] == "validation_error"
+
+    # 5. Non-existent id -> 404
+    missing_id = "00000000-0000-0000-0000-000000000000"
+    notfound_resp = client.patch(
+        f"/api/v1/transactions/{missing_id}",
+        json={"forced_scenario": "decline"},
+    )
+    assert notfound_resp.status_code == 404
+    assert notfound_resp.json()["code"] == "not_found"
+
+
+def test_patch_project_settings(client):
+    """T032: PATCH /api/v1/project updates project defaults and bounds."""
+    # 1. Update valid fields
+    patch_resp = client.patch(
+        "/api/v1/project",
+        json={
+            "default_scenario": "decline",
+            "pending_settle_delay_s": 3,
+            "timeout_delay_s": 15,
+            "history_cap": 500,
+            "webhook_retry_max": 5,
+        },
+    )
+    assert patch_resp.status_code == 200
+    body = patch_resp.json()
+    assert body["default_scenario"] == "decline"
+    assert body["pending_settle_delay_s"] == 3
+    assert body["timeout_delay_s"] == 15
+    assert body["history_cap"] == 500
+    assert body["webhook_retry_max"] == 5
+
+    # Verify GET reflects changes
+    get_body = client.get("/api/v1/project").json()
+    assert get_body["default_scenario"] == "decline"
+    assert get_body["pending_settle_delay_s"] == 3
+
+    # Reset default_scenario to approve
+    client.patch(
+        "/api/v1/project",
+        json={"default_scenario": "approve", "pending_settle_delay_s": 5},
+    )
+
+    # 2. Out of range delays -> 422
+    for bad_delay in (-1, 300, 1000):
+        r = client.patch("/api/v1/project", json={"pending_settle_delay_s": bad_delay})
+        assert r.status_code == 422
+        assert r.json()["code"] == "validation_error"
+
+    # 3. History cap < 1 -> 422
+    r_cap = client.patch("/api/v1/project", json={"history_cap": 0})
+    assert r_cap.status_code == 422
+    assert r_cap.json()["code"] == "validation_error"
+
+    # 4. Unknown field -> 422
+    r_unk = client.patch("/api/v1/project", json={"not_a_real_field": 123})
+    assert r_unk.status_code == 422
+    assert r_unk.json()["code"] == "validation_error"
+
+    # 5. Invalid default scenario -> 422
+    r_scen = client.patch("/api/v1/project", json={"default_scenario": "bogus_scenario"})
+    assert r_scen.status_code == 422
+    assert r_scen.json()["code"] == "scenario_invalid"

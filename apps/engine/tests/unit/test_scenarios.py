@@ -7,7 +7,18 @@ rather than only end-to-end: each rank must beat the one below it *and* lose to 
 import pytest
 
 from src.api.errors import ApiError, ErrorCode
-from src.models import ScenarioOutcome
+from src.config import DELAY_MAX_S
+from src.models import (
+    ALLOWED_TRANSITIONS,
+    IllegalTransitionError,
+    ScenarioOutcome,
+    Transaction,
+    TransactionStatus,
+)
+from src.scenarios.outcomes import (
+    apply_verify_outcome,
+    checkout_confirm_status,
+)
 from src.scenarios.resolve import SCENARIO_HEADER, resolve_scenario, scenario_from_header
 
 
@@ -75,3 +86,45 @@ def test_unknown_header_value_is_scenario_invalid(raw):
 
 def test_header_name_matches_the_contract():
     assert SCENARIO_HEADER == "X-Sandbox-Scenario"
+
+
+def test_illegal_transitions_raise():
+    """T029: state machine rejects transitions not in data-model.md diagram."""
+    tx = Transaction(status=TransactionStatus.settled)
+    with pytest.raises(IllegalTransitionError):
+        tx.transition_to(TransactionStatus.pending)
+
+    tx2 = Transaction(status=TransactionStatus.pending)
+    with pytest.raises(IllegalTransitionError):
+        tx2.transition_to(TransactionStatus.declined)
+
+    tx3 = Transaction(status=TransactionStatus.refunded)
+    with pytest.raises(IllegalTransitionError):
+        tx3.transition_to(TransactionStatus.settled)
+
+
+def test_delays_bounded_below_300s():
+    """T029: timeout and pending delays must be bounded (< 300s) to protect CI."""
+    assert DELAY_MAX_S == 299
+    assert DELAY_MAX_S < 300
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("scenario", list(ScenarioOutcome))
+async def test_outcome_handling_never_violates_allowed_transitions(scenario):
+    """Every outcome flow (checkout confirm + verify) must only take drawn edges."""
+    tx = Transaction(
+        status=TransactionStatus.initiated,
+        effective_scenario=scenario,
+        amount_rial=10000,
+    )
+    target = checkout_confirm_status(tx)
+    if target is not None:
+        assert target in ALLOWED_TRANSITIONS[tx.status]
+        tx.transition_to(target)
+
+    # Now verify
+    old_status = tx.status
+    await apply_verify_outcome(tx)
+    if tx.status != old_status:
+        assert tx.status in ALLOWED_TRANSITIONS[old_status]

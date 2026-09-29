@@ -4,6 +4,8 @@ Importing this module must not touch the network or a database: the engine is bu
 lifespan, and tests replace `app.state.session_factory` with an in-memory one.
 """
 
+import asyncio
+import contextlib
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,6 +19,7 @@ from src.api.errors import install_error_handlers
 from src.api.routes import router
 from src.config import Settings
 from src.models import AdapterConfig, ApiUnit, Project, Provider
+from src.scenarios.scheduler import run as run_scheduler
 
 
 @asynccontextmanager
@@ -33,9 +36,15 @@ async def lifespan(app: FastAPI):
     async with app.state.session_factory() as session:
         await _seed_default_project(session, settings)
 
-    yield
-    if owned_engine is not None:
-        await owned_engine.dispose()
+    scheduler_task = asyncio.create_task(run_scheduler(app.state.session_factory))
+    try:
+        yield
+    finally:
+        scheduler_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await scheduler_task
+        if owned_engine is not None:
+            await owned_engine.dispose()
 
 
 async def _seed_default_project(session: AsyncSession, settings: Settings) -> None:
