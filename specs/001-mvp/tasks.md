@@ -176,16 +176,16 @@ Per plan.md structure: `apps/engine/` (Python), `apps/dashboard/` (Next.js), `ap
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T050 [P] [US5] Headless CI runner at `scripts/ci-scenario-run.sh`: drives initiate/scenarios/webhook asserts non-interactively for one adapter, emits machine-readable PASS/FAIL per step, exit code contract, total runtime < 5 min (SC-004, quickstart §6, FR-010)
-- [ ] T051 [P] [US5] Integration tests: demo signup blocked-until-verify, visitor A cannot read visitor B rows (`session_required` / scoped queries), signup + simulate spam → `rate_limited` at `apps/engine/tests/integration/test_demo_gate.py` (FR-014, clarification 1)
+- [X] T050 [P] [US5] Headless CI runner at `scripts/ci-scenario-run.sh`: drives initiate/scenarios/webhook asserts non-interactively for one adapter, emits machine-readable PASS/FAIL per step, exit code contract, total runtime < 5 min (SC-004, quickstart §6, FR-010)
+- [X] T051 [P] [US5] Integration tests: demo signup blocked-until-verify, visitor A cannot read visitor B rows (`session_required` / scoped queries), signup + simulate spam → `rate_limited` at `apps/engine/tests/integration/test_demo_gate.py` (FR-014, clarification 1)
 
 ### Implementation for User Story 5
 
-- [ ] T052 [US5] Add VisitorSession model (email citext, magic_link_token_hash single-use expiring, verified_at; local projects have NONE) at `apps/engine/src/models/visitor.py` + Alembic migration at `apps/engine/alembic/versions/` (data-model.md)
-- [ ] T053 [US5] Implement demo layer at `apps/demo/src/`: `POST /demo/signup` (rate-limited, spam-throttled per email), `POST /demo/verify` (magic link → session cookie binding visitor Project), `POST /demo/logout`; dev transport logs link, prod SMTP via env (research R10, control-api.md demo routes); routes absent in local profile (FR-014)
-- [ ] T054 [US5] Enforce visitor isolation: project_id scoping on EVERY control-API query under the demo profile at `apps/engine/src/api/scoping.py` (strict tenant key from session; research R10)
-- [ ] T055 [US5] Wire `--profile demo` in `docker-compose.yml`: demo service in front of engine+dashboard images, rate limiting at proxy, per-visitor project creation on verify (FR-013/FR-014, research R10)
-- [ ] T056 [US5] Run independent validation: specs/001-mvp/quickstart.md §6 (exit 0, < 5 min) and §8 (gate, isolation, rate limit) — **STOP and VALIDATE US5**
+- [X] T052 [US5] Add VisitorSession model (email citext, magic_link_token_hash single-use expiring, verified_at; local projects have NONE) at `apps/engine/src/models/visitor.py` + Alembic migration at `apps/engine/alembic/versions/` (data-model.md)
+- [X] T053 [US5] Implement demo layer at `apps/demo/src/`: `POST /demo/signup` (rate-limited, spam-throttled per email), `POST /demo/verify` (magic link → session cookie binding visitor Project), `POST /demo/logout`; dev transport logs link, prod SMTP via env (research R10, control-api.md demo routes); routes absent in local profile (FR-014)
+- [X] T054 [US5] Enforce visitor isolation: project_id scoping on EVERY control-API query under the demo profile at `apps/engine/src/api/scoping.py` (strict tenant key from session; research R10)
+- [X] T055 [US5] Wire `--profile demo` in `docker-compose.yml`: demo service in front of engine+dashboard images, rate limiting at proxy, per-visitor project creation on verify (FR-013/FR-014, research R10)
+- [X] T056 [US5] Run independent validation: specs/001-mvp/quickstart.md §6 (exit 0, < 5 min) and §8 (gate, isolation, rate limit) — **STOP and VALIDATE US5**
 
 **Checkpoint**: All five stories independently functional
 

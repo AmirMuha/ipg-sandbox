@@ -36,18 +36,7 @@ METER_FIELDS = ("requests_total", "transactions_total", "history_retained", "web
 MAX_PAGE_SIZE = 100
 
 
-async def current_project(session: Annotated[AsyncSession, Depends(get_session)]) -> Project:
-    """The project every read is scoped to (FR-014 isolation).
-
-    Local self-host runs exactly one project (data-model.md), so this is the oldest row.
-    ponytail: single-project scope; T052 (hosted demo) swaps this for the session-cookie lookup.
-    """
-    project = await session.scalar(
-        select(Project).order_by(Project.created_at, Project.id).limit(1)
-    )
-    if project is None:
-        raise not_found("project")
-    return project
+from src.api.scoping import get_current_project as current_project
 
 
 def _project_body(project: Project) -> dict[str, Any]:

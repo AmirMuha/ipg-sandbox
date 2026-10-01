@@ -8,6 +8,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ipg_sandbox}
       - DEFAULT_PENDING_SETTLE_DELAY_S=${DEFAULT_PENDING_SETTLE_DELAY_S:-5}
       - DEFAULT_TIMEOUT_DELAY_S=${DEFAULT_TIMEOUT_DELAY_S:-30}
+      - ENGINE_PROFILE=${ENGINE_PROFILE:-local}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -23,6 +24,20 @@ services:
         NEXT_PUBLIC_API_URL: http://localhost:${ENGINE_PORT:-8080}
     ports:
       - "${DASHBOARD_PORT:-3000}:3000"
+
+  demo:
+    profiles: ["demo"]
+    build:
+      context: apps/demo
+    ports:
+      - "${DEMO_PORT:-8000}:8000"
+    environment:
+      - ENGINE_URL=http://engine:8080
+      - DASHBOARD_URL=http://dashboard:3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ipg_sandbox}
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:16-alpine

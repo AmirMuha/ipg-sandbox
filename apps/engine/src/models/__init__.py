@@ -22,6 +22,7 @@ from .models import (
     utcnow,
 )
 from .webhook import DeliveryResult, WebhookDelivery
+from .visitor import VisitorSession
 
 __all__ = [
     "ALLOWED_TRANSITIONS",
@@ -37,6 +38,7 @@ __all__ = [
     "Transaction",
     "TransactionStatus",
     "UsageMeter",
+    "VisitorSession",
     "WebhookDelivery",
     "utcnow",
 ]

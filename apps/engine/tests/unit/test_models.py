@@ -271,6 +271,7 @@ def test_models_cover_only_the_four_t008_tables():
         "transactions",
         "usage_meters",
         "webhook_deliveries",
+        "visitor_sessions",
     }
 
 
