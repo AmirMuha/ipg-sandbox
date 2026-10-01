@@ -579,3 +579,71 @@ def test_patch_and_test_adapter(client):
     p_unk = client.patch(f"/api/v1/adapters/{adapter_id}", json={"bogus": 123})
     assert p_unk.status_code == 422
     assert p_unk.json()["code"] == "validation_error"
+
+
+# --- T075: per-adapter status (FR-008 "configuration and status") ---------------------------
+
+
+def test_adapters_carry_a_status_object(client):
+    """Every adapter answers with a status block; FR-008 asks for status, not just config."""
+    adapters = client.get("/api/v1/adapters").json()
+
+    assert adapters, "expected the seeded adapters"
+    for adapter in adapters:
+        status = adapter["status"]
+        assert set(status) == {
+            "state",
+            "transactions_total",
+            "transactions_settled",
+            "failed_deliveries",
+            "last_activity_at",
+        }
+        assert status["state"] in {"healthy", "degraded", "idle", "disabled"}
+
+
+def test_unused_adapter_reports_idle_not_broken(client):
+    """Never exercised is `idle`, not `degraded` — no activity is not a failure.
+
+    Asserted over every adapter rather than a named one, because this file's fixture seeds a
+    different set than the root conftest does.
+    """
+    adapters = client.get("/api/v1/adapters").json()
+
+    assert adapters
+    for adapter in adapters:
+        if adapter["status"]["transactions_total"] == 0:
+            assert adapter["status"]["state"] == "idle", adapter
+            assert adapter["status"]["last_activity_at"] is None, adapter
+
+
+def test_adapter_status_counts_settled_transactions(client):
+    """Status is derived from real rows, so an approved payment moves the counters."""
+    before = {
+        a["provider"]: a["status"]["transactions_total"]
+        for a in client.get("/api/v1/adapters").json()
+    }
+
+    init = client.post(
+        "/zarinpal/request/payment",
+        json={"merchant_id": "test-merchant", "amount": 5000, "currency": "IRR"},
+    )
+    authority = init.json()["authority"]
+    client.post(f"/zarinpal/checkout/{authority}", data={"action": "confirm"})
+    client.post("/zarinpal/payment/verification", json={"authority": authority})
+
+    after = {a["provider"]: a["status"] for a in client.get("/api/v1/adapters").json()}
+
+    assert after["zarinpal"]["transactions_total"] == before["zarinpal"] + 1
+    assert after["zarinpal"]["transactions_settled"] >= 1
+    assert after["zarinpal"]["last_activity_at"] is not None
+
+
+def test_disabled_adapter_reports_disabled(client):
+    """An operator switching an adapter off sees that reflected, not just unchecked in the UI."""
+    adapters = client.get("/api/v1/adapters").json()
+    target = adapters[0]
+
+    client.patch(f"/api/v1/adapters/{target['id']}", json={"enabled": False})
+    refreshed = {a["id"]: a for a in client.get("/api/v1/adapters").json()}
+
+    assert refreshed[target["id"]]["status"]["state"] == "disabled"

@@ -11,6 +11,13 @@ services:
       - ENGINE_PROFILE=${ENGINE_PROFILE:-local}
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      # stdlib urllib rather than curl: the engine image ships neither curl nor wget (T077).
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/api/v1/project', timeout=3).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,6 +36,14 @@ services:
       # need the compose-internal hostname. NEXT_PUBLIC_API_URL stays the host-reachable
       # value baked in at build time for the browser.
       - ENGINE_URL=http://engine:8080
+    healthcheck:
+      # wget is present in the node image; the engine's urllib probe is not. `/fa/transactions`
+      # is a real rendered route, so this fails if SSR cannot reach the engine (T077).
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/fa/transactions"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   demo:
     profiles: ["demo"]

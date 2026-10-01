@@ -1,11 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { AdapterConfig, patchAdapter, testAdapter } from "../lib/api";
 
 export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
   const router = useRouter();
+  // T073: per-adapter config/status is the FR-008 surface; it rendered in English under /fa/
+  // because every string was hardcoded.
+  const tAdapter = useTranslations("adapter_settings");
+  const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [enabled, setEnabled] = useState(adapter.enabled);
@@ -20,7 +25,7 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
       setEnabled(newEnabled);
       router.refresh();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to update adapter status");
+      alert(err instanceof Error ? err.message : tAdapter("toggle_failed"));
     } finally {
       setLoading(false);
     }
@@ -32,12 +37,12 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
     try {
       const parsed = JSON.parse(credentials);
       await patchAdapter(adapter.id, { credentials: parsed });
-      setTestResult({ ok: true, message: "Credentials saved." });
+      setTestResult({ ok: true, message: tAdapter("credentials_saved") });
       router.refresh();
     } catch (err: unknown) {
       setTestResult({
         ok: false,
-        message: err instanceof Error ? err.message : "Invalid JSON",
+        message: err instanceof Error ? err.message : tAdapter("invalid_json"),
       });
     } finally {
       setLoading(false);
@@ -55,7 +60,7 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
     } catch (err: unknown) {
       setTestResult({
         ok: false,
-        message: err instanceof Error ? err.message : "Adapter credentials check failed",
+        message: err instanceof Error ? err.message : tAdapter("test_failed"),
       });
     } finally {
       setLoading(false);
@@ -73,6 +78,33 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
           <p className="text-xs text-muted font-mono">
             {adapter.endpoint_path_prefix} &bull; {adapter.api_unit}
           </p>
+          {/* T075: the status half of FR-008's "per-adapter configuration and status". */}
+          {adapter.status && (
+            <p
+              className="text-xs mt-1"
+              data-testid={`adapter-status-${adapter.provider}`}
+              title={`${tAdapter("tx_total")}: ${adapter.status.transactions_total} · ${tAdapter("settled")}: ${adapter.status.transactions_settled} · ${tAdapter("failed_deliveries")}: ${adapter.status.failed_deliveries}`}
+            >
+              <span
+                className={`inline-block w-2 h-2 rounded-full mr-1 ${
+                  adapter.status.state === "healthy"
+                    ? "bg-green-500"
+                    : adapter.status.state === "degraded"
+                      ? "bg-amber-500"
+                      : adapter.status.state === "disabled"
+                        ? "bg-gray-400"
+                        : "bg-blue-400"
+                }`}
+              />
+              {tAdapter(`state_${adapter.status.state}`)}
+              {adapter.status.last_activity_at && (
+                <span className="text-muted">
+                  {" · "}
+                  {tAdapter("last_activity")}: {adapter.status.last_activity_at.slice(0, 10)}
+                </span>
+              )}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 cursor-pointer text-xs">
@@ -84,7 +116,7 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
               className="accent-accent"
               data-testid={`adapter-toggle-${adapter.provider}`}
             />
-            <span>{enabled ? "Enabled" : "Disabled"}</span>
+            <span>{enabled ? tCommon("enabled") : tCommon("disabled")}</span>
           </label>
           <button
             onClick={handleTest}
@@ -92,7 +124,7 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
             className="text-xs bg-surface-2 border border-border hover:border-accent px-3 py-1 rounded transition-colors disabled:opacity-50"
             data-testid={`test-adapter-btn-${adapter.provider}`}
           >
-            {loading ? "Testing..." : "Test Credentials"}
+            {loading ? tAdapter("testing") : tAdapter("test_credentials")}
           </button>
         </div>
       </div>
@@ -113,7 +145,7 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
       {adapter.credentials !== undefined && (
         <div className="space-y-2">
           <label className="block text-xs text-muted font-mono">
-            Test Credentials (JSON)
+            {tAdapter("credentials_json_label")}
           </label>
           <textarea
             rows={4}
@@ -127,7 +159,7 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
             disabled={loading}
             className="text-xs bg-surface-2 border border-border hover:border-accent px-3 py-1 rounded transition-colors disabled:opacity-50"
           >
-            Save Credentials
+            {tAdapter("save_credentials")}
           </button>
         </div>
       )}

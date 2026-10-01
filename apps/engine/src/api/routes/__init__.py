@@ -13,7 +13,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.db import get_session
@@ -21,10 +21,14 @@ from src.api.errors import ApiError, ErrorCode, not_found
 from src.config import DELAY_MAX_S
 from src.models import (
     AdapterConfig,
+    DeliveryResult,
     Project,
     ProjectKind,
     ScenarioOutcome,
+    Transaction,
+    TransactionStatus,
     UsageMeter,
+    WebhookDelivery,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -57,7 +61,62 @@ def _project_body(project: Project) -> dict[str, Any]:
     }
 
 
-def _adapter_body(adapter: AdapterConfig, *, kind: ProjectKind) -> dict[str, Any]:
+async def _adapter_status(session: AsyncSession, adapter: AdapterConfig) -> dict[str, Any]:
+    """Per-adapter health, derived from real activity (T075).
+
+    FR-008 asks the dashboard for per-adapter configuration *and status*, but `AdapterConfig`
+    has no status columns and the only status-ish thing the UI had was a transient banner from
+    a manual credential test — nothing loaded from the server, so there was no status to show.
+
+    Derived from the transactions and deliveries that already exist rather than a new table: it
+    is real data, cannot drift, and needs no write path or migration. ponytail: swap for a
+    persisted `last_health_check_at` if an operator ever needs an adapter probed on a schedule.
+    """
+    total = await session.scalar(
+        select(func.count()).select_from(Transaction).where(Transaction.adapter_id == adapter.id)
+    )
+    settled = await session.scalar(
+        select(func.count())
+        .select_from(Transaction)
+        .where(
+            Transaction.adapter_id == adapter.id, Transaction.status == TransactionStatus.settled
+        )
+    )
+    last_activity = await session.scalar(
+        select(func.max(Transaction.created_at)).where(Transaction.adapter_id == adapter.id)
+    )
+
+    failed_deliveries = await session.scalar(
+        select(func.count())
+        .select_from(WebhookDelivery)
+        .join(Transaction, WebhookDelivery.transaction_id == Transaction.id)
+        .where(
+            Transaction.adapter_id == adapter.id, WebhookDelivery.result == DeliveryResult.failed
+        )
+    )
+
+    if not adapter.enabled:
+        state = "disabled"
+    elif total == 0:
+        # Never exercised is not the same as broken — report it as unknown rather than failing.
+        state = "idle"
+    elif failed_deliveries and failed_deliveries * 2 >= total:
+        state = "degraded"
+    else:
+        state = "healthy"
+
+    return {
+        "state": state,
+        "transactions_total": total or 0,
+        "transactions_settled": settled or 0,
+        "failed_deliveries": failed_deliveries or 0,
+        "last_activity_at": last_activity.isoformat() if last_activity else None,
+    }
+
+
+def _adapter_body(
+    adapter: AdapterConfig, *, kind: ProjectKind, status: dict[str, Any] | None = None
+) -> dict[str, Any]:
     body: dict[str, Any] = {
         "id": adapter.id,
         "project_id": adapter.project_id,
@@ -66,6 +125,8 @@ def _adapter_body(adapter: AdapterConfig, *, kind: ProjectKind) -> dict[str, Any
         "api_unit": adapter.api_unit,
         "endpoint_path_prefix": adapter.endpoint_path_prefix,
     }
+    if status is not None:
+        body["status"] = status
     # Local self-host: the operator entered these test values themselves, so reading them back is
     # part of configuring (and debugging) the stack. Demo: the project is visitor-scoped and the
     # route is reachable by that visitor, so the same read becomes a credential-display surface
@@ -166,7 +227,10 @@ async def list_adapters(
         .where(AdapterConfig.project_id == project.id)
         .order_by(AdapterConfig.provider)
     )
-    return [_adapter_body(adapter, kind=project.kind) for adapter in adapters]
+    return [
+        _adapter_body(adapter, kind=project.kind, status=await _adapter_status(session, adapter))
+        for adapter in adapters
+    ]
 
 
 _PATCHABLE_ADAPTER = {"enabled", "credentials"}
@@ -210,7 +274,7 @@ async def patch_adapter(
         adapter.credentials = val
 
     await session.commit()
-    return _adapter_body(adapter, kind=project.kind)
+    return _adapter_body(adapter, kind=project.kind, status=await _adapter_status(session, adapter))
 
 
 @router.post("/adapters/{adapter_id}/test")

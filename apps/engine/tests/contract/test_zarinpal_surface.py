@@ -11,6 +11,7 @@ def test_zarinpal_initiate_success_and_errors(client: TestClient):
     resp = client.post(
         "/zarinpal/request/payment",
         json={
+            "merchant_id": "test-merchant",
             "amount": 250000,
             "currency": "IRR",
             "callback_url": "http://localhost:3000/callback",
@@ -40,7 +41,7 @@ def test_zarinpal_initiate_success_and_errors(client: TestClient):
     # 3. Missing required amount
     missing_resp = client.post(
         "/zarinpal/request/payment",
-        json={"description": "No amount"},
+        json={"merchant_id": "test-merchant", "description": "No amount"},
     )
     assert missing_resp.status_code == 422
     assert missing_resp.json()["code"] == "validation_error"
@@ -51,6 +52,7 @@ def test_zarinpal_checkout_and_callback(client: TestClient):
     init_resp = client.post(
         "/zarinpal/request/payment",
         json={
+            "merchant_id": "test-merchant",
             "amount": 100000,
             "return_url": "http://localhost:3000/return",
         },
@@ -93,6 +95,7 @@ def test_zarinpal_verification_and_refund(client: TestClient):
         "/zarinpal/request/payment",
         headers={"X-Sandbox-Scenario": "refund"},
         json={
+            "merchant_id": "test-merchant",
             "amount": 50000,
             "return_url": "http://localhost:3000/return",
         },
@@ -134,6 +137,7 @@ def test_zarinpal_decline_scenario(client: TestClient):
         "/zarinpal/request/payment",
         headers={"X-Sandbox-Scenario": "decline"},
         json={
+            "merchant_id": "test-merchant",
             "amount": 75000,
             "return_url": "http://localhost:3000/return",
         },

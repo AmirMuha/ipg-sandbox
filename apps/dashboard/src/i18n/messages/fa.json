@@ -67,7 +67,15 @@
     "force_scenario": "اعمال سناریو",
     "clear_force": "پیش‌فرض پروژه (بدون اجبار)",
     "project_default_title": "سناریوی پیش‌فرض پروژه",
-    "save_project": "بروزرسانی تنظیمات پروژه"
+    "save_project": "بروزرسانی تنظیمات پروژه",
+    "title_compact": "سناریو و تأخیرهای پیش‌فرض پروژه",
+    "default_scenario_label": "سناریوی پیش‌فرض",
+    "pending_delay_label": "تأخیر تسویهٔ معلق (ثانیه)",
+    "timeout_delay_label": "تأخیر انقضا (ثانیه)",
+    "updated": "سناریو به‌روزرسانی شد",
+    "update_failed": "به‌روزرسانی سناریو ناموفق بود",
+    "project_updated": "تنظیمات پیش‌فرض پروژه به‌روزرسانی شد",
+    "project_update_failed": "به‌روزرسانی تنظیمات پروژه ناموفق بود"
   },
   "status": {
     "initiated": "شروع شده",
@@ -86,5 +94,25 @@
     "refund": "استرداد وجه (refund)",
     "pending_settle": "در انتظار تا تسویه (pending_settle)",
     "verify_fail": "شکست تایید (verify_fail)"
+  },
+  "adapter_settings": {
+    "credentials_saved": "اطلاعات ورود ذخیره شد.",
+    "credentials_save_failed": "ذخیرهٔ اطلاعات ورود ناموفق بود.",
+    "test_ok": "اطلاعات ورود معتبر است! درگاه پاسخ داد.",
+    "test_failed": "بررسی اطلاعات ورود درگاه ناموفق بود",
+    "testing": "در حال بررسی...",
+    "test_credentials": "بررسی اطلاعات ورود",
+    "credentials_json_label": "اطلاعات ورود (JSON)",
+    "save_credentials": "ذخیرهٔ اطلاعات ورود",
+    "invalid_json": "اطلاعات ورود باید JSON معتبر باشد",
+    "toggle_failed": "به‌روزرسانی وضعیت درگاه ناموفق بود",
+    "state_healthy": "سالم",
+    "state_degraded": "دچار مشکل",
+    "state_idle": "بی‌فعالیت",
+    "state_disabled": "غیرفعال",
+    "last_activity": "آخرین فعالیت",
+    "tx_total": "تراکنش",
+    "settled": "تسویه‌شده",
+    "failed_deliveries": "ارسال ناموفق"
   }
 }

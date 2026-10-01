@@ -20,6 +20,9 @@ class VisitorSession(Base):
     # Using citext if available, else text with lower index
     email: Mapped[str] = mapped_column(String, nullable=False, index=True)
     magic_link_token_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    # T071: without this a magic link stayed valid forever until first use. T052 specifies a
+    # "single-use expiring" token; single-use held, expiry did not.
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()"), nullable=False

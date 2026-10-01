@@ -69,6 +69,18 @@ export interface Project {
   created_at: string;
 }
 
+// T075: FR-008 asks for per-adapter configuration *and status*. The engine derives this from
+// real transaction/delivery activity rather than a stored field, so it cannot drift.
+export type AdapterState = "healthy" | "degraded" | "idle" | "disabled";
+
+export interface AdapterStatus {
+  state: AdapterState;
+  transactions_total: number;
+  transactions_settled: number;
+  failed_deliveries: number;
+  last_activity_at: string | null;
+}
+
 export interface AdapterConfig {
   id: string;
   project_id: string;
@@ -77,6 +89,7 @@ export interface AdapterConfig {
   api_unit: "rial" | "toman";
   endpoint_path_prefix: string;
   credentials?: Record<string, unknown>;
+  status?: AdapterStatus;
 }
 
 export interface WebhookDelivery {

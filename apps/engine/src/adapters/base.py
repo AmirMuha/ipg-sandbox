@@ -8,6 +8,7 @@ the seam the engine drives every gateway through, and the three class attributes
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar
 
+from src.api.errors import ApiError, ErrorCode
 from src.models import AdapterConfig, ApiUnit, Provider, Transaction
 
 # contracts/adapter-surfaces.md stages + data-model.md's WebhookDelivery `stage` enum
@@ -51,6 +52,38 @@ class PaymentAdapter(ABC):
         """
         return None
 
+    def verify_supplied_credentials(self, supplied: dict[str, Any]) -> None:
+        """Reject request credentials that are absent, empty, or not the configured value.
+
+        One implementation for every adapter (T080). Each route used to check only
+        `supplied == ""`, so an omitted key fell through as `None` and any value at all was
+        accepted — a wrong merchant still created a payment. Comparing against
+        `AdapterConfig.credentials` is what `/api/v1/adapters/{id}/test` already implies.
+
+        Skips a key the caller did not send when the adapter's own scheme does not require it,
+        so an adapter with no credential requirement stays usable.
+        """
+        configured = self.config.credentials or {}
+        for key in self.credential_scheme:
+            expected = configured.get(key)
+            if not expected:
+                # Misconfigured adapter, not a bad request — `check_credentials` owns that.
+                self.check_credentials()
+                continue
+            value = supplied.get(key)
+            if not value:
+                raise ApiError(
+                    ErrorCode.invalid_credentials,
+                    f"Missing or empty credential: {key}",
+                    status=401,
+                )
+            if value != expected:
+                raise ApiError(
+                    ErrorCode.invalid_credentials,
+                    f"Invalid credential value for {key}",
+                    status=401,
+                )
+
     @abstractmethod
     async def create_payment(self, tx: Transaction, request: dict[str, Any]) -> dict[str, Any]:
         """Initiate. Returns the wire response (emulated `authority`/`id`/`RefId` + start URL)."""
@@ -81,3 +114,18 @@ def to_rial(amount: int, unit: ApiUnit) -> int:
 def from_rial(amount_rial: int, unit: ApiUnit) -> int:
     """Convert canonical Rial to boundary unit (clarification 4)."""
     return amount_rial // 10 if unit == ApiUnit.toman else amount_rial
+
+
+def unsupported_operation(provider: str, path: str) -> ApiError:
+    """Explicit rejection for an operation this adapter does not emulate.
+
+    T081: without a catch-all on the REST adapters, an unknown path fell through to FastAPI's
+    default 404 and answered `{"code": "not_found"}` — indistinguishable from "you asked for the
+    wrong URL" and never naming the adapter. `spec.md:108` and `contracts/adapter-surfaces.md:9`
+    both require an explicit "not supported by this adapter".
+    """
+    return ApiError(
+        ErrorCode.unsupported_operation,
+        f"Operation not supported by the {provider} adapter: {path}",
+        status=400,
+    )

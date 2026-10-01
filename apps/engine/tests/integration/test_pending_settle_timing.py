@@ -26,6 +26,7 @@ def test_pending_settle_timing_and_override(client: TestClient):
         "/zarinpal/request/payment",
         headers={"X-Sandbox-Scenario": "pending_settle"},
         json={
+            "merchant_id": "test-merchant",
             "amount": 10000,
             "return_url": "http://localhost:3000/return",
         },
@@ -69,7 +70,11 @@ def test_pending_settle_timing_and_override(client: TestClient):
     init2 = client.post(
         "/zarinpal/request/payment",
         headers={"X-Sandbox-Scenario": "pending_settle"},
-        json={"amount": 20000, "return_url": "http://localhost:3000/return"},
+        json={
+            "merchant_id": "test-merchant",
+            "amount": 20000,
+            "return_url": "http://localhost:3000/return",
+        },
     )
     auth2 = init2.json()["authority"]
     client.post(f"/zarinpal/checkout/{auth2}", data={"action": "confirm"}, follow_redirects=False)

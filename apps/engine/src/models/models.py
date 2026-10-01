@@ -54,8 +54,14 @@ ALLOWED_TRANSITIONS: dict[TransactionStatus, frozenset[TransactionStatus]] = {
         }
     ),
     TransactionStatus.approved: frozenset({TransactionStatus.refunded}),
+    # Refund is "post-settle" per contracts/adapter-surfaces.md:22, so a normal
+    # approve -> settled transaction must be refundable. Without this edge all three adapters
+    # attempted `settled -> refunded` and got IllegalTransitionError, which is a RuntimeError
+    # rather than an ApiError and so escaped as a 500 internal_error (T079).
+    TransactionStatus.settled: frozenset({TransactionStatus.refunded}),
 }
-# settled / refunded / expired / declined / failed are terminal — no outgoing edges.
+# refunded / expired / declined / failed are terminal — no outgoing edges. `settled` is
+# terminal except for the one-way refund hop above, and `approved` likewise.
 
 
 class IllegalTransitionError(RuntimeError):

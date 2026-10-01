@@ -90,6 +90,9 @@ test("5. Force decline affects next payment (SC-006 check 2)", async () => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      // T080: the engine validates credential values, not just their presence, so the
+      // smoke test has to send the merchant it seeds.
+      merchant_id: "sandbox-merchant",
       amount: 45000,
       return_url: "http://localhost:3000/return",
     }),

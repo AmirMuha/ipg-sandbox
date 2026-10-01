@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { retryDelivery } from "../lib/api";
 
 export function RetryButton({ deliveryId }: { deliveryId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  // T073: hardcoded English under /fa/.
+  const tCommon = useTranslations("common");
 
   async function handleRetry() {
     setLoading(true);
@@ -27,7 +30,7 @@ export function RetryButton({ deliveryId }: { deliveryId: string }) {
       className="text-xs bg-surface-2 border border-border hover:border-accent px-2.5 py-1 rounded transition-colors disabled:opacity-50"
       data-testid={`retry-btn-${deliveryId}`}
     >
-      {loading ? "..." : "Retry"}
+      {loading ? "..." : tCommon("retry")}
     </button>
   );
 }

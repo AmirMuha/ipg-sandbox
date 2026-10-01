@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
   patchProject,
@@ -27,6 +28,9 @@ export function ScenarioControls({
   project?: Project;
 }) {
   const router = useRouter();
+  // T073: this panel is one of SC-006\'s primary flows and was rendering in English
+  // under /fa/ because every string here was hardcoded.
+  const tScenario = useTranslations("scenario_controls");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -56,10 +60,10 @@ export function ScenarioControls({
     try {
       const scenario = forcedScenario ? (forcedScenario as ScenarioOutcome) : null;
       await patchTransaction(transaction.id, scenario);
-      setSuccess("Scenario updated");
+      setSuccess(tScenario("updated"));
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to update scenario");
+      setError(err instanceof Error ? err.message : tScenario("update_failed"));
     } finally {
       setLoading(false);
     }
@@ -76,10 +80,10 @@ export function ScenarioControls({
         pending_settle_delay_s: Number(pendingSettleDelay),
         timeout_delay_s: Number(timeoutDelay),
       });
-      setSuccess("Project defaults updated");
+      setSuccess(tScenario("project_updated"));
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to update project");
+      setError(err instanceof Error ? err.message : tScenario("project_update_failed"));
     } finally {
       setLoading(false);
     }
@@ -104,7 +108,7 @@ export function ScenarioControls({
           className="bg-surface border border-border p-4 rounded-lg space-y-4"
           data-testid="per-tx-scenario-form"
         >
-          <h3 className="font-semibold text-sm">Force Transaction Scenario</h3>
+          <h3 className="font-semibold text-sm">{tScenario("per_tx_title")}</h3>
           <div className="flex items-center gap-3">
             <select
               value={forcedScenario}
@@ -112,7 +116,7 @@ export function ScenarioControls({
               className="bg-surface-2 border border-border rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-accent"
               data-testid="per-tx-scenario-select"
             >
-              <option value="">Project Default (No Force)</option>
+              <option value="">{tScenario("clear_force")}</option>
               {SCENARIOS.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -136,10 +140,10 @@ export function ScenarioControls({
           className="bg-surface border border-border p-4 rounded-lg space-y-4"
           data-testid="project-scenario-form"
         >
-          <h3 className="font-semibold text-sm">Project Default Scenario & Delays</h3>
+          <h3 className="font-semibold text-sm">{tScenario("title_compact")}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs text-muted mb-1">Default Scenario</label>
+              <label className="block text-xs text-muted mb-1">{tScenario("default_scenario_label")}</label>
               <select
                 value={defaultScenario}
                 onChange={(e) => setDefaultScenario(e.target.value as ScenarioOutcome)}
@@ -154,7 +158,7 @@ export function ScenarioControls({
               </select>
             </div>
             <div>
-              <label className="block text-xs text-muted mb-1">Pending Settle Delay (s)</label>
+              <label className="block text-xs text-muted mb-1">{tScenario("pending_delay_label")}</label>
               <input
                 type="number"
                 min="0"
@@ -166,7 +170,7 @@ export function ScenarioControls({
               />
             </div>
             <div>
-              <label className="block text-xs text-muted mb-1">Timeout Delay (s)</label>
+              <label className="block text-xs text-muted mb-1">{tScenario("timeout_delay_label")}</label>
               <input
                 type="number"
                 min="0"
@@ -184,7 +188,7 @@ export function ScenarioControls({
             className="bg-accent text-white px-4 py-1.5 rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             data-testid="save-project-btn"
           >
-            Save Project Defaults
+            {tScenario("save_project")}
           </button>
         </form>
       )}

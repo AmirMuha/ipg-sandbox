@@ -14,6 +14,7 @@ from src.adapters.base import (
     STAGE_SETTLE,
     to_rial,
 )
+from src.adapters.base import unsupported_operation as base_unsupported
 from src.adapters.zarinpal.adapter import ZarinpalAdapter
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode, not_found
@@ -67,13 +68,14 @@ async def initiate_payment(
 ) -> dict[str, Any]:
     body: dict[str, Any] = await request.json()
 
-    # Credential check
+    # Credential check. Rejects absent, empty AND mismatched values: checking only `== ""`
+    # let an omitted merchant_id fall through as `None`, and accepting any value meant a
+    # wrong merchant still created a payment (spec edge case: invalid or unknown credentials
+    # must surface a clear error, not a hang or a generic crash).
     merchant_id = body.get("merchant_id")
     if merchant_id is None:
         merchant_id = body.get("MerchantID")
-    if merchant_id == "":
-        raise ApiError(ErrorCode.invalid_credentials, "Invalid or empty merchant_id", status=401)
-    adapter.check_credentials()
+    adapter.verify_supplied_credentials({"merchant_id": merchant_id})
 
     amount = body.get("amount") or body.get("Amount")
     if amount is None:
@@ -211,3 +213,32 @@ async def refund_payment(
     if tx.status == TransactionStatus.refunded:
         schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_REFUND)
     return resp
+
+
+# T081: an operation this adapter does not emulate is answered explicitly, not as a bare 404.
+# A wrong *method* on a real operation must still answer 405, so the catch-all checks the path
+# against the operations this adapter actually serves before claiming it.
+_ZARINPAL_OPERATIONS = frozenset(
+    {
+        "request/payment",
+        "checkout/{authority}",
+        "callback/{authority}",
+        "payment/verification",
+        "payment/refund",
+    }
+)
+
+
+@router.api_route(
+    "/{unsupported:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    include_in_schema=False,
+)
+async def unsupported_operation(request: Request, unsupported: str) -> None:
+    if unsupported in _ZARINPAL_OPERATIONS:
+        raise ApiError(
+            ErrorCode.unsupported_operation,
+            "Method not allowed for this operation",
+            status=405,
+        )
+    raise base_unsupported("zarinpal", f"/zarinpal/{unsupported}")

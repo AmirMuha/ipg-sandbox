@@ -10,7 +10,7 @@ def test_idpay_initiate_success_and_errors(client: TestClient):
     # 1. Success initiation
     resp = client.post(
         "/idpay/payment",
-        headers={"X-API-KEY": "test-key"},
+        headers={"X-API-KEY": "test-idpay-key"},
         json={
             "order_id": "order-101",
             "amount": 25000,  # 25,000 Toman -> 250,000 Rial
@@ -41,7 +41,7 @@ def test_idpay_initiate_success_and_errors(client: TestClient):
     # 3. Missing amount -> 422
     missing_resp = client.post(
         "/idpay/payment",
-        headers={"X-API-KEY": "test-key"},
+        headers={"X-API-KEY": "test-idpay-key"},
         json={"order_id": "bad"},
     )
     assert missing_resp.status_code == 422
@@ -52,7 +52,7 @@ def test_idpay_checkout_and_verify(client: TestClient):
     # 1. Initiate
     init_resp = client.post(
         "/idpay/payment",
-        headers={"X-API-KEY": "test-key"},
+        headers={"X-API-KEY": "test-idpay-key"},
         json={
             "order_id": "order-102",
             "amount": 50000,  # Toman
@@ -104,7 +104,7 @@ def test_idpay_decline_and_refund(client: TestClient):
     # 1. Decline scenario
     init_resp = client.post(
         "/idpay/payment",
-        headers={"X-Sandbox-Scenario": "decline", "X-API-KEY": "test-key"},
+        headers={"X-Sandbox-Scenario": "decline", "X-API-KEY": "test-idpay-key"},
         json={"amount": 10000},
     )
     pay_id = init_resp.json()["id"]
@@ -119,7 +119,7 @@ def test_idpay_decline_and_refund(client: TestClient):
     # 2. Refund scenario
     refund_init = client.post(
         "/idpay/payment",
-        headers={"X-Sandbox-Scenario": "refund", "X-API-KEY": "test-key"},
+        headers={"X-Sandbox-Scenario": "refund", "X-API-KEY": "test-idpay-key"},
         json={"amount": 20000},
     )
     refund_id = refund_init.json()["id"]

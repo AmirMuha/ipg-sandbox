@@ -90,7 +90,7 @@ def test_first_payment_idpay_approved_flow(client: TestClient):
     # 1. Initiate with 1,000 Toman -> stored as 10,000 Rial canonical
     init_resp = client.post(
         "/idpay/payment",
-        headers={"X-API-KEY": "test-key"},
+        headers={"X-API-KEY": "test-idpay-key"},
         json={
             "order_id": "first-idpay-order",
             "amount": 1000,

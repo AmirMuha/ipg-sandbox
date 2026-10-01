@@ -90,8 +90,13 @@ class ZarinpalAdapter(PaymentAdapter):
         }
 
     async def refund(self, tx: Transaction, request: dict[str, Any]) -> dict[str, Any]:
-        """Post-settle refund."""
-        if tx.status == TransactionStatus.approved:
+        """Post-settle refund.
+
+        Accepts `settled` as well as `approved`: the contract calls refund "post-settle", so a
+        plain approve flow has to be refundable. Checking `approved` only made Zarinpal answer
+        `code -50` with HTTP 200 on every normal payment (T079).
+        """
+        if tx.status in (TransactionStatus.settled, TransactionStatus.approved):
             tx.transition_to(TransactionStatus.refunded)
             ref_id = 100000 + (tx.amount_rial % 900000)
             return {

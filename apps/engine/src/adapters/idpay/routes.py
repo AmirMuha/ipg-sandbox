@@ -14,6 +14,7 @@ from src.adapters.base import (
     STAGE_SETTLE,
     to_rial,
 )
+from src.adapters.base import unsupported_operation as base_unsupported
 from src.adapters.idpay.adapter import IDPayAdapter
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode, not_found
@@ -68,11 +69,9 @@ async def initiate_payment(
 ) -> dict[str, Any]:
     body: dict[str, Any] = await request.json()
 
-    # Credential check
+    # Credential check: absent, empty and mismatched values are all rejected (T080).
     api_key = x_api_key if x_api_key is not None else body.get("api_key")
-    if api_key == "":
-        raise ApiError(ErrorCode.invalid_credentials, "Invalid or empty api_key", status=401)
-    adapter.check_credentials()
+    adapter.verify_supplied_credentials({"api_key": api_key})
 
     amount = body.get("amount")
     if amount is None:
@@ -209,3 +208,31 @@ async def refund_payment(
     if tx.status == TransactionStatus.refunded:
         schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_REFUND)
     return resp
+
+
+# T081: an operation this adapter does not emulate is answered explicitly, not as a bare 404.
+# A wrong *method* on a real operation must still answer 405, so the catch-all checks the path
+# against the operations this adapter actually serves before claiming it.
+_IDPAY_OPERATIONS = frozenset(
+    {
+        "payment",
+        "payment/start/{id}",
+        "payment/verify",
+        "payment/refund",
+    }
+)
+
+
+@router.api_route(
+    "/{unsupported:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    include_in_schema=False,
+)
+async def unsupported_operation(request: Request, unsupported: str) -> None:
+    if unsupported in _IDPAY_OPERATIONS:
+        raise ApiError(
+            ErrorCode.unsupported_operation,
+            "Method not allowed for this operation",
+            status=405,
+        )
+    raise base_unsupported("idpay", f"/idpay/{unsupported}")

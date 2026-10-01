@@ -93,4 +93,9 @@ that T023 has not yet built. See the "R4 outcome" note in that file.
 
 ## License
 
-AGPL-3.0. See [LICENSE](./LICENSE).
+AGPL-3.0. See [LICENSE](./LICENSE), declared as `AGPL-3.0-only` in both package manifests
+(`apps/engine/pyproject.toml`, `apps/dashboard/package.json`).
+
+Source files do **not** carry per-file SPDX headers. The license is declared once, in the three
+canonical places above, rather than repeated across ~96 files — which would be pure diff noise
+and would have to be kept in sync. T078 records this as a deliberate decision.

@@ -83,6 +83,7 @@ def test_scenario_matrix_cell(client: TestClient, cell: Cell):
             "/zarinpal/request/payment",
             headers={"X-Sandbox-Scenario": cell.scenario},
             json={
+                "merchant_id": "test-merchant",
                 "amount": 25000,
                 "return_url": "http://localhost:3000/return",
                 "description": f"matrix-{cell.scenario}",
@@ -135,7 +136,7 @@ def test_scenario_matrix_cell(client: TestClient, cell: Cell):
         # 1. Initiate
         init_resp = client.post(
             "/idpay/payment",
-            headers={"X-Sandbox-Scenario": cell.scenario, "X-API-KEY": "test-key"},
+            headers={"X-Sandbox-Scenario": cell.scenario, "X-API-KEY": "test-idpay-key"},
             json={
                 "order_id": f"idpay-{cell.scenario}",
                 "amount": 5000,

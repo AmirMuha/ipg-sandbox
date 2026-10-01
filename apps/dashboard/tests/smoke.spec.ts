@@ -65,6 +65,8 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
     // Now initiate a payment via Zarinpal
     const initRes = await request.post(`${ENGINE_URL}/zarinpal/request/payment`, {
       data: {
+        // T080: the engine validates credential values, not just their presence.
+        merchant_id: "sandbox-merchant",
         amount: 30000,
         return_url: "http://localhost:3000/return",
       },
@@ -110,3 +112,72 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
     }
   });
 });
+
+  // T074 (SC-006): quickstart §7 step 4 requires "all strings translated" in both locales, and
+  // until now nothing asserted that. Test 1 only checks that `dir`/`lang` flip on <html>, and
+  // test 3 drives the force-scenario flow only under /fa/, so a hardcoded English string in a
+  // shared component passed silently. These collect the visible text per locale and compare.
+  test("5. Rendered strings differ between FA and EN (no untranslated hardcoded text)", async ({
+    page,
+  }) => {
+    const collect = async (url: string) => {
+      await page.goto(`${BASE_URL}${url}`);
+      const main = page.locator("main");
+      await expect(main).toBeVisible();
+      return (await main.innerText()).replace(/\s+/g, " ").trim();
+    };
+
+    for (const route of ["/transactions", "/settings"]) {
+      const fa = await collect(`/fa${route}`);
+      const en = await collect(`/en${route}`);
+
+      expect(fa.length, `FA ${route} rendered empty`).toBeGreaterThan(0);
+      expect(en.length, `EN ${route} rendered empty`).toBeGreaterThan(0);
+
+      // Identical text means one locale fell through to hardcoded strings.
+      expect(fa, `FA and EN ${route} render identical text — strings are not localized`).not.toBe(
+        en
+      );
+
+      // The aggregate diff above is too weak on its own: one untranslated string leaves the
+      // rest of the page still localized, so the texts remain different and the check passes.
+      // Compare the per-element strings instead, which is what actually catches a regression —
+      // verified by sabotaging a label and watching this fail.
+      const perElement = async (url: string) =>
+        page.goto(`${BASE_URL}${url}`).then(() =>
+          page.locator("main h2, main h3, main label, main button").allInnerTexts()
+        );
+
+      const faParts = (await perElement(`/fa${route}`)).map((s) => s.trim()).filter(Boolean);
+      const enParts = (await perElement(`/en${route}`)).map((s) => s.trim()).filter(Boolean);
+
+      // Gateway brand names are proper nouns and are intentionally identical in both locales —
+      // translating "Zarinpal" would be wrong, so they are not evidence of a missed string.
+      const isBrandName = (s: string) =>
+        /^(zarinpal|idpay|behpardakht|mellat|ipg sandbox)$/i.test(s);
+
+      expect(faParts.length, `FA ${route} exposed no headings/labels`).toBeGreaterThan(0);
+      // Every heading/label present in both locales must actually differ — a shared string is
+      // untranslated text.
+      const shared = faParts.filter(
+        (part) => !isBrandName(part) && enParts.includes(part)
+      );
+      expect(
+        shared,
+        `untranslated strings shared by FA and EN on ${route}: ${JSON.stringify(shared)}`
+      ).toEqual([]);
+    }
+
+    // And spot-check the specific strings T073 translated, so the diff cannot pass by
+    // differing on some unrelated word.
+    await page.goto(`${BASE_URL}/fa/settings`);
+    const faSettings = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+    expect(faSettings).not.toContain("Save Project Defaults");
+    expect(faSettings).not.toContain("Pending Settle Delay (s)");
+    expect(faSettings).not.toContain("Test Credentials");
+
+    await page.goto(`${BASE_URL}/en/settings`);
+    const enSettings = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+    expect(enSettings).toContain("Update Project Settings");
+    expect(enSettings).toContain("Pending Settle Delay");
+  });

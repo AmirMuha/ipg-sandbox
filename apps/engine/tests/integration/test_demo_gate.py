@@ -54,6 +54,6 @@ def test_signup_spam_rate_limited(demo_client):
     assert resp.json()["detail"] == "rate_limited"
 
 
-def test_visitor_isolation(demo_client, engine_client):
-    # This requires DB setup, which might be complex if we mock it
-    pass
+# T072: visitor isolation used to sit here as a bare `pass`, so the central FR-014 claim was
+# unverified. It now runs for real in `test_demo_signup.py`, which imports the demo module
+# against a SQLite database instead of the Postgres host that does not exist under test.

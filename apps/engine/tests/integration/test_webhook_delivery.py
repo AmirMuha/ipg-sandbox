@@ -66,6 +66,7 @@ def test_delivery_success_and_latency(client: TestClient, receiver):
     init_resp = client.post(
         "/zarinpal/request/payment",
         json={
+            "merchant_id": "test-merchant",
             "amount": 50000,
             "callback_url": receiver["url"],
             "return_url": "http://localhost:3000/return",
@@ -116,6 +117,7 @@ def test_unreachable_target_retries_and_visibility(client: TestClient):
     init_resp = client.post(
         "/zarinpal/request/payment",
         json={
+            "merchant_id": "test-merchant",
             "amount": 30000,
             "callback_url": dead_url,
             "return_url": "http://localhost:3000/return",
@@ -163,7 +165,11 @@ def test_project_default_webhook_url(client: TestClient, receiver):
     # 2. Initiate WITHOUT callback_url
     init_resp = client.post(
         "/zarinpal/request/payment",
-        json={"amount": 40000, "return_url": "http://localhost:3000/return"},
+        json={
+            "merchant_id": "test-merchant",
+            "amount": 40000,
+            "return_url": "http://localhost:3000/return",
+        },
     )
     authority = init_resp.json()["authority"]
     client.post(f"/zarinpal/checkout/{authority}", data={"action": "confirm"})
@@ -187,7 +193,11 @@ def test_manual_retry_endpoint(client: TestClient, receiver):
     bad_url = "http://127.0.0.1:1/dead"
     init_resp = client.post(
         "/zarinpal/request/payment",
-        json={"amount": 60000, "callback_url": bad_url},
+        json={
+            "merchant_id": "test-merchant",
+            "amount": 60000,
+            "callback_url": bad_url,
+        },
     )
     authority = init_resp.json()["authority"]
     client.post(f"/zarinpal/checkout/{authority}", data={"action": "confirm"})
