@@ -5,7 +5,7 @@ services:
     ports:
       - "${ENGINE_PORT:-8080}:8080"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ipg_sandbox}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ipg_sandbox}
       - DEFAULT_PENDING_SETTLE_DELAY_S=${DEFAULT_PENDING_SETTLE_DELAY_S:-5}
       - DEFAULT_TIMEOUT_DELAY_S=${DEFAULT_TIMEOUT_DELAY_S:-30}
       - ENGINE_PROFILE=${ENGINE_PROFILE:-local}
@@ -24,6 +24,11 @@ services:
         NEXT_PUBLIC_API_URL: http://localhost:${ENGINE_PORT:-8080}
     ports:
       - "${DASHBOARD_PORT:-3000}:3000"
+    environment:
+      # Server components fetch the engine during SSR, from inside the container, so they
+      # need the compose-internal hostname. NEXT_PUBLIC_API_URL stays the host-reachable
+      # value baked in at build time for the browser.
+      - ENGINE_URL=http://engine:8080
 
   demo:
     profiles: ["demo"]
@@ -34,7 +39,7 @@ services:
     environment:
       - ENGINE_URL=http://engine:8080
       - DASHBOARD_URL=http://dashboard:3000
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ipg_sandbox}
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ipg_sandbox}
     depends_on:
       postgres:
         condition: service_healthy

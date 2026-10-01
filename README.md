@@ -20,11 +20,52 @@ Dashboard on <http://localhost:3000>; engine control API on <http://localhost:80
 Local use requires **no account, signup or paid tier**. The gated hosted demo is a separate
 compose profile (`--profile demo`).
 
+## Drop-in swap
+
+Point your app at the sandbox by changing **two things** and nothing else:
+
+1. The gateway base URL — e.g. `https://api.zarinpal.example` → `http://localhost:8080/zarinpal`
+2. The test merchant id in your config — the sandbox seeds `sandbox-merchant` per adapter
+
+Force an outcome per-request with the `X-Sandbox-Scenario` header, so you can drive declines
+and timeouts from a test without touching the code under test:
+
+```bash
+curl -s -X POST http://localhost:8080/zarinpal/request/payment \
+  -H 'Content-Type: application/json' \
+  -H 'X-Sandbox-Scenario: decline' \
+  -d '{"amount":10000,"currency":"IRR","callback_url":"http://host.docker.internal:9999/callback"}'
+```
+
+Scenarios: `approve`, `decline`, `timeout`, `refund`, `pending_settle`, `verify_fail` — 6
+outcomes × 3 adapters, 18 cells. See [specs/001-mvp/quickstart.md](specs/001-mvp/quickstart.md)
+for the full §1–9 validation guide.
+
+## Running without Docker
+
+```bash
+cd apps/engine
+.venv/bin/uvicorn src.api.app:app --port 8080
+.venv/bin/pytest -q          # 199 passed, 5 skipped
+```
+
+The suite runs on SQLite and needs no Postgres. Postgres-only concurrency tests skip
+themselves unless `TEST_DATABASE_URL` is set.
+
+## Project layout
+
+| Path | What |
+|---|---|
+| `apps/engine` | FastAPI engine: adapters, scenarios, control API, webhooks, scheduler |
+| `apps/dashboard` | Next.js bilingual (FA/EN, RTL) control dashboard |
+| `apps/demo` | Gated demo layer (`--profile demo`), email-gated + per-visitor isolation |
+| `specs/001-mvp` | Spec, plan, tasks, contracts, quickstart validation guide |
+
 ## Status
 
-Early. The engine foundation is in place — data model, migrations, control API, scenario
-resolution and history cap, with the three gateway adapters next. `apps/engine` and `postgres`
-run today; the dashboard is a placeholder shell.
+Functional MVP. Data model, migrations, control API, all three gateway adapters, the 18-cell
+scenario matrix, webhook delivery with retries, the scenario scheduler, the bilingual
+dashboard, and the CI runner are all in place and covered by the test suite.
 
 ## Behpardakht (Mellat) fidelity — known gap
 

@@ -3,7 +3,16 @@
  * Pure control API client; no direct database access (FR-010).
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+// Two bases, because this module runs in both places. Server components fetch during
+// `next start`, inside the container, where `localhost:8080` is the dashboard itself and every
+// request failed with "fetch failed" (the scenario controls then never rendered, because the
+// page guards them behind `project && ...`). The browser needs the host-reachable
+// NEXT_PUBLIC_* value; the server needs the compose-internal ENGINE_URL.
+const SERVER_API_BASE =
+  process.env.ENGINE_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const CLIENT_API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+
+const API_BASE = typeof window === "undefined" ? SERVER_API_BASE : CLIENT_API_BASE;
 
 export type ScenarioOutcome =
   | "approve"

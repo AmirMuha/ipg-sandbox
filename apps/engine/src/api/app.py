@@ -48,6 +48,50 @@ async def lifespan(app: FastAPI):
             await owned_engine.dispose()
 
 
+async def _seed_adapters(session: AsyncSession, project: Project) -> None:
+    """Give `project` the three sandbox adapters if it has none.
+
+    Called for *every* project, not just the first: in the demo profile each visitor gets their
+    own project, and a project with no AdapterConfig answers every initiate with
+    `404 adapter zarinpal not found` — the demo flow could not create a payment at all.
+    """
+    existing = (
+        await session.scalars(select(AdapterConfig).where(AdapterConfig.project_id == project.id))
+    ).first()
+    if existing is not None:
+        return
+
+    session.add_all(
+        [
+            AdapterConfig(
+                project_id=project.id,
+                provider=Provider.zarinpal,
+                endpoint_path_prefix="/zarinpal",
+                api_unit=ApiUnit.rial,
+                credentials={"merchant_id": "sandbox-merchant"},
+            ),
+            AdapterConfig(
+                project_id=project.id,
+                provider=Provider.idpay,
+                endpoint_path_prefix="/idpay",
+                api_unit=ApiUnit.toman,
+                credentials={"api_key": "sandbox-key"},
+            ),
+            AdapterConfig(
+                project_id=project.id,
+                provider=Provider.behpardakht,
+                endpoint_path_prefix="/behpardakht",
+                api_unit=ApiUnit.rial,
+                credentials={
+                    "terminal_id": 123456,
+                    "username": "sandbox",
+                    "password": "sandbox",
+                },
+            ),
+        ]
+    )
+
+
 async def _seed_default_project(session: AsyncSession, settings: Settings) -> None:
     """Local self-host runs one project; `GET /project` and `/adapters` answer on a bare stack."""
     project = await session.scalar(select(Project).limit(1))
@@ -62,40 +106,7 @@ async def _seed_default_project(session: AsyncSession, settings: Settings) -> No
         session.add(project)
         await session.flush()
 
-    # Seed default adapter configs if not present
-    existing_adapters = (
-        await session.scalars(select(AdapterConfig).where(AdapterConfig.project_id == project.id))
-    ).all()
-    if not existing_adapters:
-        session.add_all(
-            [
-                AdapterConfig(
-                    project_id=project.id,
-                    provider=Provider.zarinpal,
-                    endpoint_path_prefix="/zarinpal",
-                    api_unit=ApiUnit.rial,
-                    credentials={"merchant_id": "sandbox-merchant"},
-                ),
-                AdapterConfig(
-                    project_id=project.id,
-                    provider=Provider.idpay,
-                    endpoint_path_prefix="/idpay",
-                    api_unit=ApiUnit.toman,
-                    credentials={"api_key": "sandbox-key"},
-                ),
-                AdapterConfig(
-                    project_id=project.id,
-                    provider=Provider.behpardakht,
-                    endpoint_path_prefix="/behpardakht",
-                    api_unit=ApiUnit.rial,
-                    credentials={
-                        "terminal_id": 123456,
-                        "username": "sandbox",
-                        "password": "sandbox",
-                    },
-                ),
-            ]
-        )
+    await _seed_adapters(session, project)
     await session.commit()
 
 

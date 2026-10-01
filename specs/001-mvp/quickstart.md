@@ -40,7 +40,7 @@ curl -s -X POST http://localhost:8080/zarinpal/payment/verification \
 ## 3. Scenario matrix — SC-003 (18/18)
 
 ```bash
-(cd apps/engine && uv run --extra dev pytest tests/integration/test_scenario_matrix.py -q)   # or the compose-run equivalent
+(cd apps/engine && .venv/bin/python -m pytest tests/integration/test_scenario_matrix.py -q)   # or the compose-run equivalent
 ```
 
 **Expected**: exit 0 — 6 outcomes (`approve, decline, timeout, refund, pending_settle, verify_fail`) × 3 adapters (`zarinpal, idpay, behpardakht`), each asserting the contract-defined response for that (adapter × outcome) (contract: adapter-surfaces.md §1–3).
@@ -68,11 +68,15 @@ curl -s "http://localhost:8080/api/v1/deliveries?result=delivered"
 ## 6. Headless CI run (US5.1, SC-004, FR-010)
 
 ```bash
-./scripts/ci-scenario-run.sh --adapter zarinpal   # drives steps 2–5 non-interactively
+./scripts/ci-scenario-run.sh --adapter zarinpal   # or --adapter idpay; drives steps 2–5 non-interactively
 echo $?
 ```
 
 **Expected**: machine-readable PASS/FAIL per step, **exit code 0**, whole sequence **< 5 minutes** for one adapter. Nothing in this path touches the dashboard.
+
+`behpardakht` is **not** accepted by this script: it is a SOAP/WSDL surface, so driving it from bash
+needs an XML envelope and a WSDL client. Run
+`.venv/bin/python -m pytest tests/integration/test_scenario_matrix.py` for all 3 adapters × 6 outcomes.
 
 ## 7. Dashboard checks (US4, SC-006)
 

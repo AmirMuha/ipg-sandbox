@@ -36,7 +36,9 @@ METER_FIELDS = ("requests_total", "transactions_total", "history_retained", "web
 MAX_PAGE_SIZE = 100
 
 
-from src.api.scoping import get_current_project as current_project
+# noqa placed here deliberately: `scoping` imports `src.api.db`, and hoisting this above the
+# router definition would make the import cycle resolve half-initialised.
+from src.api.scoping import get_current_project as current_project  # noqa: E402
 
 
 def _project_body(project: Project) -> dict[str, Any]:

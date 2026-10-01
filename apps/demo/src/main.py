@@ -1,6 +1,7 @@
 import os
 import uuid
 import hashlib
+import json
 from datetime import datetime, timezone, timedelta
 import httpx
 from fastapi import FastAPI, Request, HTTPException, Response, Cookie
@@ -11,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 app = FastAPI(title="IPG Sandbox Demo Proxy")
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/ipg_sandbox")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@postgres:5432/ipg_sandbox")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -49,7 +50,32 @@ async def signup(req: SignupRequest, request: Request):
             INSERT INTO projects (id, name, kind, default_scenario, history_cap, webhook_retry_max, pending_settle_delay_s, timeout_delay_s, created_at)
             VALUES (:id, :name, 'demo', 'approve', 1000, 3, 5, 30, now())
         """), {"id": project_id, "name": f"demo-{req.email}"})
-        
+
+        # Seed the three sandbox adapters for this visitor's project. Without them every
+        # initiate answers `404 adapter zarinpal not found` and the demo flow cannot run a
+        # payment at all. Mirrors `_seed_adapters` in the engine's api/app.py.
+        for provider, prefix, unit, creds in (
+            ("zarinpal", "/zarinpal", "rial", {"merchant_id": "sandbox-merchant"}),
+            ("idpay", "/idpay", "toman", {"api_key": "sandbox-key"}),
+            (
+                "behpardakht",
+                "/behpardakht",
+                "rial",
+                {"terminal_id": 123456, "username": "sandbox", "password": "sandbox"},
+            ),
+        ):
+            db.execute(text("""
+                INSERT INTO adapter_configs (id, project_id, provider, endpoint_path_prefix, api_unit, credentials)
+                VALUES (:id, :project_id, :provider, :prefix, :unit, CAST(:creds AS JSONB))
+            """), {
+                "id": str(uuid.uuid4()),
+                "project_id": project_id,
+                "provider": provider,
+                "prefix": prefix,
+                "unit": unit,
+                "creds": json.dumps(creds),
+            })
+
         # Insert visitor session
         session_id = str(uuid.uuid4())
         db.execute(text("""
