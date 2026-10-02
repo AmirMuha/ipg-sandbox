@@ -5,10 +5,16 @@ the stdlib is the whole job. Invalid values raise `ConfigError` — never a sile
 a clamped delay is a CI run that hangs for a reason nobody can see.
 
 These are the values a *new* `Project` is seeded with; the env-var names mirror `.env.example`.
+
+`.env` is loaded at import so `pnpm dev` and `docker compose` agree on the database port.
+Compose reads the same file, so without this the two paths drifted: the default below points at
+5432, and on a machine where another project already owns 5432 `pnpm dev` silently dialled *that*
+Postgres and failed with `database "ipg_sandbox" does not exist`.
 """
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 # data-model.md Validation: delays >= 0 and < 300 (bounded so CI cannot hang).
 DELAY_MAX_S = 299
@@ -16,11 +22,54 @@ DELAY_MAX_S = 299
 # ponytail: a sanity bound, not a spec number — raise it when a real gateway needs more.
 WEBHOOK_RETRY_MAX_CEILING = 10
 
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/ipg_sandbox"
+
+def load_env_file(path: Path) -> None:
+    """Overlay a `.env` file onto `os.environ` without clobbering real env vars.
+
+    Stdlib only — no `python-dotenv`. Handles the subset that matters here: `KEY=value`,
+    `#` comments, blank lines, optional `export `, and single/double quotes. An already-set
+    variable wins, so `DATABASE_URL=... pnpm dev` and compose's own `environment:` block still
+    take precedence over the file.
+    """
+    if not path.is_file():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].strip()
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+# apps/engine/src/config.py -> apps/engine/src -> apps/engine -> repo root
+load_env_file(Path(__file__).resolve().parents[3] / ".env")
 
 
 class ConfigError(ValueError):
     """An environment value is out of range or not a number."""
+
+
+def _default_database_url() -> str:
+    """Host-side Postgres URL, honouring `.env`'s published `POSTGRES_PORT`.
+
+    Compose passes an explicit `DATABASE_URL` pointing at the in-network host `postgres:5432`,
+    so this only runs for `pnpm dev` / pytest, which talk to the port published on the host.
+    Reading `POSTGRES_PORT` here is what keeps the two paths on one source of truth — otherwise
+    `pnpm dev` dials 5432 regardless of what `.env` says and, on a machine where another
+    project owns 5432, connects to a stranger's database instead of failing loudly.
+    """
+    port = os.environ.get("POSTGRES_PORT", "").strip() or "5432"
+    user = os.environ.get("POSTGRES_USER") or "postgres"
+    password = os.environ.get("POSTGRES_PASSWORD") or "postgres"
+    database = os.environ.get("POSTGRES_DB") or "ipg_sandbox"
+    return f"postgresql://{user}:{password}@localhost:{port}/{database}"
 
 
 def _env_int(name: str, default: int, *, low: int, high: int | None = None) -> int:
@@ -52,7 +101,7 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> "Settings":
-        url = os.environ.get("DATABASE_URL") or DEFAULT_DATABASE_URL
+        url = os.environ.get("DATABASE_URL") or _default_database_url()
         # asyncpg is the project's only async driver; alembic/env.py performs the same upgrade.
         if url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)

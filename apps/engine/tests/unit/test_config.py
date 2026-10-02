@@ -4,9 +4,11 @@
 both directions — that a bad value raises *and* that the documented default survives the trip.
 """
 
+import os
+
 import pytest
 
-from src.config import ConfigError, Settings
+from src.config import ConfigError, Settings, load_env_file
 
 # Every knob plus the value that must be rejected for it. 300 is the exclusive upper bound
 # (data-model.md); -1 is under every floor.
@@ -70,3 +72,68 @@ def test_plain_postgres_url_is_upgraded_to_asyncpg(monkeypatch):
     """compose passes `postgresql://`; asyncpg is the only async driver installed."""
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@db:5432/x")
     assert Settings.from_env().database_url == "postgresql+asyncpg://u:p@db:5432/x"
+
+
+# --- .env loading and host-port resolution --------------------------------------------------
+# `pnpm dev` used to dial localhost:5432 regardless of `.env`, so on a machine where another
+# project owns 5432 it connected to a stranger's database and died with
+# `database "ipg_sandbox" does not exist`.
+
+
+def test_env_file_overlays_but_never_clobbers(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "\n".join(
+            [
+                "# a comment",
+                "",
+                "FROM_FILE=file-value",
+                'QUOTED="quoted value"',
+                "SINGLE='single value'",
+                "export EXPORTED=exported-value",
+                "WITH_HASH=value # not a comment here",
+            ]
+        )
+    )
+    monkeypatch.delenv("FROM_FILE", raising=False)
+    monkeypatch.setenv("ALREADY_SET", "original")
+
+    load_env_file(env_file)
+
+    assert os.environ["FROM_FILE"] == "file-value"
+    assert os.environ["QUOTED"] == "quoted value"
+    assert os.environ["SINGLE"] == "single value"
+    assert os.environ["EXPORTED"] == "exported-value"
+    assert os.environ["ALREADY_SET"] == "original", "a real env var must win over the file"
+
+
+def test_env_file_absent_is_not_an_error(tmp_path):
+    load_env_file(tmp_path / "does-not-exist.env")  # must not raise
+
+
+def test_database_url_uses_the_published_postgres_port(monkeypatch):
+    """`pnpm dev` talks to the published host port, not the in-network container one."""
+    for name in (
+        "DATABASE_URL",
+        "POSTGRES_PORT",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("POSTGRES_PORT", "55432")
+
+    url = Settings.from_env().database_url
+
+    assert "localhost:55432" in url
+    assert url.startswith("postgresql+asyncpg://")
+
+
+def test_explicit_database_url_still_wins(monkeypatch):
+    """An exported DATABASE_URL overrides `.env`/defaults — compose relies on this."""
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@db.internal:5433/other")
+    monkeypatch.setenv("POSTGRES_PORT", "55432")
+
+    url = Settings.from_env().database_url
+
+    assert url == "postgresql+asyncpg://u:p@db.internal:5433/other"

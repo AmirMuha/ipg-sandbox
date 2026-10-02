@@ -39,11 +39,13 @@ services:
     healthcheck:
       # wget is present in the node image; the engine's urllib probe is not. `/fa/transactions`
       # is a real rendered route, so this fails if SSR cannot reach the engine (T077).
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/fa/transactions"]
-      interval: 10s
-      timeout: 5s
+      # timeout is 20s, not 5s: that route SSRs against the engine, and the first cold render
+      # takes longer than 5s — a 5s budget marked a working dashboard `unhealthy`.
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--timeout=15", "--spider", "http://127.0.0.1:3000/fa/transactions"]
+      interval: 15s
+      timeout: 20s
       retries: 5
-      start_period: 20s
+      start_period: 30s
 
   demo:
     profiles: ["demo"]
