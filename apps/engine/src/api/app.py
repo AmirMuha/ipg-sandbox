@@ -6,6 +6,7 @@ lifespan, and tests replace `app.state.session_factory` with an in-memory one.
 
 import asyncio
 import contextlib
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -112,9 +113,19 @@ async def _seed_default_project(session: AsyncSession, settings: Settings) -> No
 
 def create_app() -> FastAPI:
     app = FastAPI(title="IPG Sandbox Engine", version="0.1.0", lifespan=lifespan)
+    # FR-010: the dashboard's port is whatever `DASHBOARD_PORT` resolves to, and a developer
+    # routinely runs it on 3001+ when 3000 is taken. The regex covers every loopback port on
+    # both host spellings so a remap does not silently break the browser's preflights; the
+    # explicit origins keep the container-internal hostname working for SSR.
+    dashboard_port = os.environ.get("DASHBOARD_PORT", "").strip() or "3000"
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        allow_origins=[
+            f"http://localhost:{dashboard_port}",
+            f"http://127.0.0.1:{dashboard_port}",
+            "http://dashboard:3000",
+        ],
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
         allow_methods=["*"],
         allow_headers=["*"],
     )

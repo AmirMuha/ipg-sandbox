@@ -72,6 +72,17 @@ def _default_database_url() -> str:
     return f"postgresql://{user}:{password}@localhost:{port}/{database}"
 
 
+def public_base_url() -> str:
+    """Origin a *browser* uses to reach this engine, for `checkout_url` in API responses.
+
+    Compose publishes `ENGINE_PORT`, so the two paths have to read the same variable rather
+    than hardcoding 8080 the way the adapter response builders do. Read at call time (not
+    import time) so a test or a remapped port is picked up without a reload.
+    """
+    port = os.environ.get("ENGINE_PORT", "").strip() or "8080"
+    return f"http://localhost:{port}"
+
+
 def _env_int(name: str, default: int, *, low: int, high: int | None = None) -> int:
     """Read an integer env var, or raise `ConfigError`. `low`/`high` are inclusive."""
     raw = os.environ.get(name)

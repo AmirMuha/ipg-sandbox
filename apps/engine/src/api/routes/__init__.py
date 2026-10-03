@@ -10,6 +10,7 @@ matters here (meters exposing *only* counters, FR-011) is easier to guard with a
 """
 
 from typing import Annotated, Any
+from urllib.parse import urlparse
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
@@ -150,6 +151,7 @@ _PATCHABLE = {
     "webhook_retry_max",
     "webhook_retry_backoff_s",
     "history_cap",
+    "webhook_url",
 }
 
 
@@ -201,6 +203,20 @@ async def patch_project(
                 "webhook_retry_backoff_s must be a list of non-negative integers",
                 status=422,
             )
+    if "webhook_url" in body:
+        val = body["webhook_url"]
+        if val is not None:
+            if not isinstance(val, str):
+                raise ApiError(
+                    ErrorCode.validation_error, "webhook_url must be a string or null", status=422
+                )
+            parsed = urlparse(val)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise ApiError(
+                    ErrorCode.validation_error,
+                    "webhook_url must be an absolute http(s) URL",
+                    status=422,
+                )
     if "default_scenario" in body:
         try:
             body["default_scenario"] = ScenarioOutcome(body["default_scenario"])
@@ -309,8 +325,10 @@ async def get_meters(
     return {field: (getattr(meter, field, 0) or 0) if meter else 0 for field in METER_FIELDS}
 
 
+from src.api.routes.analytics import router as analytics_router  # noqa: E402
 from src.api.routes.deliveries import router as deliveries_router  # noqa: E402
 from src.api.routes.transactions import router as transactions_router  # noqa: E402
 
 router.include_router(transactions_router)
 router.include_router(deliveries_router)
+router.include_router(analytics_router)

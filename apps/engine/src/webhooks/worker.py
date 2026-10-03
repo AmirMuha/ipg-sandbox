@@ -7,6 +7,7 @@ visible trail as a successful one (data-model.md Rule, no-silent-loss).
 
 import asyncio
 import logging
+import time
 from typing import Any
 from uuid import UUID
 
@@ -169,3 +170,41 @@ def schedule_delivery(
     _BACKGROUND_TASKS.add(task)
     task.add_done_callback(_BACKGROUND_TASKS.discard)
     return task
+
+
+# Stricter than REQUEST_TIMEOUT_S on purpose: the ping backs a UI button with a spinner, not a
+# queued delivery. Three seconds is long enough for a local service and short enough that a
+# black-holed target does not leave the operator staring at a spinner.
+PING_TIMEOUT_S = 3.0
+
+
+async def ping(target: str, project_id: UUID) -> dict[str, Any]:
+    """POST a synthetic ping to `target` and report what happened.
+
+    No delivery row and no meter bump — this is a diagnostic, not a delivery attempt, and
+    logging it as one would corrupt the webhook stats it exists to help debug. Lives here
+    rather than in the route because FR-012 restricts egress to this module.
+    """
+    started = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=PING_TIMEOUT_S) as client:
+            resp = await client.post(
+                target,
+                json={"event": "webhook.ping", "project_id": str(project_id), "target_url": target},
+            )
+        ok = resp.status_code in _SUCCESS
+        return {
+            "ok": ok,
+            "target_url": target,
+            "status_code": resp.status_code,
+            "latency_ms": round((time.monotonic() - started) * 1000),
+            "error": None if ok else f"HTTP {resp.status_code}",
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "target_url": target,
+            "status_code": None,
+            "latency_ms": round((time.monotonic() - started) * 1000),
+            "error": f"{type(exc).__name__}: {exc}"[:500],
+        }

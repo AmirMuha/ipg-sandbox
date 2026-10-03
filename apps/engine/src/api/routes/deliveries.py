@@ -19,6 +19,7 @@ from src.models import (
     WebhookDelivery,
 )
 from src.webhooks.worker import deliver_once
+from src.webhooks.worker import ping as ping_webhook_target
 
 router = APIRouter(tags=["deliveries"])
 MAX_PAGE_SIZE = 100
@@ -151,3 +152,31 @@ async def update_project_webhook_url(
     project.webhook_url = url
     await session.commit()
     return _project_body(project)
+
+
+@router.post("/project/webhook-ping")
+async def ping_webhook(
+    request: Request,
+    project: Annotated[Project, Depends(current_project)],
+) -> dict[str, Any]:
+    """POST a synthetic ping to the target and report what happened.
+
+    Always 200 on an attempted ping, even when the target refused it — `ok`/`error` carry the
+    verdict. A diagnostic that 5xx'd on an unreachable target would be indistinguishable from
+    the engine itself being down. A missing or malformed URL is still 422: that is a bad
+    request, not a failed ping.
+    """
+    body = await request.json() if await request.body() else {}
+    target = body.get("target_url") or project.webhook_url
+    if not target:
+        raise ApiError(
+            ErrorCode.validation_error, "No webhook URL configured or provided", status=422
+        )
+
+    parsed = urlparse(target)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise ApiError(
+            ErrorCode.validation_error, "target_url must be an absolute http(s) URL", status=422
+        )
+
+    return await ping_webhook_target(target, project.id)
