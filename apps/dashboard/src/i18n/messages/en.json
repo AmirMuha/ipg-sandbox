@@ -48,7 +48,8 @@
     "response_status": "HTTP Status",
     "timestamp": "Timestamp",
     "payload": "Payload",
-    "error": "Error"
+    "error": "Error",
+    "endpoint_title": "Callback Endpoint"
   },
   "settings": {
     "title": "Settings",
@@ -79,7 +80,10 @@
     "update_failed": "Failed to update scenario",
     "project_updated": "Project defaults updated",
     "project_update_failed": "Failed to update project",
-    "apply": "Apply"
+    "apply": "Apply",
+    "webhook_url_label": "Default Webhook URL",
+    "history_cap_label": "History Cap",
+    "webhook_retry_max_label": "Webhook Retry Max"
   },
   "status": {
     "initiated": "Initiated",
@@ -119,5 +123,56 @@
     "settled": "settled",
     "failed_deliveries": "failed deliveries",
     "credentials_valid": "Credentials valid! Adapter responded successfully."
+  },
+  "simulate": {
+    "title": "Simulate Payment",
+    "adapter": "Gateway",
+    "amount_rial": "Amount (Rial)",
+    "scenario": "Scenario",
+    "description": "Description",
+    "app_reference": "Order reference",
+    "callback_url": "Callback URL",
+    "auto_complete": "Complete automatically",
+    "auto_complete_hint": "Runs checkout and verification in one step.",
+    "submit": "Simulate",
+    "submitting": "Creating...",
+    "success_interactive": "Transaction created. Open the hosted checkout page to complete it.",
+    "success_auto": "Transaction settled automatically.",
+    "error": "Simulation failed"
+  },
+  "filters": {
+    "search": "Search",
+    "search_placeholder": "Authority, order reference, description",
+    "status": "Status",
+    "adapter": "Gateway",
+    "all": "All",
+    "from_date": "From",
+    "to_date": "To",
+    "clear": "Clear filters"
+  },
+  "pagination": {
+    "prev": "Previous",
+    "next": "Next",
+    "page_size": "Per page",
+    "summary": "Page {page} of {total}"
+  },
+  "webhook_diagnostics": {
+    "ping": "Send test ping",
+    "pinging": "Pinging...",
+    "ok": "Endpoint reachable",
+    "failed": "Endpoint unreachable",
+    "latency": "{ms} ms",
+    "http_status": "HTTP {code}"
+  },
+  "delete": {
+    "button": "Delete transaction",
+    "confirm": "Delete this transaction and its delivery logs? This cannot be undone.",
+    "confirm_short": "Delete this transaction?",
+    "deleting": "Deleting...",
+    "done": "Transaction deleted"
+  },
+  "checkout": {
+    "open": "Open Gateway Checkout",
+    "hint": "Complete or cancel the payment on the hosted gateway page."
   }
 }

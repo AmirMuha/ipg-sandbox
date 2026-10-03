@@ -51,6 +51,8 @@ export interface Transaction {
   due_at?: string;
   created_at: string;
   updated_at: string;
+  /** Absolute URL of the gateway's hosted checkout page for this transaction. */
+  checkout_url?: string | null;
   raw_request?: Record<string, unknown>;
   raw_response?: Record<string, unknown>;
 }
@@ -110,6 +112,60 @@ export interface Paginated<T> {
   page: number;
   page_size: number;
   total: number;
+  total_pages: number;
+}
+
+/** POST /transactions/simulate request (control-api.md §2). */
+export interface PaymentSimulationRequest {
+  adapter: string;
+  amount_rial: number;
+  forced_scenario?: ScenarioOutcome | null;
+  callback_url?: string | null;
+  description?: string;
+  app_reference?: string;
+  /** Walk checkout + verify in one call instead of returning a hosted checkout URL. */
+  auto_complete?: boolean;
+}
+
+export interface PaymentSimulationResponse {
+  transaction: Transaction;
+  checkout_url: string | null;
+  execution_mode: "interactive" | "auto_completed";
+  callback_dispatched: boolean;
+}
+
+/** GET /analytics/overview (control-api.md §1) — aggregates over *all* retained rows. */
+export interface ProjectAnalyticsOverview {
+  total_volume_rial: number;
+  total_transactions: number;
+  success_rate_percent: number;
+  status_breakdown: Record<TransactionStatus, number>;
+  scenario_distribution: Record<ScenarioOutcome, number>;
+  funnel: {
+    initiated: number;
+    hosted: number;
+    callback: number;
+    settled: number;
+  };
+  webhooks: {
+    total_deliveries: number;
+    delivered: number;
+    failed: number;
+    pending: number;
+  };
+  gateways: {
+    configured_total: number;
+    active_total: number;
+  };
+}
+
+/** POST /project/webhook-ping (control-api.md §3). */
+export interface WebhookPingResponse {
+  ok: boolean;
+  target_url: string;
+  status_code: number | null;
+  latency_ms: number;
+  error: string | null;
 }
 
 export class ApiError extends Error {
@@ -156,16 +212,47 @@ async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> 
 }
 
 export async function listTransactions(params?: {
+  q?: string;
   page?: number;
   page_size?: number;
   status?: string;
+  adapter?: string;
+  from_date?: string;
+  to_date?: string;
 }): Promise<Paginated<Transaction>> {
   const sp = new URLSearchParams();
+  if (params?.q) sp.set("q", params.q);
   if (params?.page) sp.set("page", String(params.page));
   if (params?.page_size) sp.set("page_size", String(params.page_size));
   if (params?.status) sp.set("status", params.status);
+  if (params?.adapter) sp.set("adapter", params.adapter);
+  if (params?.from_date) sp.set("from_date", params.from_date);
+  if (params?.to_date) sp.set("to_date", params.to_date);
   const qs = sp.toString();
   return fetchApi<Paginated<Transaction>>(`/transactions${qs ? `?${qs}` : ""}`);
+}
+
+/** T008: the dashboard's primary action — create a payment without writing client code. */
+export async function simulateTransaction(
+  payload: PaymentSimulationRequest
+): Promise<PaymentSimulationResponse> {
+  return fetchApi<PaymentSimulationResponse>("/transactions/simulate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** T014: project-wide aggregates. Not derivable from a single page of transactions. */
+export async function getAnalyticsOverview(): Promise<ProjectAnalyticsOverview> {
+  return fetchApi<ProjectAnalyticsOverview>("/analytics/overview");
+}
+
+/** T025: diagnose whether the configured callback endpoint is reachable. */
+export async function pingWebhook(target_url?: string | null): Promise<WebhookPingResponse> {
+  return fetchApi<WebhookPingResponse>("/project/webhook-ping", {
+    method: "POST",
+    body: JSON.stringify(target_url ? { target_url } : {}),
+  });
 }
 
 export async function getTransaction(id: string): Promise<Transaction> {

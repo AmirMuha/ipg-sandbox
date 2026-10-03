@@ -1,30 +1,25 @@
 import { formatRial } from "../lib/format";
-import type { Transaction } from "../lib/api";
+import type { ProjectAnalyticsOverview } from "../lib/api";
 
 /**
- * The design's `.stats-grid` — four `.stat-card`s. Values are computed from
- * the real transaction list rather than the mock's hardcoded numbers.
+ * The design's `.stats-grid` — four `.stat-card`s.
+ *
+ * Every number comes from GET /analytics/overview, not from the transactions list: FR-004
+ * exists because these cards used to sum whatever page the table happened to load, so a
+ * project with 200 transactions reported the totals of the newest 50.
  */
 export function StatCards({
-  transactions,
+  overview,
   locale,
-  deliveryTotal,
-  deliveryFailed,
 }: {
-  transactions: Transaction[];
+  overview: ProjectAnalyticsOverview | null;
   locale: string;
-  deliveryTotal?: number;
-  deliveryFailed?: number;
 }) {
-  const volume = transactions.reduce((sum, t) => sum + (t.amount_rial ?? 0), 0);
-  const approved = transactions.filter((t) =>
-    ["settled", "approved"].includes(t.status)
-  ).length;
-  const declined = transactions.filter((t) =>
-    ["declined", "failed"].includes(t.status)
-  ).length;
-  const total = transactions.length;
-  const successRate = total ? (approved / total) * 100 : 0;
+  const total = overview?.total_transactions ?? 0;
+  const successRate = overview?.success_rate_percent ?? 0;
+  const settled = overview?.status_breakdown.settled ?? 0;
+  const declined = (overview?.status_breakdown.declined ?? 0) + (overview?.status_breakdown.failed ?? 0);
+  const funnel = overview?.funnel;
 
   return (
     <section className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
@@ -34,7 +29,7 @@ export function StatCards({
           <span className="text-[11px] text-muted">IRR</span>
         </div>
         <div className="stat-card-value text-xl font-bold tracking-display text-text tabular-nums">
-          {formatRial(volume, locale)}
+          {formatRial(overview?.total_volume_rial ?? 0, locale)}
         </div>
         <div className="stat-card-meta text-xs text-muted flex items-center gap-1.5">
           <span className="stat-pill success text-[11px] font-semibold px-1.5 py-px rounded bg-success-bg text-success-ink">
@@ -55,7 +50,7 @@ export function StatCards({
         </div>
         <div className="stat-card-meta text-xs text-muted flex items-center gap-1.5">
           <span>
-            {approved} {locale === "fa" ? "تایید" : "Approved"} · {declined}{" "}
+            {settled} {locale === "fa" ? "تایید" : "Approved"} · {declined}{" "}
             {locale === "fa" ? "رد شده" : "Declined"}
           </span>
         </div>
@@ -63,19 +58,25 @@ export function StatCards({
 
       <div className="stat-card bg-surface border border-border rounded-console p-4 flex flex-col gap-2 relative overflow-hidden">
         <div className="stat-card-title text-xs text-muted font-medium flex items-center justify-between">
-          <span>{locale === "fa" ? "وضعیت دروازه‌ها" : "Gateway Health"}</span>
+          <span>{locale === "fa" ? "قیف پرداخت" : "Payment Funnel"}</span>
           <span className="text-[11px] text-muted">
             {locale === "fa" ? "محلی" : "Local"}
           </span>
         </div>
-        <div className="stat-card-value text-xl font-bold tracking-display text-text tabular-nums">
-          {new Set(transactions.map((t) => t.adapter_id)).size}
+        <div
+          className="stat-card-value text-xl font-bold tracking-display text-text tabular-nums"
+          data-testid="funnel-settled"
+        >
+          {funnel?.settled ?? 0}
         </div>
         <div className="stat-card-meta text-xs text-muted flex items-center gap-1.5">
           <span className="stat-pill success text-[11px] font-semibold px-1.5 py-px rounded bg-success-bg text-success-ink">
-            {locale === "fa" ? "فعال" : "Online"}
+            {locale === "fa" ? "تسویه" : "Settled"}
           </span>
-          <span>{locale === "fa" ? "بدون وابستگی خارجی" : "Zero external network"}</span>
+          <span dir="ltr">
+            {funnel?.initiated ?? 0} → {funnel?.hosted ?? 0} → {funnel?.callback ?? 0} →{" "}
+            {funnel?.settled ?? 0}
+          </span>
         </div>
       </div>
 
@@ -85,14 +86,18 @@ export function StatCards({
           <span className="status-dot w-[7px] h-[7px] rounded-full bg-success inline-block" />
         </div>
         <div className="stat-card-value text-xl font-bold tracking-display text-text tabular-nums">
-          {deliveryTotal ?? "—"}
+          {overview?.webhooks.total_deliveries ?? "—"}
         </div>
         <div className="stat-card-meta text-xs text-muted flex items-center gap-1.5">
-          {deliveryFailed ? (
+          {overview?.webhooks.failed ? (
             <span className="stat-pill error text-[11px] font-semibold px-1.5 py-px rounded bg-danger-bg text-danger-ink">
-              {deliveryFailed} {locale === "fa" ? "خطا" : "Failed"}
+              {overview.webhooks.failed} {locale === "fa" ? "خطا" : "Failed"}
             </span>
           ) : null}
+          <span>
+            {overview?.gateways.active_total ?? 0}/{overview?.gateways.configured_total ?? 0}{" "}
+            {locale === "fa" ? "درگاه فعال" : "gateways active"}
+          </span>
         </div>
       </div>
     </section>

@@ -11,6 +11,7 @@ import {
 } from "../../../../../lib/api";
 import { formatDate, formatRial, getStatusColor } from "../../../../../lib/format";
 import { ScenarioControls } from "../../../../../components/ScenarioControls";
+import { DeleteTransactionButton } from "../../../../../components/DeleteTransactionButton";
 
 export default async function TransactionDetailPage({
   params: { locale, id },
@@ -20,6 +21,7 @@ export default async function TransactionDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations("transactions");
   const tStatus = await getTranslations("status");
+  const tCheckout = await getTranslations("checkout");
 
   let tx: Transaction | null = null;
   let deliveries: WebhookDelivery[] = [];
@@ -89,6 +91,26 @@ export default async function TransactionDetailPage({
           <div className="text-xs font-mono truncate" dir="ltr">{tx.authority}</div>
         </div>
       </div>
+
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Only meaningful while the buyer still has something to pay — a settled link is a
+            dead link, and the hosted page rejects it anyway. */}
+        {(tx.status === "initiated" || tx.status === "pending") && tx.checkout_url && (
+          <a
+            href={tx.checkout_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary inline-flex items-center gap-2 px-4 py-2 rounded-[6px] bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            data-testid="checkout-link"
+          >
+            {tCheckout("open")}
+          </a>
+        )}
+        <DeleteTransactionButton transactionId={tx.id} />
+      </div>
+      {(tx.status === "initiated" || tx.status === "pending") && tx.checkout_url && (
+        <p className="text-xs text-muted -mt-3">{tCheckout("hint")}</p>
+      )}
 
       <ScenarioControls transaction={tx} />
 
