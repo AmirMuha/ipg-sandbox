@@ -3,45 +3,70 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   AdapterConfig,
   getAdapters,
+  getAnalyticsOverview,
   getProject,
-  listDeliveries,
   listTransactions,
   Paginated,
   Project,
+  ProjectAnalyticsOverview,
   Transaction,
 } from "../../../../lib/api";
 import { formatDate, formatRial, getStatusColor } from "../../../../lib/format";
 import { ScenarioControls } from "../../../../components/ScenarioControls";
 import { StatCards } from "../../../../components/StatCards";
+import { TransactionFilters } from "../../../../components/TransactionFilters";
+import { PaginationControls } from "../../../../components/PaginationControls";
 
 export default async function TransactionsPage({
   params: { locale },
+  searchParams,
 }: {
   params: { locale: string };
+  searchParams: Record<string, string | string[] | undefined>;
 }) {
   setRequestLocale(locale);
   const t = await getTranslations("transactions");
   const tStatus = await getTranslations("status");
 
-  let txData: Paginated<Transaction> = { items: [], page: 1, page_size: 50, total: 0 };
+  const num = (v: string | string[] | undefined, fallback: number) => {
+    const n = Number(Array.isArray(v) ? v[0] : v);
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+  };
+  const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
+
+  const page = num(searchParams.page, 1);
+  const pageSize = num(searchParams.page_size, 20);
+  const filters = {
+    q: str(searchParams.q),
+    status: str(searchParams.status),
+    adapter: str(searchParams.adapter),
+    from_date: str(searchParams.from_date),
+    to_date: str(searchParams.to_date),
+  };
+
+  let txData: Paginated<Transaction> = {
+    items: [],
+    page: 1,
+    page_size: pageSize,
+    total: 0,
+    total_pages: 0,
+  };
+  let overview: ProjectAnalyticsOverview | null = null;
   let adapters: AdapterConfig[] = [];
   let project: Project | null = null;
-  let deliveryTotal: number | undefined;
-  let deliveryFailed: number | undefined;
   let loadError: string | null = null;
 
   try {
-    const [txs, adps, prj, deliveries] = await Promise.all([
-      listTransactions({ page: 1, page_size: 50 }),
+    const [txs, ov, adps, prj] = await Promise.all([
+      listTransactions({ ...filters, page, page_size: pageSize }),
+      getAnalyticsOverview(),
       getAdapters(),
       getProject(),
-      listDeliveries({ page: 1, page_size: 50 }),
     ]);
     txData = txs;
+    overview = ov;
     adapters = adps;
     project = prj;
-    deliveryTotal = deliveries.total ?? deliveries.items.length;
-    deliveryFailed = deliveries.items.filter((d: any) => d.result !== "delivered").length;
   } catch (err: unknown) {
     loadError = err instanceof Error ? err.message : "Failed to load data";
   }
@@ -50,12 +75,7 @@ export default async function TransactionsPage({
 
   return (
     <>
-      <StatCards
-        transactions={txData.items as any[]}
-        locale={locale}
-        deliveryTotal={deliveryTotal}
-        deliveryFailed={deliveryFailed}
-      />
+      <StatCards overview={overview} locale={locale} />
 
       {loadError && (
         <div className="p-4 bg-danger-bg border border-danger-border text-danger-ink rounded-console text-sm">
@@ -73,6 +93,7 @@ export default async function TransactionsPage({
               {txData.total} {locale === "fa" ? "رکورد" : "Records"}
             </span>
           </div>
+          <TransactionFilters adapters={adapters.map((a) => a.provider)} />
         </div>
 
         <div className="table-container overflow-x-auto">
@@ -178,6 +199,12 @@ export default async function TransactionsPage({
             </tbody>
           </table>
         </div>
+
+        <PaginationControls
+          page={txData.page}
+          totalPages={txData.total_pages}
+          total={txData.total}
+        />
       </div>
     </>
   );

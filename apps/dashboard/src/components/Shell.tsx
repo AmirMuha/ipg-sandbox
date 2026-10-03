@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { NavLinks } from "./NavLinks";
+import { SimulateModal } from "./SimulateModal";
+import { getAdapters } from "../lib/api";
 
 /**
  * Console frame, ported from ipg-sandbox-dashboard.html:
@@ -12,6 +17,10 @@ import { NavLinks } from "./NavLinks";
  * scenario ribbon is skipped for the same reason — its pills are client-side
  * state over localStorage in the mock, and the real equivalent is the
  * project-settings form on /transactions.
+ *
+ * A client component because the header CTA opens `SimulateModal` (T009). Its one
+ * non-prop dependency, `useTranslations`, already runs client-side under the layout's
+ * NextIntlClientProvider.
  */
 export function Shell({
   children,
@@ -22,7 +31,17 @@ export function Shell({
 }) {
   const t = useTranslations("nav");
   const otherLocale = locale === "fa" ? "en" : "fa";
+  const [simulateOpen, setSimulateOpen] = useState(false);
+  const [adapters, setAdapters] = useState<
+    Awaited<ReturnType<typeof getAdapters>>
+  >([]);
 
+  async function openSimulate() {
+    setSimulateOpen(true);
+    // Fetched lazily on first open: the modal is the only consumer, and a console
+    // frame that blocks its whole subtree on the adapters request is not worth it.
+    if (adapters.length === 0) setAdapters(await getAdapters());
+  }
 
   const links = [
     {
@@ -107,9 +126,11 @@ export function Shell({
               </Link>
             </div>
 
-            <Link
-              href={`/${locale}/transactions`}
+            <button
+              type="button"
+              onClick={openSimulate}
               className="btn-primary inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[6px] bg-accent text-accent-on text-[13px] font-medium hover:bg-accent/92 active:bg-accent/86 transition-colors duration-fast ease-standard"
+              data-testid="simulate-payment-btn"
             >
               <svg
                 width="14"
@@ -124,7 +145,7 @@ export function Shell({
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
               <span>{t("simulate_payment")}</span>
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -138,6 +159,12 @@ export function Shell({
       <main className="flex-1 w-full max-w-console mx-auto p-6 flex flex-col gap-6">
         {children}
       </main>
+
+      <SimulateModal
+        adapters={adapters}
+        open={simulateOpen}
+        onClose={() => setSimulateOpen(false)}
+      />
     </div>
   );
 }

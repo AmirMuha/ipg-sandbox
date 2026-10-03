@@ -48,7 +48,8 @@
     "response_status": "کد HTTP",
     "timestamp": "زمان",
     "payload": "محتوای ارسالی (Payload)",
-    "error": "پیام خطا"
+    "error": "پیام خطا",
+    "endpoint_title": "نقطهٔ بازگشت (Callback)"
   },
   "settings": {
     "title": "تنظیمات",
@@ -79,7 +80,10 @@
     "update_failed": "به‌روزرسانی سناریو ناموفق بود",
     "project_updated": "تنظیمات پیش‌فرض پروژه به‌روزرسانی شد",
     "project_update_failed": "به‌روزرسانی تنظیمات پروژه ناموفق بود",
-    "apply": "اعمال"
+    "apply": "اعمال",
+    "webhook_url_label": "آدرس وب‌هوک پیش‌فرض",
+    "history_cap_label": "سقف تاریخچه",
+    "webhook_retry_max_label": "حداکثر تلاش مجدد وب‌هوک"
   },
   "status": {
     "initiated": "شروع شده",
@@ -119,5 +123,56 @@
     "settled": "تسویه‌شده",
     "failed_deliveries": "ارسال ناموفق",
     "credentials_valid": "اطلاعات معتبر است! آداپتور با موفقیت پاسخ داد."
+  },
+  "simulate": {
+    "title": "شبیه‌سازی پرداخت",
+    "adapter": "درگاه",
+    "amount_rial": "مبلغ (ریال)",
+    "scenario": "سناریو",
+    "description": "توضیح",
+    "app_reference": "شماره سفارش",
+    "callback_url": "آدرس کال‌بک",
+    "auto_complete": "تکمیل خودکار",
+    "auto_complete_hint": "پرداخت و تایید را در یک مرحله انجام می‌دهد.",
+    "submit": "شبیه‌سازی",
+    "submitting": "در حال ایجاد...",
+    "success_interactive": "تراکنش ایجاد شد. برای تکمیل، صفحه پرداخت درگاه را باز کنید.",
+    "success_auto": "تراکنش به‌صورت خودکار تسویه شد.",
+    "error": "شبیه‌سازی ناموفق بود"
+  },
+  "filters": {
+    "search": "جستجو",
+    "search_placeholder": "شناسه، شماره سفارش، توضیح",
+    "status": "وضعیت",
+    "adapter": "درگاه",
+    "all": "همه",
+    "from_date": "از تاریخ",
+    "to_date": "تا تاریخ",
+    "clear": "پاک کردن فیلترها"
+  },
+  "pagination": {
+    "prev": "قبلی",
+    "next": "بعدی",
+    "page_size": "در هر صفحه",
+    "summary": "صفحه {page} از {total}"
+  },
+  "webhook_diagnostics": {
+    "ping": "ارسال تست",
+    "pinging": "در حال ارسال...",
+    "ok": "در دسترس",
+    "failed": "در دسترس نیست",
+    "latency": "{ms} میلی‌ثانیه",
+    "http_status": "HTTP {code}"
+  },
+  "delete": {
+    "button": "حذف تراکنش",
+    "confirm": "این تراکنش و گزارش‌های کال‌بک آن حذف شود؟ این عمل بازگشت‌پذیر نیست.",
+    "confirm_short": "این تراکنش حذف شود؟",
+    "deleting": "در حال حذف...",
+    "done": "تراکنش حذف شد"
+  },
+  "checkout": {
+    "open": "باز کردن صفحه پرداخت درگاه",
+    "hint": "پرداخت را در صفحه درگاه تکمیل یا لغو کنید."
   }
 }

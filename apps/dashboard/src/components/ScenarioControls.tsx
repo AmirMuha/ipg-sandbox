@@ -50,6 +50,11 @@ export function ScenarioControls({
   const [timeoutDelay, setTimeoutDelay] = useState<number>(
     project?.timeout_delay_s ?? 30
   );
+  const [webhookUrl, setWebhookUrl] = useState<string>(project?.webhook_url ?? "");
+  const [historyCap, setHistoryCap] = useState<number>(project?.history_cap ?? 500);
+  const [webhookRetryMax, setWebhookRetryMax] = useState<number>(
+    project?.webhook_retry_max ?? 3
+  );
 
   async function handleTxSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,6 +84,10 @@ export function ScenarioControls({
         default_scenario: defaultScenario,
         pending_settle_delay_s: Number(pendingSettleDelay),
         timeout_delay_s: Number(timeoutDelay),
+        // Empty means "unset" — the engine stores null, which also disables auto-delivery.
+        webhook_url: webhookUrl.trim() === "" ? null : webhookUrl.trim(),
+        history_cap: Number(historyCap),
+        webhook_retry_max: Number(webhookRetryMax),
       });
       setSuccess(tScenario("project_updated"));
       router.refresh();
@@ -179,6 +188,49 @@ export function ScenarioControls({
                 onChange={(e) => setTimeoutDelay(Number(e.target.value))}
                 className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
                 data-testid="timeout-delay-input"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-3">
+              <label className="block text-xs text-muted mb-1">
+                {tScenario("webhook_url_label")}
+              </label>
+              <input
+                type="url"
+                dir="ltr"
+                placeholder="https://example.com/webhooks/payment"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                data-testid="project-webhook-url-input"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted mb-1">
+                {tScenario("history_cap_label")}
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={historyCap}
+                onChange={(e) => setHistoryCap(Number(e.target.value))}
+                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                data-testid="project-history-cap-input"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted mb-1">
+                {tScenario("webhook_retry_max_label")}
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="10"
+                value={webhookRetryMax}
+                onChange={(e) => setWebhookRetryMax(Number(e.target.value))}
+                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                data-testid="project-webhook-retry-max-input"
               />
             </div>
           </div>

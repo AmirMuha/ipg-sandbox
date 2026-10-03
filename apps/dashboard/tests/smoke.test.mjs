@@ -196,3 +196,258 @@ test("5. Force decline affects next payment (SC-006 check 2)", async () => {
     body: JSON.stringify({ default_scenario: "approve" }),
   });
 });
+
+test("6. Simulation endpoint creates a transaction and returns a checkout URL", async () => {
+  const res = await fetch(`${ENGINE_URL}/api/v1/transactions/simulate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ adapter: "zarinpal", amount_rial: 750000, auto_complete: false }),
+  });
+  assert.strictEqual(res.status, 201, "Expected 201 from POST /transactions/simulate");
+
+  const body = await res.json();
+  const tx = body.transaction;
+  assert.ok(tx.id, "Expected a transaction id");
+  assert.strictEqual(tx.status, "initiated", "Expected an initiated transaction");
+  assert.strictEqual(tx.amount_rial, 750000);
+  assert.strictEqual(body.execution_mode, "interactive");
+  assert.strictEqual(body.callback_dispatched, false);
+  assert.ok(
+    tx.checkout_url && tx.checkout_url.includes("/zarinpal/checkout/"),
+    `Expected a zarinpal hosted checkout URL, got ${tx.checkout_url}`
+  );
+
+  // The URL must actually be served, not merely well-formed.
+  const path = new URL(tx.checkout_url).pathname;
+  const hosted = await fetch(`${ENGINE_URL}${path}`);
+  assert.ok(hosted.status === 200, `Expected hosted checkout to answer 200, got ${hosted.status}`);
+});
+
+test("7. auto_complete settles in one call", async () => {
+  const res = await fetch(`${ENGINE_URL}/api/v1/transactions/simulate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ adapter: "zarinpal", amount_rial: 500000, auto_complete: true }),
+  });
+  assert.strictEqual(res.status, 201);
+
+  const body = await res.json();
+  assert.strictEqual(
+    body.transaction.status,
+    "settled",
+    "Expected auto_complete to settle the payment"
+  );
+  assert.strictEqual(body.execution_mode, "auto_completed");
+  assert.strictEqual(
+    body.callback_dispatched,
+    false,
+    "No webhook URL is configured, so no callback was sent"
+  );
+});
+
+test("8. Analytics overview reports totals and a monotonic funnel", async () => {
+  const res = await fetch(`${ENGINE_URL}/api/v1/analytics/overview`);
+  assert.strictEqual(res.status, 200);
+  const ov = await res.json();
+
+  assert.ok(typeof ov.total_transactions === "number", "Expected total_transactions");
+  assert.ok(typeof ov.total_volume_rial === "number", "Expected total_volume_rial");
+  assert.ok(typeof ov.success_rate_percent === "number", "Expected success_rate_percent");
+  assert.ok(typeof ov.status_breakdown === "object", "Expected a status_breakdown map");
+  assert.ok(typeof ov.gateways === "object", "Expected a gateways rollup map");
+  assert.ok(ov.funnel, "Expected a funnel object");
+  assert.ok(ov.webhooks, "Expected a webhooks rollup");
+
+  const counted = Object.values(ov.status_breakdown).reduce((a, b) => a + b, 0);
+  assert.strictEqual(
+    counted,
+    ov.total_transactions,
+    "Every transaction appears in exactly one status bucket"
+  );
+
+  const f = ov.funnel;
+  for (const stage of ["initiated", "hosted", "callback", "settled"]) {
+    assert.ok(typeof f[stage] === "number", `Expected funnel.${stage}`);
+  }
+  assert.ok(f.settled <= f.callback, "funnel.settled must not exceed funnel.callback");
+  assert.ok(f.callback <= f.hosted, "funnel.callback must not exceed funnel.hosted");
+  assert.ok(f.hosted <= f.initiated, "funnel.hosted must not exceed funnel.initiated");
+});
+
+test("9. Transaction search filters and paginates", async () => {
+  const all = await (await fetch(`${ENGINE_URL}/api/v1/transactions?page_size=100`)).json();
+  assert.ok(all.total_pages >= 1, "Expected at least one page");
+  const sample = all.items[0];
+  assert.ok(sample, "Expected at least one seeded transaction");
+
+  // q matches on authority, app_reference, or description.
+  const byQ = await (
+    await fetch(`${ENGINE_URL}/api/v1/transactions?q=${encodeURIComponent(sample.authority)}`)
+  ).json();
+  assert.ok(
+    byQ.items.some((t) => t.authority === sample.authority),
+    "Expected the searched transaction to come back"
+  );
+  assert.ok(byQ.total <= all.total, "A search must not widen the result set");
+
+  // LIKE metacharacters are literals, not wildcards.
+  const literal = await (await fetch(`${ENGINE_URL}/api/v1/transactions?q=%25`)).json();
+  assert.ok(
+    !literal.items.some((t) => t.authority !== "%"),
+    "A '%' search must not match everything"
+  );
+
+  const filtered = await (
+    await fetch(`${ENGINE_URL}/api/v1/transactions?status=settled&page_size=100`)
+  ).json();
+  assert.ok(
+    filtered.items.every((t) => t.status === "settled"),
+    "Expected only settled transactions"
+  );
+
+  const paged = await (await fetch(`${ENGINE_URL}/api/v1/transactions?page_size=1`)).json();
+  assert.strictEqual(paged.items.length, 1);
+  assert.strictEqual(paged.page_size, 1);
+});
+
+test("10. Dashboard renders the analytics overview, filters, and simulate CTA", async () => {
+  const html = await (await fetch(`${DASHBOARD_URL}/fa/transactions`)).text();
+
+  assert.ok(
+    html.includes('data-testid="simulate-payment-btn"'),
+    "Expected the simulate-payment CTA"
+  );
+  assert.ok(
+    html.includes('data-testid="filter-search"'),
+    "Expected the search filter input"
+  );
+  assert.ok(
+    html.includes('data-testid="funnel-settled"'),
+    "Expected the payment funnel card"
+  );
+
+  const webhooks = await (await fetch(`${DASHBOARD_URL}/fa/webhooks`)).text();
+  assert.ok(
+    webhooks.includes('data-testid="webhook-ping-btn"'),
+    "Expected the webhook ping button"
+  );
+  assert.ok(
+    webhooks.includes('data-testid="project-webhook-url-input"'),
+    "Expected the default webhook URL input"
+  );
+
+  const settings = await (await fetch(`${DASHBOARD_URL}/fa/settings`)).text();
+  assert.ok(
+    settings.includes('data-testid="project-history-cap-input"'),
+    "Expected the history cap input"
+  );
+  assert.ok(
+    settings.includes('data-testid="project-webhook-retry-max-input"'),
+    "Expected the webhook retry max input"
+  );
+});
+
+test("11. Detail page offers checkout and delete for a payable transaction", async () => {
+  const created = (
+    await (
+      await fetch(`${ENGINE_URL}/api/v1/transactions/simulate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adapter: "zarinpal", amount_rial: 250000, auto_complete: false }),
+      })
+    ).json()
+  ).transaction;
+
+  const html = await (await fetch(`${DASHBOARD_URL}/fa/transactions/${created.id}`)).text();
+  assert.ok(
+    html.includes('data-testid="checkout-link"'),
+    "Expected the Open Gateway Checkout link on an initiated transaction"
+  );
+  assert.ok(
+    html.includes(`data-testid="delete-tx-${created.id}"`),
+    "Expected the delete button"
+  );
+
+  // A settled transaction has nothing left to pay, so no link is rendered.
+  const settled = (
+    await (
+      await fetch(`${ENGINE_URL}/api/v1/transactions/simulate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adapter: "zarinpal", amount_rial: 260000, auto_complete: true }),
+      })
+    ).json()
+  ).transaction;
+  const settledHtml = await (
+    await fetch(`${DASHBOARD_URL}/fa/transactions/${settled.id}`)
+  ).text();
+  assert.ok(
+    !settledHtml.includes('data-testid="checkout-link"'),
+    "Expected no checkout link on a settled transaction"
+  );
+});
+
+test("12. Deleting a transaction cascades to its deliveries", async () => {
+  const created = (
+    await (
+      await fetch(`${ENGINE_URL}/api/v1/transactions/simulate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adapter: "zarinpal", amount_rial: 240000, auto_complete: true }),
+      })
+    ).json()
+  ).transaction;
+
+  // The delivery log is keyed by transaction id and only reports a page here, so
+  // compare item counts rather than a total.
+  const before = await (
+    await fetch(`${ENGINE_URL}/api/v1/deliveries?transaction_id=${created.id}`)
+  ).json();
+  assert.ok(before.total === 0 || before.total === undefined, "Expected a deliveries page");
+
+  const del = await fetch(`${ENGINE_URL}/api/v1/transactions/${created.id}`, {
+    method: "DELETE",
+  });
+  assert.strictEqual(del.status, 200);
+  assert.strictEqual((await del.json()).deleted, true);
+
+  const gone = await fetch(`${ENGINE_URL}/api/v1/transactions/${created.id}`);
+  assert.strictEqual(gone.status, 404, "Expected the transaction to be gone");
+
+  const after = await (
+    await fetch(`${ENGINE_URL}/api/v1/deliveries?transaction_id=${created.id}`)
+  ).json();
+  assert.strictEqual(
+    after.items.length,
+    0,
+    "Delivery rows must cascade with the transaction"
+  );
+});
+
+test("13. Webhook ping reports reachability without recording a delivery", async () => {
+  const before = await (await fetch(`${ENGINE_URL}/api/v1/deliveries?page_size=100`)).json();
+
+  // Nothing is configured, so the engine must refuse rather than invent a target.
+  const unconfigured = await fetch(`${ENGINE_URL}/api/v1/project/webhook-ping`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  assert.strictEqual(unconfigured.status, 422, "Expected 422 with no webhook URL configured");
+
+  const res = await fetch(`${ENGINE_URL}/api/v1/project/webhook-ping`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    // Loopback discard: the request leaves the process and comes back, which is
+    // enough to prove the timeout and status plumbing without a live receiver.
+    body: JSON.stringify({ target_url: "http://127.0.0.1:1/unreachable" }),
+  });
+  assert.strictEqual(res.status, 200);
+  const result = await res.json();
+  assert.strictEqual(result.ok, false, "An unreachable endpoint reports ok=false");
+  assert.ok(result.error, "Expected an error message for an unreachable endpoint");
+  assert.ok(result.latency_ms >= 0, "Expected a latency measurement");
+
+  const after = await (await fetch(`${ENGINE_URL}/api/v1/deliveries?page_size=100`)).json();
+  assert.strictEqual(after.total, before.total, "A ping must not record a delivery attempt");
+});

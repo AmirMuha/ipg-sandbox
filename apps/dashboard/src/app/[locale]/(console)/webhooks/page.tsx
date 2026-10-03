@@ -1,7 +1,15 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { listDeliveries, Paginated, WebhookDelivery } from "../../../../lib/api";
+import {
+  getProject,
+  listDeliveries,
+  Paginated,
+  Project,
+  WebhookDelivery,
+} from "../../../../lib/api";
 import { formatDate } from "../../../../lib/format";
 import { RetryButton } from "../../../../components/RetryButton";
+import { ScenarioControls } from "../../../../components/ScenarioControls";
+import { WebhookPingButton } from "../../../../components/WebhookPingButton";
 
 export default async function WebhooksPage({
   params: { locale },
@@ -16,11 +24,18 @@ export default async function WebhooksPage({
     page: 1,
     page_size: 50,
     total: 0,
+    total_pages: 0,
   };
+  let project: Project | null = null;
   let errorMsg: string | null = null;
 
   try {
-    deliveriesData = await listDeliveries({ page: 1, page_size: 50 });
+    const [dels, prj] = await Promise.all([
+      listDeliveries({ page: 1, page_size: 50 }),
+      getProject(),
+    ]);
+    deliveriesData = dels;
+    project = prj;
   } catch (err: unknown) {
     errorMsg = err instanceof Error ? err.message : "Failed to load webhook deliveries";
   }
@@ -35,6 +50,27 @@ export default async function WebhooksPage({
       {errorMsg && (
         <div className="p-4 bg-danger/10 border border-danger/20 text-danger rounded-lg text-sm">
           {errorMsg}
+        </div>
+      )}
+
+      {project && (
+        <div className="space-y-3">
+          <div className="panel bg-surface border border-border rounded-console p-5 space-y-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="min-w-0">
+                <h2 className="font-semibold text-sm">{t("endpoint_title")}</h2>
+                <p
+                  className="text-xs text-muted font-mono truncate"
+                  dir="ltr"
+                  data-testid="webhook-target-url"
+                >
+                  {project.webhook_url || "—"}
+                </p>
+              </div>
+              <WebhookPingButton targetUrl={project.webhook_url} />
+            </div>
+          </div>
+          <ScenarioControls project={project} />
         </div>
       )}
 
