@@ -2,7 +2,7 @@
 
 import random
 import uuid
-from datetime import datetime
+from datetime import datetime, time
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -132,9 +132,9 @@ async def list_transactions(
                 )
             )
         )
-    if q:
+    if q and q.strip():
         # `%` and `_` are LIKE wildcards; a search for "ORD_1" must not also match "ORDX1".
-        needle = f"%{q.replace('%', r'\%').replace('_', r'\_')}%"
+        needle = f"%{q.strip().replace('%', r'\%').replace('_', r'\_')}%"
         where.append(
             or_(
                 Transaction.authority.ilike(needle),
@@ -145,6 +145,10 @@ async def list_transactions(
     if from_date is not None:
         where.append(Transaction.created_at >= from_date)
     if to_date is not None:
+        # Date-only filters (e.g. from <input type="date">) parse to midnight 00:00:00.
+        # Include the entire day by advancing to 23:59:59.999999.
+        if to_date.time() == time.min:
+            to_date = to_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         where.append(Transaction.created_at <= to_date)
 
     total = await session.scalar(select(func.count()).select_from(Transaction).where(*where))

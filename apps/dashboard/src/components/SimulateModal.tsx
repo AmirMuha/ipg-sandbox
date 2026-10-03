@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AdapterConfig,
   ApiError,
@@ -33,6 +33,13 @@ export function SimulateModal({
   const [adapter, setAdapter] = useState<AdapterConfig["provider"]>(
     enabled[0]?.provider ?? "zarinpal"
   );
+
+  useEffect(() => {
+    if (enabled.length > 0 && !enabled.some((a) => a.provider === adapter)) {
+      setAdapter(enabled[0].provider);
+    }
+  }, [adapters, adapter, enabled]);
+
   const [amount, setAmount] = useState("1000000");
   const [scenario, setScenario] = useState<ScenarioOutcome | "">("");
   const [description, setDescription] = useState("");

@@ -27,7 +27,7 @@ export function TransactionFilters({ adapters }: { adapters: string[] }) {
     }
     sp.delete("page"); // any filter change invalidates the current page number
     const qs = sp.toString();
-    router.push(qs ? `?${qs}` : "?");
+    router.push(qs ? `?${qs}` : window.location.pathname);
   }
 
   const input =

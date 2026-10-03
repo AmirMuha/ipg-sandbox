@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { ApiError, deleteTransaction } from "../lib/api";
@@ -11,6 +11,8 @@ import { ApiError, deleteTransaction } from "../lib/api";
  */
 export function DeleteTransactionButton({ transactionId }: { transactionId: string }) {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || "fa";
   const t = useTranslations("delete");
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -21,7 +23,7 @@ export function DeleteTransactionButton({ transactionId }: { transactionId: stri
     setError(null);
     try {
       await deleteTransaction(transactionId);
-      router.push(".."); // detail page: the record it described is gone
+      router.push(`/${locale}/transactions`);
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));

@@ -173,6 +173,11 @@ async def ping_webhook(
             ErrorCode.validation_error, "No webhook URL configured or provided", status=422
         )
 
+    if not isinstance(target, str):
+        raise ApiError(
+            ErrorCode.validation_error, "target_url must be an absolute http(s) URL", status=422
+        )
+
     parsed = urlparse(target)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise ApiError(
