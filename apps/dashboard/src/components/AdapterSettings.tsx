@@ -55,7 +55,7 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
     try {
       const res = await testAdapter(adapter.id);
       if (res.ok) {
-        setTestResult({ ok: true, message: "Credentials valid! Adapter responded successfully." });
+        setTestResult({ ok: true, message: tAdapter("credentials_valid") });
       }
     } catch (err: unknown) {
       setTestResult({
@@ -69,13 +69,13 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
 
   return (
     <div
-      className="bg-surface border border-border rounded-lg p-5 space-y-4"
+      className="panel bg-surface border border-border rounded-console p-5 space-y-4"
       data-testid={`adapter-card-${adapter.provider}`}
     >
       <div className="flex items-center justify-between border-b border-border pb-3">
         <div>
-          <h3 className="font-semibold text-base capitalize">{adapter.provider}</h3>
-          <p className="text-xs text-muted font-mono">
+          <h3 className="font-display text-[17px] font-semibold tracking-display capitalize">{adapter.provider}</h3>
+          <p className="text-xs text-muted font-mono" dir="ltr" style={{ textAlign: "start" }}>
             {adapter.endpoint_path_prefix} &bull; {adapter.api_unit}
           </p>
           {/* T075: the status half of FR-008's "per-adapter configuration and status". */}
@@ -86,21 +86,24 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
               title={`${tAdapter("tx_total")}: ${adapter.status.transactions_total} · ${tAdapter("settled")}: ${adapter.status.transactions_settled} · ${tAdapter("failed_deliveries")}: ${adapter.status.failed_deliveries}`}
             >
               <span
-                className={`inline-block w-2 h-2 rounded-full mr-1 ${
+                className={`inline-block w-2 h-2 rounded-full ms-1 ${
                   adapter.status.state === "healthy"
-                    ? "bg-green-500"
+                    ? "bg-success"
                     : adapter.status.state === "degraded"
-                      ? "bg-amber-500"
+                      ? "bg-warning"
                       : adapter.status.state === "disabled"
-                        ? "bg-gray-400"
-                        : "bg-blue-400"
+                        ? "bg-border"
+                        : "bg-accent"
                 }`}
               />
               {tAdapter(`state_${adapter.status.state}`)}
               {adapter.status.last_activity_at && (
                 <span className="text-muted">
                   {" · "}
-                  {tAdapter("last_activity")}: {adapter.status.last_activity_at.slice(0, 10)}
+                  {tAdapter("last_activity")}:{" "}
+                  <span dir="ltr" className="inline-block">
+                    {adapter.status.last_activity_at.slice(0, 10)}
+                  </span>
                 </span>
               )}
             </p>
@@ -121,7 +124,7 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
           <button
             onClick={handleTest}
             disabled={loading}
-            className="text-xs bg-surface-2 border border-border hover:border-accent px-3 py-1 rounded transition-colors disabled:opacity-50"
+            className="btn-secondary text-xs bg-surface border border-border text-text hover:bg-surface-subtle px-2.5 py-1 rounded-[6px] transition-colors duration-fast ease-standard disabled:opacity-50"
             data-testid={`test-adapter-btn-${adapter.provider}`}
           >
             {loading ? tAdapter("testing") : tAdapter("test_credentials")}
@@ -133,8 +136,8 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
         <div
           className={`p-3 rounded text-xs border ${
             testResult.ok
-              ? "bg-success/10 text-success border-success/30"
-              : "bg-danger/10 text-danger border-danger/30"
+              ? "bg-success-bg text-success-ink border-success-border"
+              : "bg-danger-bg text-danger-ink border-danger-border"
           }`}
           data-testid={`test-result-${adapter.provider}`}
         >
@@ -152,12 +155,13 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
             value={credentials}
             onChange={(e) => setCredentials(e.target.value)}
             className="w-full bg-surface-2 border border-border rounded p-2.5 text-xs font-mono focus:outline-none focus:border-accent"
+            dir="ltr"
             data-testid={`credentials-input-${adapter.provider}`}
           />
           <button
             onClick={handleSaveCredentials}
             disabled={loading}
-            className="text-xs bg-surface-2 border border-border hover:border-accent px-3 py-1 rounded transition-colors disabled:opacity-50"
+            className="btn-secondary text-xs bg-surface border border-border text-text hover:bg-surface-subtle px-2.5 py-1 rounded-[6px] transition-colors duration-fast ease-standard disabled:opacity-50"
           >
             {tAdapter("save_credentials")}
           </button>

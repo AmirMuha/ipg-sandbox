@@ -52,6 +52,68 @@ test("2. English LTR layout", async () => {
   );
 });
 
+test("2b. Marketing routes render with RTL regardless of locale", async () => {
+  // The marketing copy is Persian-only, so these pages force dir="rtl" even
+  // under /en — an LTR flip would reorder every layout rule against the text.
+  for (const route of ["home", "providers", "pricing", "login"]) {
+    for (const locale of ["fa", "en"]) {
+      const res = await fetch(`${DASHBOARD_URL}/${locale}/${route}`);
+      assert.strictEqual(res.status, 200, `Expected 200 on /${locale}/${route}`);
+      const html = await res.text();
+      assert.ok(
+        html.includes('dir="rtl"'),
+        `Expected dir="rtl" on /${locale}/${route}`
+      );
+    }
+  }
+});
+
+test("2c. Home page carries the export's Persian copy", async () => {
+  const res = await fetch(`${DASHBOARD_URL}/fa/home`);
+  const html = await res.text();
+
+  for (const copy of [
+    "درگاه پرداخت را تا آخرین سناریو تست کنید",
+    "شبیه‌سازی دقیق",
+    "ترافیک بیرونی صفر",
+    "zarinpal",
+  ]) {
+    assert.ok(html.includes(copy), `Expected home copy: ${copy}`);
+  }
+});
+
+test("2d. Root redirect lands on the marketing home, not the console", async () => {
+  // `/` 307s to `/fa` via next-intl middleware (no Location header — it is a
+  // rewrite), and the prerendered `[locale]/page.tsx` then redirects client-side
+  // via a NEXT_REDIRECT payload. Both layers are asserted here; the destination
+  // never appears as a Location header, which is what the first version of this
+  // test wrongly expected.
+  const root = await fetch(`${DASHBOARD_URL}/`, { redirect: "manual" });
+  assert.ok(
+    [302, 307, 308].includes(root.status),
+    `Expected a redirect from /, got ${root.status}`
+  );
+
+  const fa = await fetch(`${DASHBOARD_URL}/fa`);
+  const html = await fa.text();
+  // Payload shape is `NEXT_REDIRECT;replace;<url>;<status>;` in the RSC flight.
+  const redirect = html.match(/NEXT_REDIRECT;replace;([^;]+);/)?.[1];
+  assert.strictEqual(
+    redirect,
+    "/fa/home",
+    "Expected /fa to redirect into /fa/home"
+  );
+});
+
+test("2e. Provider API references are downloadable", async () => {
+  const res = await fetch(`${DASHBOARD_URL}/docs/zarinpal-api-reference.md`);
+  assert.strictEqual(res.status, 200, "Expected zarinpal doc to be served");
+  assert.ok(
+    (await res.text()).length > 0,
+    "Expected zarinpal doc to have content"
+  );
+});
+
 test("3. Webhooks view renders table", async () => {
   const res = await fetch(`${DASHBOARD_URL}/fa/webhooks`);
   assert.strictEqual(res.status, 200);

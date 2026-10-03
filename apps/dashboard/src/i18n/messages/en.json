@@ -4,7 +4,8 @@
     "transactions": "Transactions",
     "webhooks": "Webhooks",
     "settings": "Settings",
-    "switch_lang": "فارسی"
+    "switch_lang": "فارسی",
+    "simulate_payment": "Simulate Payment"
   },
   "common": {
     "save": "Save",
@@ -32,7 +33,9 @@
     "date": "Date & Time",
     "details_title": "Transaction Details",
     "raw_request": "Raw Request",
-    "raw_response": "Raw Response"
+    "raw_response": "Raw Response",
+    "forced": "(forced)",
+    "inspect": "Inspect"
   },
   "webhooks": {
     "title": "Webhook Deliveries",
@@ -75,7 +78,8 @@
     "updated": "Scenario updated",
     "update_failed": "Failed to update scenario",
     "project_updated": "Project defaults updated",
-    "project_update_failed": "Failed to update project"
+    "project_update_failed": "Failed to update project",
+    "apply": "Apply"
   },
   "status": {
     "initiated": "Initiated",
@@ -113,6 +117,7 @@
     "last_activity": "last activity",
     "tx_total": "transactions",
     "settled": "settled",
-    "failed_deliveries": "failed deliveries"
+    "failed_deliveries": "failed deliveries",
+    "credentials_valid": "Credentials valid! Adapter responded successfully."
   }
 }

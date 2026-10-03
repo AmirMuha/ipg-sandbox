@@ -8,9 +8,9 @@ import {
   listDeliveries,
   Transaction,
   WebhookDelivery,
-} from "../../../../lib/api";
-import { formatDate, formatRial, getStatusColor } from "../../../../lib/format";
-import { ScenarioControls } from "../../../../components/ScenarioControls";
+} from "../../../../../lib/api";
+import { formatDate, formatRial, getStatusColor } from "../../../../../lib/format";
+import { ScenarioControls } from "../../../../../components/ScenarioControls";
 
 export default async function TransactionDetailPage({
   params: { locale, id },
@@ -51,15 +51,15 @@ export default async function TransactionDetailPage({
           &larr; Back
         </Link>
         <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-3">
+          <h1 className="font-display text-xl font-semibold tracking-tight flex items-center gap-3">
             <span>{t("details_title")}</span>
-            <span className="font-mono text-sm text-muted font-normal">{tx.id}</span>
+            <span className="font-mono text-sm text-muted font-normal" dir="ltr">{tx.id}</span>
           </h1>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface border border-border p-4 rounded-lg">
+        <div className="bg-surface border border-border p-4 rounded-lg shadow-raised">
           <div className="text-xs text-muted mb-1">{t("status")}</div>
           <div className="text-sm font-semibold">
             <span
@@ -72,27 +72,27 @@ export default async function TransactionDetailPage({
           </div>
         </div>
 
-        <div className="bg-surface border border-border p-4 rounded-lg">
+        <div className="bg-surface border border-border p-4 rounded-lg shadow-raised">
           <div className="text-xs text-muted mb-1">{t("amount")}</div>
           <div className="text-base font-mono font-semibold">
             {formatRial(tx.amount_rial, locale)} {tx.currency}
           </div>
         </div>
 
-        <div className="bg-surface border border-border p-4 rounded-lg">
+        <div className="bg-surface border border-border p-4 rounded-lg shadow-raised">
           <div className="text-xs text-muted mb-1">{t("adapter")}</div>
           <div className="text-sm font-mono font-semibold">{providerName}</div>
         </div>
 
-        <div className="bg-surface border border-border p-4 rounded-lg">
+        <div className="bg-surface border border-border p-4 rounded-lg shadow-raised">
           <div className="text-xs text-muted mb-1">{t("authority")}</div>
-          <div className="text-xs font-mono truncate">{tx.authority}</div>
+          <div className="text-xs font-mono truncate" dir="ltr">{tx.authority}</div>
         </div>
       </div>
 
       <ScenarioControls transaction={tx} />
 
-      <div className="bg-surface border border-border rounded-lg p-5 space-y-4">
+      <div className="bg-surface border border-border rounded-lg p-5 space-y-4 shadow-raised">
         <h2 className="text-base font-semibold">Webhook Deliveries ({deliveries.length})</h2>
         {deliveries.length === 0 ? (
           <p className="text-sm text-muted">No webhook deliveries recorded for this transaction.</p>
@@ -102,24 +102,25 @@ export default async function TransactionDetailPage({
               <div
                 key={del.id}
                 className="bg-surface-2 border border-border p-3 rounded text-xs font-mono flex items-center justify-between"
+                dir="ltr"
               >
                 <div>
                   <span className="font-bold uppercase text-[10px] me-2 px-1.5 py-0.5 rounded bg-surface">
                     {del.stage}
                   </span>
-                  <span>{del.target_url}</span>
-                  <span className="ms-2 text-muted">Attempt #{del.attempt}</span>
+                  <span dir="ltr">{del.target_url}</span>
+                  <span className="ms-2 text-muted" dir="ltr">Attempt #{del.attempt}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      del.result === "delivered" ? "text-success" : "text-danger"
+                      del.result === "delivered" ? "text-success-ink" : "text-danger-ink"
                     }`}
                   >
                     {del.result}
                   </span>
                   {del.response_status && (
-                    <span className="text-muted">HTTP {del.response_status}</span>
+                    <span className="text-muted" dir="ltr">HTTP {del.response_status}</span>
                   )}
                 </div>
               </div>
@@ -129,20 +130,22 @@ export default async function TransactionDetailPage({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-surface border border-border rounded-lg p-4 space-y-2">
+        <div className="bg-surface border border-border rounded-lg p-4 space-y-2 shadow-raised">
           <h3 className="font-semibold text-sm">{t("raw_request")}</h3>
           <pre
             className="p-3 bg-surface-2 border border-border rounded text-xs font-mono overflow-auto max-h-[350px]"
+            dir="ltr"
             data-testid="raw-request"
           >
             {JSON.stringify(tx.raw_request ?? {}, null, 2)}
           </pre>
         </div>
 
-        <div className="bg-surface border border-border rounded-lg p-4 space-y-2">
+        <div className="bg-surface border border-border rounded-lg p-4 space-y-2 shadow-raised">
           <h3 className="font-semibold text-sm">{t("raw_response")}</h3>
           <pre
             className="p-3 bg-surface-2 border border-border rounded text-xs font-mono overflow-auto max-h-[350px]"
+            dir="ltr"
             data-testid="raw-response"
           >
             {JSON.stringify(tx.raw_response ?? {}, null, 2)}

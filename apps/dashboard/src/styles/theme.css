@@ -2,23 +2,155 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Vazirmatn (project-local, from the design handoff) ─────────────────
+ * Two subsets split by unicode-range: "Vazirmatn PF" draws Arabic-script
+ * codepoints, "Vazirmatn Latin" draws Latin. Both lead every stack — the
+ * product's copy is Persian, and Georgia/Inter carry no Persian glyphs. */
+@font-face {
+  font-family: "Vazirmatn PF";
+  src: url("/fonts/vazirmatn-arabic.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1,
+    U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "Vazirmatn Latin";
+  src: url("/fonts/vazirmatn-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+/* ─── Tokens (ipg-sandbox-dashboard.html :root, bound verbatim) ───────────
+ * Values are bare RGB channels, not hex. Tailwind needs an <alpha-value>
+ * placeholder to emit `bg-success/10`; a bare `var(--success)` color
+ * silently generates NOTHING, which is what 33 opacity-modified classes in
+ * this app were already doing. Tailwind-side aliases in tailwind.config.ts
+ * expose the extra tiers (surface-subtle, accent-ink, …).
+ *
+ * Measured on --bg #FBF6EE: --text 16.1:1 · --text-2 9.3:1 · --muted 4.65:1
+ * · --accent 4.96:1 · white-on-accent 5.34:1. Two traps the design documents:
+ * --muted on --surface-2 drops to 3.96:1 (never pair them), and --success
+ * 3.84:1 / --warning 2.91:1 FAIL as text — small type uses the *-ink tiers. */
 :root {
-  --bg: #08090a;
-  --surface: #101113;
-  --surface-2: #17181b;
-  --border: #23252a;
-  --text: #f7f8f8;
-  --muted: #8a8f98;
-  --accent: #5e6ad2;
-  --success: #4cb782;
-  --danger: #e5484d;
-  --warning: #f2a72b;
+  --bg: 251 246 238;
+  --surface: 255 253 248;
+  --surface-2: 241 227 207; /* design's --surface-warm */
+  --border: 222 210 195;
+  --border-soft: 238 228 215;
+  --text: 32 25 20; /* design's --fg */
+  --text-2: 76 64 55; /* design's --fg-2 */
+  --muted: 122 109 99;
+  --accent: 155 91 50;
+  --success: 79 138 79;
+  --warning: 201 130 47; /* design's --warn */
+  --danger: 179 58 58;
+
+  /* Derived working tiers — the design mixes these in oklab; the values
+   * below are that mix precomputed, since a bare-var palette can't compose. */
+  --surface-subtle: 244 238 228; /* bg + 5% fg */
+  --surface-elevated: 242 235 224; /* bg + 8% fg */
+  --accent-on: 255 255 255;
+  --accent-subtle: 245 238 230; /* accent + 90% bg */
+  --accent-border: 208 181 162; /* accent + 58% bg */
+  --accent-ink: 127 74 41; /* accent + 18% black */
+  --success-bg: 248 245 239;
+  --success-ink: 59 103 59;
+  --success-border: 207 224 207;
+  --danger-bg: 249 245 243;
+  --danger-ink: 143 46 46;
+  --danger-border: 235 208 208;
+  --warning-bg: 249 244 236;
+  --warning-ink: 148 96 35;
+  --warning-border: 235 221 200;
+  --info-bg: var(--surface-subtle);
+
+  --font-display: "Vazirmatn PF", "Vazirmatn Latin", Georgia, "Times New Roman", serif;
+  --font-body: "Vazirmatn PF", "Vazirmatn Latin", Inter, system-ui, sans-serif;
+  --font-mono: "Vazirmatn PF", "Vazirmatn Latin", "SF Mono", ui-monospace, Menlo, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 17px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 42px;
+  --tracking-display: -0.025em;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 9999px;
+  --elev-raised: 0 20px 52px rgba(32, 25, 20, 0.12);
+  --focus-ring: 0 0 0 4px rgba(155, 91, 50, 0.24);
+  --motion-fast: 150ms;
+  --motion-base: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --scrollbar-track: rgb(var(--bg));
+  --scrollbar-thumb: rgb(var(--border));
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: rgb(var(--bg));
+  color: rgb(var(--text));
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Console body uses the sans at 14px with tight leading, not the marketing
+   page's 17px/1.62 — see `body` in ipg-sandbox-dashboard.html. */
+.font-display {
+  font-family: var(--font-display);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muted));
+}
+
+/* Arabic-script typographic reset: the display face's negative tracking is a
+ * Latin device — on cursive script it severs the joins. */
+[lang="fa"] h1,
+[lang="fa"] h2,
+[lang="fa"] h3,
+[lang="fa"] h4 {
+  letter-spacing: normal;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+::selection {
+  background: rgba(155, 91, 50, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
 }

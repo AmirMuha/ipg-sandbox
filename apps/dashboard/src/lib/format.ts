@@ -20,20 +20,26 @@ export function formatDate(dateStr: string, locale = "fa"): string {
   }
 }
 
+/**
+ * Badges use the `*-ink` / `*-bg` / `*-border` tiers, not the bare semantic
+ * hues: on the cream canvas --success is 3.84:1 and --warning 2.91:1, which
+ * both FAIL WCAG AA for the 12px badge text. The ink tiers are mixed toward
+ * black and clear 4.5:1.
+ */
 export function getStatusColor(status: string): string {
   switch (status) {
     case "settled":
     case "approved":
     case "delivered":
-      return "text-success bg-success/10 border-success/30";
+      return "text-success-ink bg-success-bg border-success-border";
     case "declined":
     case "failed":
-      return "text-danger bg-danger/10 border-danger/30";
+      return "text-danger-ink bg-danger-bg border-danger-border";
     case "pending":
     case "initiated":
-      return "text-warning bg-warning/10 border-warning/30";
+      return "text-warning-ink bg-warning-bg border-warning-border";
     case "refunded":
-      return "text-accent bg-accent/10 border-accent/30";
+      return "text-accent-ink bg-accent-subtle border-accent/30";
     default:
       return "text-muted bg-surface-2 border-border";
   }

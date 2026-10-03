@@ -92,12 +92,12 @@ export function ScenarioControls({
   return (
     <div className="space-y-6">
       {error && (
-        <div className="p-3 text-sm text-danger bg-danger/10 border border-danger/20 rounded">
+        <div className="p-3 text-sm text-danger-ink bg-danger-bg border border-danger-border rounded">
           {error}
         </div>
       )}
       {success && (
-        <div className="p-3 text-sm text-success bg-success/10 border border-success/20 rounded">
+        <div className="p-3 text-sm text-success-ink bg-success-bg border border-success-border rounded">
           {success}
         </div>
       )}
@@ -105,7 +105,7 @@ export function ScenarioControls({
       {transaction && (
         <form
           onSubmit={handleTxSubmit}
-          className="bg-surface border border-border p-4 rounded-lg space-y-4"
+          className="panel bg-surface border border-border rounded-console p-5 space-y-4"
           data-testid="per-tx-scenario-form"
         >
           <h3 className="font-semibold text-sm">{tScenario("per_tx_title")}</h3>
@@ -113,7 +113,7 @@ export function ScenarioControls({
             <select
               value={forcedScenario}
               onChange={(e) => setForcedScenario(e.target.value)}
-              className="bg-surface-2 border border-border rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-accent"
+              className="bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
               data-testid="per-tx-scenario-select"
             >
               <option value="">{tScenario("clear_force")}</option>
@@ -126,9 +126,9 @@ export function ScenarioControls({
             <button
               type="submit"
               disabled={loading}
-              className="bg-accent text-white px-4 py-1.5 rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="btn-primary bg-accent text-accent-on px-3.5 py-1.5 rounded-[6px] text-[13px] font-medium hover:bg-accent/92 transition-colors duration-fast ease-standard disabled:opacity-50"
             >
-              Apply
+              {tScenario("apply")}
             </button>
           </div>
         </form>
@@ -137,7 +137,7 @@ export function ScenarioControls({
       {project && (
         <form
           onSubmit={handleProjectSubmit}
-          className="bg-surface border border-border p-4 rounded-lg space-y-4"
+          className="panel bg-surface border border-border rounded-console p-5 space-y-4"
           data-testid="project-scenario-form"
         >
           <h3 className="font-semibold text-sm">{tScenario("title_compact")}</h3>
@@ -147,7 +147,7 @@ export function ScenarioControls({
               <select
                 value={defaultScenario}
                 onChange={(e) => setDefaultScenario(e.target.value as ScenarioOutcome)}
-                className="w-full bg-surface-2 border border-border rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-accent"
+                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
                 data-testid="project-default-select"
               >
                 {SCENARIOS.map((s) => (
@@ -165,7 +165,7 @@ export function ScenarioControls({
                 max="299"
                 value={pendingSettleDelay}
                 onChange={(e) => setPendingSettleDelay(Number(e.target.value))}
-                className="w-full bg-surface-2 border border-border rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-accent"
+                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
                 data-testid="pending-delay-input"
               />
             </div>
@@ -177,7 +177,7 @@ export function ScenarioControls({
                 max="299"
                 value={timeoutDelay}
                 onChange={(e) => setTimeoutDelay(Number(e.target.value))}
-                className="w-full bg-surface-2 border border-border rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-accent"
+                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
                 data-testid="timeout-delay-input"
               />
             </div>
@@ -185,7 +185,7 @@ export function ScenarioControls({
           <button
             type="submit"
             disabled={loading}
-            className="bg-accent text-white px-4 py-1.5 rounded text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="btn-primary bg-accent text-accent-on px-3.5 py-1.5 rounded-[6px] text-[13px] font-medium hover:bg-accent/92 transition-colors duration-fast ease-standard disabled:opacity-50"
             data-testid="save-project-btn"
           >
             {tScenario("save_project")}

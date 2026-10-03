@@ -1,0 +1,38 @@
+/* Marketing-only motion, from the design export's home.html <style> block.
+ * Console motion lives in the components themselves; these two keys are the
+ * only animations the marketing pages need beyond the global token set. */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: rise var(--motion-base, 240ms) var(--ease-standard, ease) both;
+}
+
+.delay-1 {
+  animation-delay: 60ms;
+}
+
+/* Hero quickstart dwell bar. scaleX(0 -> 1) from the right, matching RTL. */
+@keyframes qs-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-in {
+    animation: none;
+  }
+}

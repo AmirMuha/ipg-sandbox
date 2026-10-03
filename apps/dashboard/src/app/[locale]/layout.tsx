@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { routing, isRtl } from "../../i18n/routing";
-import { Shell } from "../../components/Shell";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -28,7 +27,7 @@ export default async function LocaleLayout({
     <html lang={locale} dir={dir}>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <Shell locale={locale}>{children}</Shell>
+          {children}
         </NextIntlClientProvider>
       </body>
     </html>

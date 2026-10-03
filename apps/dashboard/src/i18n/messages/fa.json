@@ -4,7 +4,8 @@
     "transactions": "تراکنش‌ها",
     "webhooks": "وب‌هوک‌ها",
     "settings": "تنظیمات",
-    "switch_lang": "English"
+    "switch_lang": "English",
+    "simulate_payment": "شبیه‌سازی پرداخت"
   },
   "common": {
     "save": "ذخیره",
@@ -32,7 +33,9 @@
     "date": "تاریخ و زمان",
     "details_title": "جزئیات تراکنش",
     "raw_request": "درخواست خام (Request)",
-    "raw_response": "پاسخ خام (Response)"
+    "raw_response": "پاسخ خام (Response)",
+    "forced": "(اجباری)",
+    "inspect": "بررسی"
   },
   "webhooks": {
     "title": "ارسال‌های وب‌هوک",
@@ -75,7 +78,8 @@
     "updated": "سناریو به‌روزرسانی شد",
     "update_failed": "به‌روزرسانی سناریو ناموفق بود",
     "project_updated": "تنظیمات پیش‌فرض پروژه به‌روزرسانی شد",
-    "project_update_failed": "به‌روزرسانی تنظیمات پروژه ناموفق بود"
+    "project_update_failed": "به‌روزرسانی تنظیمات پروژه ناموفق بود",
+    "apply": "اعمال"
   },
   "status": {
     "initiated": "شروع شده",
@@ -113,6 +117,7 @@
     "last_activity": "آخرین فعالیت",
     "tx_total": "تراکنش",
     "settled": "تسویه‌شده",
-    "failed_deliveries": "ارسال ناموفق"
+    "failed_deliveries": "ارسال ناموفق",
+    "credentials_valid": "اطلاعات معتبر است! آداپتور با موفقیت پاسخ داد."
   }
 }
