@@ -1,7 +1,11 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { AdapterConfig, getAdapters, getProject, Project } from "../../../../lib/api";
+import { AdapterConfig, apiBase, getAdapters, getProject, Project } from "../../../../lib/api";
 import { AdapterSettings } from "../../../../components/AdapterSettings";
-import { ScenarioControls } from "../../../../components/ScenarioControls";
+import { ProjectSettingsForm } from "../../../../components/ProjectSettingsForm";
+import { ScenarioCiGuide } from "../../../../components/ScenarioCiGuide";
+
+// Adapter credentials and project defaults are live engine state.
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage({
   params: { locale },
@@ -39,7 +43,7 @@ export default async function SettingsPage({
       {project && (
         <div className="space-y-4">
           <h2 className="font-display text-[17px] font-semibold tracking-display">{t("project_settings")}</h2>
-          <ScenarioControls project={project} />
+          <ProjectSettingsForm project={project} locale={locale} />
         </div>
       )}
 
@@ -51,6 +55,8 @@ export default async function SettingsPage({
           ))}
         </div>
       </div>
+
+      <ScenarioCiGuide apiBase={apiBase} />
     </div>
   );
 }

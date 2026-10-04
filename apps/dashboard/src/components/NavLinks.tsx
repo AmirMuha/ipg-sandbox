@@ -2,37 +2,54 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 /**
- * Sub-bar tabs from ipg-sandbox-dashboard.html (.sub-bar / .tab-link).
+ * Sub-bar tabs from ipg-sandbox-dashboard.html (.seg / .seg-btn).
  * Client-only: the active route needs usePathname, which a server component
  * can't read.
+ *
+ * The three segments point at /transactions, /webhooks and /settings. The third
+ * is the adapters+SDK page but keeps its /settings URL — the route and its
+ * `project-history-cap-input` / `project-webhook-retry-max-input` testids are
+ * the console's settings surface under test.
  */
-export function NavLinks({
-  links,
-}: {
-  links: { href: string; label: string; testId: string; icon: "list" | "bell" | "code" | "chart" }[];
-}) {
+export function NavLinks({ locale }: { locale: string }) {
+  const t = useTranslations("nav");
   const pathname = usePathname();
 
+  const tabs = [
+    { key: "transactions", href: `/${locale}/transactions`, label: t("transactions"), icon: "list" as const },
+    { key: "webhooks", href: `/${locale}/webhooks`, label: t("webhooks"), icon: "bell" as const },
+    {
+      key: "settings",
+      href: `/${locale}/settings`,
+      label: locale === "fa" ? "درگاه‌ها و SDK" : "Adapters & SDK",
+      icon: "code" as const,
+    },
+  ];
+
   return (
-    <nav className="tab-group flex items-center" data-testid="tab-group">
-      {links.map((l) => {
-        const active = pathname === l.href;
+    <nav
+      className="seg flex items-center gap-1 p-0.5 rounded-sm bg-surface-subtle border border-border overflow-x-auto snap-x snap-mandatory"
+      data-testid="tab-group"
+    >
+      {tabs.map((tab) => {
+        const active = pathname === tab.href || pathname?.startsWith(`${tab.href}/`);
         return (
           <Link
-            key={l.href}
-            href={l.href}
+            key={tab.href}
+            href={tab.href}
             aria-current={active ? "page" : undefined}
-            className={`tab-link flex items-center gap-2 px-3.5 py-2 text-[13px] text-muted border-b-2 border-transparent hover:text-text transition-colors duration-fast ease-standard ${
+            data-testid={`nav-${tab.key}`}
+            className={`seg-btn shrink-0 snap-start inline-flex items-center gap-2 min-h-9 px-3.5 py-1.5 rounded-sm text-[13px] transition-colors duration-fast ease-standard ${
               active
-                ? "!text-text !bg-accent-subtle !border-accent font-medium"
-                : ""
+                ? "bg-surface-elevated text-text font-semibold shadow-[0_1px_2px_rgba(32,25,20,0.08)]"
+                : "text-muted font-medium hover:text-text"
             }`}
-            data-testid={l.testId}
           >
-            <TabIcon kind={l.icon} />
-            <span>{l.label}</span>
+            <TabIcon kind={tab.icon} />
+            <span>{tab.label}</span>
           </Link>
         );
       })}
@@ -40,7 +57,7 @@ export function NavLinks({
   );
 }
 
-function TabIcon({ kind }: { kind: "list" | "bell" | "code" | "chart" }) {
+function TabIcon({ kind }: { kind: "list" | "bell" | "code" }) {
   const common = {
     width: 15,
     height: 15,
@@ -50,6 +67,7 @@ function TabIcon({ kind }: { kind: "list" | "bell" | "code" | "chart" }) {
     strokeWidth: 2,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
+    "aria-hidden": true,
   };
   if (kind === "bell")
     return (
@@ -63,14 +81,6 @@ function TabIcon({ kind }: { kind: "list" | "bell" | "code" | "chart" }) {
       <svg {...common}>
         <polyline points="16 18 22 12 16 6" />
         <polyline points="8 6 2 12 8 18" />
-      </svg>
-    );
-  if (kind === "chart")
-    return (
-      <svg {...common}>
-        <line x1="18" y1="20" x2="18" y2="10" />
-        <line x1="12" y1="20" x2="12" y2="4" />
-        <line x1="6" y1="20" x2="6" y2="14" />
       </svg>
     );
   return (

@@ -8,6 +8,18 @@ export function formatRial(amount: number, locale = "fa"): string {
   }).format(amount);
 }
 
+export function formatToman(amountRial: number, locale = "fa"): string {
+  const toman = Math.floor(amountRial / 10);
+  return new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", {
+    style: "decimal",
+  }).format(toman);
+}
+
+export function formatCapacity(count: number, cap: number, locale = "fa"): string {
+  const f = (n: number) => new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(n);
+  return `${f(count)} / ${f(cap)}`;
+}
+
 export function formatDate(dateStr: string, locale = "fa"): string {
   try {
     const d = new Date(dateStr);

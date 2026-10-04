@@ -35,7 +35,9 @@
     "raw_request": "درخواست خام (Request)",
     "raw_response": "پاسخ خام (Response)",
     "forced": "(اجباری)",
-    "inspect": "بررسی"
+    "inspect": "بررسی",
+    "order_id": "شماره سفارش",
+    "gateway": "درگاه"
   },
   "webhooks": {
     "title": "ارسال‌های وب‌هوک",
@@ -49,13 +51,24 @@
     "timestamp": "زمان",
     "payload": "محتوای ارسالی (Payload)",
     "error": "پیام خطا",
-    "endpoint_title": "نقطهٔ بازگشت (Callback)"
+    "endpoint_title": "نقطهٔ بازگشت (Callback)",
+    "local_dispatcher": "توزیع‌کننده لوکال‌هاست",
+    "event": "رویداد",
+    "gateway": "درگاه",
+    "status_col": "وضعیت",
+    "time": "زمان",
+    "actions": "عملیات",
+    "total_deliveries": "ارسال",
+    "delivered": "تحویل شد",
+    "failed": "ناموفق",
+    "pending": "در انتظار",
+    "payloads_title": "محتوای ارسال‌ها"
   },
   "settings": {
-    "title": "تنظیمات",
-    "subtitle": "پیکربندی سناریوهای پیش‌فرض و درگاه‌های فعال",
+    "title": "درگاه‌ها و راهنمای ادغام",
+    "subtitle": "پیکربندی درگاه‌های پرداخت و اتصال سندباکس به خط لولهٔ CI شما",
     "project_settings": "تنظیمات عمومی پروژه",
-    "adapter_settings": "پیکربندی درگاه‌ها",
+    "adapter_settings": "درگاه‌ها",
     "default_scenario": "سناریوی پیش‌فرض",
     "pending_settle_delay": "تاخیر تسویه در انتظار (ثانیه)",
     "timeout_delay": "تاخیر پایان مهلت (ثانیه)",
@@ -63,7 +76,15 @@
     "webhook_retry_max": "حداکثر دفعات تلاش وب‌هوک",
     "test_credentials": "تست اعتبار",
     "credentials_valid": "اعتبار درگاه با موفقیت تایید شد.",
-    "test_failed": "خطا در بررسی اعتبار درگاه"
+    "test_failed": "خطا در بررسی اعتبار درگاه",
+    "toman": "تومان",
+    "saving": "در حال ذخیره...",
+    "saved": "تنظیمات پروژه ذخیره شد",
+    "save_failed": "ذخیره تنظیمات ناموفق بود",
+    "ci_title": "تست خودکار در CI / بدون مرورگر",
+    "ci_body": "با هدر X-IPG-Scenario هر سناریویی را در هر درخواست اجبار کنید — بدون داشبورد و بدون مرورگر. هر مقدار نتیجهٔ پرداخت بعدی را تعیین می‌کند، بدون آنکه نیازی به ساخت رکورد از قبل باشد.",
+    "ci_scenarios": "سناریوها",
+    "ci_copy": "کپی دستور"
   },
   "scenario_controls": {
     "title": "کنترل سناریو",
@@ -101,7 +122,9 @@
     "timeout": "پایان مهلت (timeout)",
     "refund": "استرداد وجه (refund)",
     "pending_settle": "در انتظار تا تسویه (pending_settle)",
-    "verify_fail": "شکست تایید (verify_fail)"
+    "verify_fail": "شکست تایید (verify_fail)",
+    "webhook_url_label": "آدرس وب‌هوک پیش‌فرض",
+    "save_project": "بروزرسانی تنظیمات پروژه"
   },
   "adapter_settings": {
     "credentials_saved": "اطلاعات ورود ذخیره شد.",
@@ -122,7 +145,15 @@
     "tx_total": "تراکنش",
     "settled": "تسویه‌شده",
     "failed_deliveries": "ارسال ناموفق",
-    "credentials_valid": "اطلاعات معتبر است! آداپتور با موفقیت پاسخ داد."
+    "credentials_valid": "اطلاعات معتبر است! آداپتور با موفقیت پاسخ داد.",
+    "endpoint_label": "نقطه پایانی",
+    "copy_endpoint": "کپی آدرس",
+    "copied": "کپی شد",
+    "version_rest": "REST v4",
+    "version_soap": "SOAP",
+    "merchant_id": "شناسه پذیرنده",
+    "api_key": "کلید API",
+    "docs_link": "دریافت مستندات API"
   },
   "simulate": {
     "title": "شبیه‌سازی پرداخت",
@@ -138,7 +169,9 @@
     "submitting": "در حال ایجاد...",
     "success_interactive": "تراکنش ایجاد شد. برای تکمیل، صفحه پرداخت درگاه را باز کنید.",
     "success_auto": "تراکنش به‌صورت خودکار تسویه شد.",
-    "error": "شبیه‌سازی ناموفق بود"
+    "error": "شبیه‌سازی ناموفق بود",
+    "toman": "تومان",
+    "next_gateway": "مرحله بعد: درگاه پرداخت"
   },
   "filters": {
     "search": "جستجو",
@@ -174,5 +207,24 @@
   "checkout": {
     "open": "باز کردن صفحه پرداخت درگاه",
     "hint": "پرداخت را در صفحه درگاه تکمیل یا لغو کنید."
+  },
+  "gateway_checkout": {
+    "title": "پرداخت در درگاه",
+    "shaparak": "شاپرک",
+    "masked_card_number": "۶۰۳۷-۹۹**-****-۸۴۹۲",
+    "cardholder": "نام دارنده",
+    "dummy_cardholder": "IPG SANDBOX",
+    "otp": "رمز پویا",
+    "dummy_otp": "۴۲۷۱",
+    "scenario_tag": "سناریو: {scenario}",
+    "pay_and_complete": "پرداخت و تایید نهایی"
+  },
+  "scenario_ribbon": {
+    "title": "سناریوی پیش‌فرض:",
+    "delay_label": "تأخیر تسویه",
+    "delay_updated": "تأخیر تسویه به‌روزرسانی شد",
+    "scenario_updated": "سناریوی پیش‌فرض به‌روزرسانی شد",
+    "update_failed": "به‌روزرسانی ناموفق بود",
+    "seconds": "ثانیه"
   }
 }

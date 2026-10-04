@@ -13,25 +13,15 @@ const BASE_URL = process.env.DASHBOARD_URL ?? "http://localhost:3000";
 const ENGINE_URL = process.env.ENGINE_URL ?? "http://localhost:8080";
 
 test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
-  test("1. Persian locale has RTL direction and English locale has LTR direction", async ({
-    page,
-  }) => {
+  test("1. Persian locale is RTL and the locale switcher is hidden", async ({ page }) => {
     // Navigate to Persian transactions
     await page.goto(`${BASE_URL}/fa/transactions`);
     const htmlFa = page.locator("html");
     await expect(htmlFa).toHaveAttribute("dir", "rtl");
     await expect(htmlFa).toHaveAttribute("lang", "fa");
 
-    // Click locale switch link
-    const localeSwitch = page.locator('[data-testid="locale-switch"]');
-    await expect(localeSwitch).toBeVisible();
-    await localeSwitch.click();
-
-    // Verify flipped to LTR English
-    await page.waitForURL("**/en/transactions");
-    const htmlEn = page.locator("html");
-    await expect(htmlEn).toHaveAttribute("dir", "ltr");
-    await expect(htmlEn).toHaveAttribute("lang", "en");
+    // Language is fixed to Persian for now — no switcher control is rendered.
+    await expect(page.locator('[data-testid="locale-switch"]')).toHaveCount(0);
   });
 
   test("2. Transactions list renders correctly with adapter, amount (Rial), status", async ({
@@ -53,7 +43,8 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
   }) => {
     await page.goto(`${BASE_URL}/fa/transactions`);
 
-    // Select 'decline' as project default in scenario controls
+    // Select 'decline' as project default in the settings form
+    await page.goto(`${BASE_URL}/fa/settings`);
     const select = page.locator('[data-testid="project-default-select"]');
     await expect(select).toBeVisible();
     await select.selectOption("decline");
@@ -88,7 +79,7 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
     expect(verifyData.code).toBe(-51);
 
     // Reload transactions page and verify row has declined status
-    await page.reload();
+    await page.goto(`${BASE_URL}/fa/transactions`);
     const declinedBadge = page.locator('[data-testid="tx-status"]:has-text("رد شده"), [data-testid="tx-status"]:has-text("declined")');
     await expect(declinedBadge.first()).toBeVisible();
 

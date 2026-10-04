@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+
+// Every console page reads live engine state (transactions, deliveries, project defaults),
+// so prerendering them would freeze a snapshot of whatever the engine held at build time.
+// The drawer's `useSearchParams()` already forced this for the shell, but each page has to
+// opt in for itself.
+export const dynamic = "force-dynamic";
 import {
   AdapterConfig,
   getAdapters,
@@ -11,11 +17,13 @@ import {
   ProjectAnalyticsOverview,
   Transaction,
 } from "../../../../lib/api";
-import { formatDate, formatRial, getStatusColor } from "../../../../lib/format";
-import { ScenarioControls } from "../../../../components/ScenarioControls";
+import { formatDate, formatRial, formatToman, getStatusColor } from "../../../../lib/format";
+import { ScenarioRibbon } from "../../../../components/ScenarioRibbon";
+import { OutcomeDistribution } from "../../../../components/OutcomeDistribution";
 import { StatCards } from "../../../../components/StatCards";
 import { TransactionFilters } from "../../../../components/TransactionFilters";
 import { PaginationControls } from "../../../../components/PaginationControls";
+import { CopyButton } from "../../../../components/CopyButton";
 
 export default async function TransactionsPage({
   params: { locale },
@@ -27,6 +35,7 @@ export default async function TransactionsPage({
   setRequestLocale(locale);
   const t = await getTranslations("transactions");
   const tStatus = await getTranslations("status");
+  const tSettings = await getTranslations("settings");
 
   const num = (v: string | string[] | undefined, fallback: number) => {
     const n = Number(Array.isArray(v) ? v[0] : v);
@@ -75,7 +84,17 @@ export default async function TransactionsPage({
 
   return (
     <>
-      <StatCards overview={overview} locale={locale} />
+      <StatCards
+        overview={overview}
+        historyCap={project?.history_cap}
+        locale={locale}
+      />
+
+      <OutcomeDistribution
+        distribution={overview?.scenario_distribution ?? {}}
+        total={overview?.total_transactions ?? 0}
+        locale={locale}
+      />
 
       {loadError && (
         <div className="p-4 bg-danger-bg border border-danger-border text-danger-ink rounded-console text-sm">
@@ -83,7 +102,7 @@ export default async function TransactionsPage({
         </div>
       )}
 
-      {project && <ScenarioControls project={project} />}
+      {project && <ScenarioRibbon project={project} locale={locale} />}
 
       <div className="panel bg-surface border border-border rounded-console overflow-hidden">
         <div className="panel-header px-5 py-4 border-b border-border flex items-center justify-between gap-4 flex-wrap">
@@ -104,19 +123,22 @@ export default async function TransactionsPage({
             <thead>
               <tr>
                 <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("adapter")}
+                  {t("authority")}
+                </th>
+                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
+                  {t("gateway")}
+                </th>
+                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
+                  {t("order_id")}
                 </th>
                 <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
                   {t("amount")}
                 </th>
                 <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("status")}
-                </th>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
                   {t("scenario")}
                 </th>
                 <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("authority")}
+                  {t("status")}
                 </th>
                 <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
                   {t("date")}
@@ -127,7 +149,7 @@ export default async function TransactionsPage({
             <tbody>
               {txData.items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-muted text-sm">
+                  <td colSpan={8} className="py-8 text-center text-muted text-sm">
                     {t("empty")}
                   </td>
                 </tr>
@@ -140,28 +162,36 @@ export default async function TransactionsPage({
                       className="hover:bg-surface-subtle transition-colors"
                       data-testid="tx-row"
                     >
+                      <td className="px-4 py-3 border-b border-border-soft align-middle" dir="ltr">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs text-text truncate max-w-[220px]">
+                            {tx.authority}
+                          </span>
+                          <CopyButton value={tx.authority} />
+                        </div>
+                      </td>
                       <td className="px-4 py-3 border-b border-border-soft align-middle">
                         <span
                           className="gateway-badge inline-flex items-center gap-1.5 px-2 py-[3px] rounded-sm text-xs font-medium bg-bg border border-border text-text whitespace-nowrap"
                           dir="ltr"
                           data-testid="tx-adapter"
                         >
-                          {providerName}
+                          .{providerName}
                         </span>
+                      </td>
+                      <td
+                        className="px-4 py-3 border-b border-border-soft align-middle font-mono text-xs text-text-2 truncate max-w-[160px]"
+                        dir="ltr"
+                      >
+                        {tx.app_reference || "—"}
                       </td>
                       <td
                         className="currency-cell px-4 py-3 border-b border-border-soft align-middle font-mono font-semibold text-text tabular-nums"
                         data-testid="tx-amount"
                       >
                         {formatRial(tx.amount_rial, locale)}
-                      </td>
-                      <td className="px-4 py-3 border-b border-border-soft align-middle" data-testid="tx-status">
-                        <span
-                          className={`status-badge inline-flex items-center gap-1.5 px-2 py-[3px] rounded-sm text-xs font-medium whitespace-nowrap border ${getStatusColor(
-                            tx.status
-                          )}`}
-                        >
-                          {tStatus.has(tx.status) ? tStatus(tx.status) : tx.status}
+                        <span className="block font-sans font-normal text-[11px] text-muted">
+                          {formatToman(tx.amount_rial, locale)} {tSettings("toman")}
                         </span>
                       </td>
                       <td className="px-4 py-3 border-b border-border-soft align-middle" data-testid="tx-scenario">
@@ -174,18 +204,22 @@ export default async function TransactionsPage({
                           </span>
                         )}
                       </td>
-                      <td
-                        className="code-cell px-4 py-3 border-b border-border-soft align-middle font-mono text-xs text-text truncate max-w-[220px]"
-                        dir="ltr"
-                      >
-                        {tx.authority}
+                      <td className="px-4 py-3 border-b border-border-soft align-middle" data-testid="tx-status">
+                        <span
+                          className={`status-badge inline-flex items-center gap-1.5 px-2 py-[3px] rounded-sm text-xs font-medium whitespace-nowrap border ${getStatusColor(
+                            tx.status
+                          )}`}
+                        >
+                          {tStatus.has(tx.status) ? tStatus(tx.status) : tx.status}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 border-b border-border-soft align-middle text-xs text-muted">
+                      <td className="px-4 py-3 border-b border-border-soft align-middle text-xs text-muted whitespace-nowrap">
                         {formatDate(tx.created_at, locale)}
                       </td>
                       <td className="px-4 py-3 border-b border-border-soft align-middle text-end">
                         <Link
-                          href={`/${locale}/transactions/${tx.id}`}
+                          href={`/${locale}/transactions?tx=${tx.id}`}
+                          scroll={false}
                           className="btn-secondary inline-flex items-center px-2.5 py-1 rounded-[6px] text-xs font-medium bg-surface text-text border border-border hover:bg-surface-subtle transition-colors duration-fast ease-standard"
                           data-testid={`tx-detail-link-${tx.id}`}
                         >

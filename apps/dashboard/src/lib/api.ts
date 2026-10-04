@@ -14,6 +14,12 @@ const CLIENT_API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:808
 
 const API_BASE = typeof window === "undefined" ? SERVER_API_BASE : CLIENT_API_BASE;
 
+/**
+ * The gateway base a merchant's client should POST to. Exported so the adapter cards can
+ * render a real endpoint snippet instead of a path prefix.
+ */
+export const apiBase = CLIENT_API_BASE;
+
 export type ScenarioOutcome =
   | "approve"
   | "decline"

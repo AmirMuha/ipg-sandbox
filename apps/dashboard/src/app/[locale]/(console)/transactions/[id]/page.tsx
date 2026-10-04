@@ -13,6 +13,9 @@ import { formatDate, formatRial, getStatusColor } from "../../../../../lib/forma
 import { ScenarioControls } from "../../../../../components/ScenarioControls";
 import { DeleteTransactionButton } from "../../../../../components/DeleteTransactionButton";
 
+// The transaction, its deliveries, and its adapter are all read live per request.
+export const dynamic = "force-dynamic";
+
 export default async function TransactionDetailPage({
   params: { locale, id },
 }: {

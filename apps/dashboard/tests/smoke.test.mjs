@@ -33,9 +33,10 @@ test("1. Root redirect and Persian RTL layout", async () => {
     faHtml.includes('data-testid="transactions-table"'),
     "Expected transactions-table in HTML"
   );
+  // Language is fixed to Persian for now — the switcher must not render.
   assert.ok(
-    faHtml.includes('data-testid="locale-switch"'),
-    "Expected locale-switch link in HTML"
+    !faHtml.includes('data-testid="locale-switch"'),
+    "Expected no locale-switch link in HTML"
   );
 });
 
@@ -331,12 +332,12 @@ test("10. Dashboard renders the analytics overview, filters, and simulate CTA", 
     webhooks.includes('data-testid="webhook-ping-btn"'),
     "Expected the webhook ping button"
   );
+  // The webhook URL input moved to the settings form; the webhooks page keeps the ping probe.
+  const settings = await (await fetch(`${DASHBOARD_URL}/fa/settings`)).text();
   assert.ok(
-    webhooks.includes('data-testid="project-webhook-url-input"'),
+    settings.includes('data-testid="project-webhook-url-input"'),
     "Expected the default webhook URL input"
   );
-
-  const settings = await (await fetch(`${DASHBOARD_URL}/fa/settings`)).text();
   assert.ok(
     settings.includes('data-testid="project-history-cap-input"'),
     "Expected the history cap input"
