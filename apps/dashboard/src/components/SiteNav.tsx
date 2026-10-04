@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { UserMenu } from "./UserMenu";
 
 interface SiteNavProps {
   locale: string;
@@ -59,30 +60,16 @@ export function SiteNav({
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          {active === "console" ? (
+        <div className="flex items-center gap-3">
+          {active === "console" && (
             <Link
               href={`/${locale}/home`}
-              className="inline-flex items-center justify-center min-h-9 px-3.5 rounded-sm border border-border bg-surface text-text text-xs font-medium hover:bg-surface-subtle transition-colors duration-fast ease-standard"
+              className="hidden sm:inline-flex items-center justify-center min-h-9 px-3 rounded-sm border border-border bg-surface text-text text-xs font-medium hover:bg-surface-subtle transition-colors duration-fast ease-standard"
             >
               {isFa ? "بازگشت به سایت" : "Back to Site"}
             </Link>
-          ) : (
-            <>
-              <Link
-                href={`/${locale}/login`}
-                className="hidden sm:inline-flex items-center justify-center min-h-11 px-4 rounded-sm text-sm font-medium text-muted hover:bg-surface-subtle hover:text-text transition-colors duration-fast ease-standard"
-              >
-                {isFa ? "ورود" : "Login"}
-              </Link>
-              <Link
-                href={`/${locale}/login`}
-                className="inline-flex items-center justify-center min-h-11 px-4 rounded-sm border border-border bg-surface text-text text-sm font-medium hover:bg-surface-subtle transition-colors duration-fast ease-standard"
-              >
-                {isFa ? "شروع رایگان" : "Start Free"}
-              </Link>
-            </>
           )}
+          <UserMenu locale={locale} active={active} />
         </div>
       </div>
 
