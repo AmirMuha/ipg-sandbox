@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="urn:InitPaymentGateway"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="urn:InitPaymentGateway"
+             name="PaymentIFBinding">
+
+  <types>
+    <xsd:schema targetNamespace="urn:InitPaymentGateway" elementFormDefault="qualified">
+      <xsd:element name="verifyTransaction">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="RefNum" type="xsd:string"/>
+            <xsd:element name="TerminalNumber" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="verifyTransactionResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Result" type="xsd:double"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="reverseTransaction">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="RefNum" type="xsd:string"/>
+            <xsd:element name="TerminalNumber" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="reverseTransactionResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Result" type="xsd:double"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </types>
+
+  <message name="verifyTransactionRequest">
+    <part name="parameters" element="tns:verifyTransaction"/>
+  </message>
+  <message name="verifyTransactionResponse">
+    <part name="parameters" element="tns:verifyTransactionResponse"/>
+  </message>
+
+  <portType name="PaymentIFBindingSoap">
+    <operation name="verifyTransaction">
+      <input message="tns:verifyTransactionRequest"/>
+      <output message="tns:verifyTransactionResponse"/>
+    </operation>
+  </portType>
+
+  <binding name="PaymentIFBindingSoap" type="tns:PaymentIFBindingSoap">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="verifyTransaction">
+      <soap:operation soapAction="verifyTransaction"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <service name="PaymentIFBinding">
+    <port name="PaymentIFBindingSoap" binding="tns:PaymentIFBindingSoap">
+      <soap:address location="http://localhost:8080/saman/verifyTxn"/>
+    </port>
+  </service>
+</definitions>

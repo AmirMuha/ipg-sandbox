@@ -9,6 +9,7 @@ from src.adapters.base import (
     CallbackStage,
     PaymentAdapter,
 )
+from src.adapters.metadata import masked_pan
 from src.api.errors import ApiError, ErrorCode
 from src.checkout.page import render_checkout_page
 from src.models import (
@@ -59,7 +60,7 @@ class ZarinpalAdapter(PaymentAdapter):
                 "code": 101,
                 "message": "Operation was successful (already verified)",
                 "ref_id": ref_id,
-                "card_pan": "502229******1234",
+                "card_pan": masked_pan(self.provider, tx),
                 "card_hash": "21EC2020-3AEA-4069-A2DD-08002B30309D",
             }
 
@@ -77,7 +78,7 @@ class ZarinpalAdapter(PaymentAdapter):
                 "code": 100,
                 "message": "Approved for refund",
                 "ref_id": ref_id,
-                "card_pan": "502229******1234",
+                "card_pan": masked_pan(self.provider, tx),
                 "card_hash": "21EC2020-3AEA-4069-A2DD-08002B30309D",
             }
 

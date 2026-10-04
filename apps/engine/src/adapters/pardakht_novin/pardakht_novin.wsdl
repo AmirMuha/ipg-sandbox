@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="http://pna.shaparak.ir/services"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="http://pna.shaparak.ir/services"
+             name="PardakhtNovinService">
+  <types>
+    <xsd:schema targetNamespace="http://pna.shaparak.ir/services" elementFormDefault="qualified">
+      <xsd:element name="Verify">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="WSContext" type="xsd:string"/>
+            <xsd:element name="Token" type="xsd:string"/>
+            <xsd:element name="RefNum" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="VerifyResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Result" type="xsd:string"/>
+            <xsd:element name="Amount" type="xsd:long"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </types>
+  <message name="VerifySoapIn">
+    <part name="parameters" element="tns:Verify"/>
+  </message>
+  <message name="VerifySoapOut">
+    <part name="parameters" element="tns:VerifyResponse"/>
+  </message>
+  <portType name="PardakhtNovinSoap">
+    <operation name="Verify">
+      <input message="tns:VerifySoapIn"/>
+      <output message="tns:VerifySoapOut"/>
+    </operation>
+  </portType>
+  <binding name="PardakhtNovinSoapBinding" type="tns:PardakhtNovinSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="Verify">
+      <soap:operation soapAction="http://pna.shaparak.ir/services/Verify" style="document"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+  <service name="PardakhtNovinService">
+    <port name="PardakhtNovinSoap" binding="tns:PardakhtNovinSoapBinding">
+      <soap:address location="http://localhost:8080/pardakht_novin/services"/>
+    </port>
+  </service>
+</definitions>

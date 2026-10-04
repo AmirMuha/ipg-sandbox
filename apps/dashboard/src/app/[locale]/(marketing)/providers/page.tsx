@@ -6,12 +6,9 @@ import { Badge, PageHead } from "../../../../components/marketing/PageHead";
 export const metadata: Metadata = {
   title: "درگاه‌های پشتیبانی‌شده | سندباکس درگاه",
   description:
-    "مشخصات فنی آداپتورهای زرین‌پال، آیدی‌پی، به‌پرداخت ملت و سامان کیش در سندباکس درگاه.",
+    "مشخصات فنی و مسیرهای ارتباطی ۱۳ درگاه پرداخت فعال شاپرک و پرداخت‌یار در سندباکس درگاه.",
 };
 
-/** `[label, value, mono?]`. The third slot only exists on some rows, so it is
- *  part of the tuple type rather than inferred as `string | boolean | undefined`
- *  off the union of array literal shapes. */
 type SpecRow = readonly [string, string] | readonly [string, string, true];
 
 const GATEWAYS: ReadonlyArray<{
@@ -30,18 +27,14 @@ const GATEWAYS: ReadonlyArray<{
     id: "zarinpal",
     monogram: "zp",
     name: "زرین‌پال",
-    latin: "zarinpal · pg/v4",
+    latin: "zarinpal · REST",
     status: "success",
     statusLabel: "پایدار",
-    summary:
-      "درخواست پرداخت، تایید تراکنش، تسهیم و استعلام. خطاهای رایج درگاه مثل -51 و -33 هم قابل اجرا هستند.",
+    summary: "پرداخت‌یار زرین‌پال با پشتیبانی از درخواست پرداخت، تایید و استعلام و بازگشت وجه.",
     spec: [
-      ["پروتکل", "REST نسخه ۴ (همچنین SOAP)"],
-      ["مسیر", "/zarinpal/pg/v4/payment/request.json", true],
-      [
-        "سناریوها",
-        "تایید، رد شدن، تایم‌اوت ۵۰۴، شکست در مرحله تایید، بازگشت وجه",
-      ],
+      ["پروتکل", "REST JSON"],
+      ["مسیر", "/zarinpal/request/payment", true],
+      ["سناریوها", "تایید، رد، تایم‌اوت، شکست تایید، استرداد"],
     ],
     doc: { href: "/docs/zarinpal-api-reference.md", size: "۵ کیلوبایت" },
     live: true,
@@ -50,15 +43,14 @@ const GATEWAYS: ReadonlyArray<{
     id: "idpay",
     monogram: "idp",
     name: "آیدی‌پی",
-    latin: "idpay · v1.1",
+    latin: "idpay · REST",
     status: "success",
     statusLabel: "پایدار",
-    summary:
-      "وب‌سرویس نسخه ۱.۱، پرداخت مستقیم، ساخت درگاه شخصی و ارسال کال‌بک وضعیت پرداخت.",
+    summary: "وب‌سرویس نسخه ۱.۱، پرداخت مستقیم با هدر احراز هویت X-API-KEY.",
     spec: [
-      ["پروتکل", "REST نسخه ۱.۱ با هدر X-API-KEY"],
-      ["مسیر", "/idpay/v1.1/payment", true],
-      ["پاسخ", "فیلدهای status و track_id مطابق درگاه اصلی"],
+      ["پروتکل", "REST JSON"],
+      ["مسیر", "/idpay/payment", true],
+      ["پاسخ", "فیلدهای status و track_id"],
     ],
     doc: { href: "/docs/idpay-api-reference.md", size: "۴ کیلوبایت" },
     live: true,
@@ -67,37 +59,177 @@ const GATEWAYS: ReadonlyArray<{
     id: "behpardakht",
     monogram: "bp",
     name: "به‌پرداخت ملت",
-    latin: "behpardakht mellat · pgw",
+    latin: "behpardakht mellat · SOAP/WSDL",
     status: "success",
     statusLabel: "پایدار",
-    summary:
-      "پروتکل SOAP و REST با متدهای bpPayRequest، bpVerifyRequest و bpSettleRequest؛ کال‌بک‌های بانک ملت هم بازتولید می‌شود.",
+    summary: "پروتکل SOAP و WSDL بانک ملت با متدهای bpPaymentRequest، bpVerifyRequest و bpReversalRequest.",
     spec: [
-      ["پروتکل", "WSDL (SOAP) و REST"],
-      ["مسیر", "/behpardakht/services/pgw", true],
-      ["خطاها", "کدهای ۴۱ و ۴۳ قابل شبیه‌سازی است"],
+      ["پروتکل", "SOAP 1.1 XML & WSDL"],
+      ["مسیر", "/behpardakht/MellatPaymentGateway", true],
+      ["کال‌بک", "فرم POST شاپرکی با ResCode"],
     ],
-    doc: {
-      href: "/docs/behpardakht-mellat-api-reference.md",
-      size: "۴ کیلوبایت",
-    },
+    doc: { href: "/docs/behpardakht-mellat-api-reference.md", size: "۴ کیلوبایت" },
     live: true,
   },
   {
-    id: "saman-kish",
-    monogram: "sk",
+    id: "saman",
+    monogram: "sep",
     name: "سامان کیش (سپ)",
-    latin: "saman kish · beta",
-    status: "warn",
-    statusLabel: "آزمایشی",
-    summary:
-      "توکن‌سازی، خرید مستقیم و وریفای دو مرحله‌ای. خطاهای شبکه شاپرک در این آداپتور هنوز کامل پوشش داده نشده است.",
+    latin: "saman sep · REST/SOAP",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "توکن‌سازی با متد onlinepg، صفحه اختصاصی پرداخت، تایید وریفای و استرداد تراکنش.",
     spec: [
-      ["پروتکل", "REST با توکن‌سازی"],
-      ["محدودیت", "وریفای دو مرحله‌ای در حال تکمیل است"],
+      ["پروتکل", "REST & SOAP WSDL"],
+      ["مسیر", "/saman/onlinepg/onlinepg", true],
+      ["تایید", "متد verifyTxn با کدهای خطای منفی"],
     ],
-    doc: { href: "/docs/saman-kish-coverage.md", size: "۳ کیلوبایت" },
-    live: false,
+    doc: { href: "/docs/saman-sep-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "sadad",
+    monogram: "sd",
+    name: "سداد (بانک ملی)",
+    latin: "sadad melli · REST",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "درگاه پرداخت سداد با متدهای PaymentRequest، کال‌بک شاپرکی و Advice/Verify.",
+    spec: [
+      ["پروتکل", "REST JSON & WSDL"],
+      ["مسیر", "/sadad/api/v0/Request/PaymentRequest", true],
+      ["شناسه‌ها", "RetrivalReferenceNumber و SystemTraceNo"],
+    ],
+    doc: { href: "/docs/sadad-melli-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "parsian",
+    monogram: "pec",
+    name: "تجارت الکترونیک پارسیان (تاپ)",
+    latin: "parsian pec · SOAP",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "وب‌سرویس EShopService با پروتکل SOAP و متدهای SalePaymentRequest و ConfirmPayment.",
+    spec: [
+      ["پروتکل", "SOAP WSDL / ASMX"],
+      ["مسیر", "/parsian/EShopService.asmx", true],
+      ["احراز هویت", "کد پین پذیرنده (PIN)"],
+    ],
+    doc: { href: "/docs/parsian-pec-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "pasargad",
+    monogram: "pep",
+    name: "پرداخت الکترونیک پاسارگاد",
+    latin: "pasargad pep · REST",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "درگاه پرداخت پاسارگاد با امضای دیجیتال RSA و تایید پرداخت دو مرحله‌ای.",
+    spec: [
+      ["پروتکل", "REST JSON با امضای اختیاری"],
+      ["مسیر", "/pasargad/api/payment/purchase", true],
+      ["کال‌بک", "ارسال invoiceNumber و trackId"],
+    ],
+    doc: { href: "/docs/pasargad-pep-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "asan_pardakht",
+    monogram: "ap",
+    name: "آسان پرداخت (آپ)",
+    latin: "asan pardakht · REST/SOAP",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "درگاه آسان پرداخت با متد Token و استعلام وریفای، سازگار با SDKهای بانکی.",
+    spec: [
+      ["پروتکل", "REST & SOAP WSDL"],
+      ["مسیر", "/asan_pardakht/Token", true],
+      ["پاسخ", "مقادیر PayResult و شماره پیگیری"],
+    ],
+    doc: { href: "/docs/asan-pardakht-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "pardakht_novin",
+    monogram: "pna",
+    name: "پرداخت نوین آرین",
+    latin: "pardakht novin · REST/SOAP",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "وب‌سرویس GenerateToken و متد Verify پرداخت نوین اقتصاد نوین.",
+    spec: [
+      ["پروتکل", "REST & SOAP WSDL"],
+      ["مسیر", "/pardakht_novin/GenerateToken", true],
+      ["کال‌بک", "RefNum و ResNum با وضعیت State"],
+    ],
+    doc: { href: "/docs/pardakht-novin-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "irankish",
+    monogram: "ik",
+    name: "کارت اعتباری ایران‌کیش",
+    latin: "irankish · REST",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "وب‌سرویس توکن نسخه ۱ و متد verify با شناسه پایانه و شناسه پذیرنده.",
+    spec: [
+      ["پروتکل", "REST JSON"],
+      ["مسیر", "/irankish/api/v1/token", true],
+      ["کد نتیجه", "resultCode: 00 برای تراکنش موفق"],
+    ],
+    doc: { href: "/docs/irankish-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "fanava",
+    monogram: "fn",
+    name: "فن‌آوا کارت",
+    latin: "fanava card · REST/SOAP",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "درگاه پرداخت فن‌آوا کارت با متدهای payment و verify.",
+    spec: [
+      ["پروتکل", "REST & SOAP WSDL"],
+      ["مسیر", "/fanava/payment", true],
+      ["تایید", "فیلد Status عددی"],
+    ],
+    doc: { href: "/docs/fanava-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "sarmayeh",
+    monogram: "sm",
+    name: "پرداخت الکترونیک سرمایه",
+    latin: "sarmayeh bank · REST/SOAP",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "درگاه پرداخت بانک سرمایه با متدهای payment و verify.",
+    spec: [
+      ["پروتکل", "REST & SOAP WSDL"],
+      ["مسیر", "/sarmayeh/payment", true],
+      ["شناسه‌ها", "Terminal ID و کد بازگشتی"],
+    ],
+    doc: { href: "/docs/sarmayeh-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
+  },
+  {
+    id: "sizpay",
+    monogram: "sz",
+    name: "سیزپی (پرداخت‌یار)",
+    latin: "sizpay · REST",
+    status: "success",
+    statusLabel: "پایدار",
+    summary: "پرداخت‌یار سیزپی با متدهای Token و Confirm و پشتیبانی از سناریوهای مختلف.",
+    spec: [
+      ["پروتکل", "REST JSON"],
+      ["مسیر", "/sizpay/api/Payment/Token", true],
+      ["پاسخ", "کد وضعیت ResCode: 0"],
+    ],
+    doc: { href: "/docs/sizpay-api-reference.md", size: "۴ کیلوبایت" },
+    live: true,
   },
 ];
 
@@ -135,14 +267,13 @@ export default async function ProvidersPage({
         title="درگاه‌های پشتیبانی‌شده"
         badges={
           <>
-            <Badge dot>۴ درگاه</Badge>
+            <Badge dot>۱۳ درگاه</Badge>
             <Badge tone="success" dot>
-              ۳ پایدار
+              ۱۳ پایدار
             </Badge>
-            <Badge tone="warn" dot>
-              ۱ آزمایشی
+            <Badge tone="success" dot>
+              شاپرک و پرداخت‌یار
             </Badge>
-            <Badge>۴ سند قابل دانلود</Badge>
           </>
         }
       >
@@ -210,7 +341,7 @@ export default async function ProvidersPage({
                 className="inline-flex items-center gap-2 min-h-11 px-4 rounded-sm border border-border bg-surface text-text text-sm font-medium hover:bg-surface-elevated transition-colors duration-fast ease-standard"
               >
                 <DownloadIcon />
-                {g.id === "saman-kish" ? "دانلود گزارش پوشش" : "دانلود مرجع API"}
+                دانلود مرجع API
               </a>
               <span className="text-xs text-text-2 font-mono">
                 Markdown · {g.doc.size}
@@ -238,7 +369,7 @@ export default async function ProvidersPage({
               یکی را انتخاب کنید و اولین درخواست را بزنید
             </h2>
             <p className="text-sm text-muted">
-              داشبورد تستی هر چهار آداپتور را با داده‌های نمونه و سناریوهای آماده در
+              داشبورد تستی هر سیزده آداپتور را با داده‌های نمونه و سناریوهای آماده در
               اختیار شما می‌گذارد.
             </p>
           </div>

@@ -14,9 +14,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from src.adapters.asan_pardakht import router as asan_pardakht_router
 from src.adapters.behpardakht import router as behpardakht_router
+from src.adapters.fanava import router as fanava_router
 from src.adapters.idpay import router as idpay_router
+from src.adapters.irankish import router as irankish_router
+from src.adapters.pardakht_novin import router as pardakht_novin_router
+from src.adapters.parsian import router as parsian_router
+from src.adapters.pasargad import router as pasargad_router
 from src.adapters.registry import seed_configs
+from src.adapters.sadad import router as sadad_router
+from src.adapters.saman import router as saman_router
+from src.adapters.sarmayeh import router as sarmayeh_router
+from src.adapters.sizpay import router as sizpay_router
 from src.adapters.zarinpal import router as zarinpal_router
 from src.api.errors import install_error_handlers
 from src.api.routes import router
@@ -103,6 +113,16 @@ def create_app() -> FastAPI:
     app.include_router(zarinpal_router)
     app.include_router(idpay_router)
     app.include_router(behpardakht_router)
+    app.include_router(saman_router)
+    app.include_router(sadad_router)
+    app.include_router(parsian_router)
+    app.include_router(pasargad_router)
+    app.include_router(asan_pardakht_router)
+    app.include_router(pardakht_novin_router)
+    app.include_router(irankish_router)
+    app.include_router(fanava_router)
+    app.include_router(sarmayeh_router)
+    app.include_router(sizpay_router)
     return app
 
 

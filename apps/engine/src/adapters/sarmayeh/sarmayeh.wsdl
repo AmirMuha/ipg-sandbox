@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="http://sarmayehbank.ir/services"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="http://sarmayehbank.ir/services"
+             name="SarmayehService">
+  <types>
+    <xsd:schema targetNamespace="http://sarmayehbank.ir/services" elementFormDefault="qualified">
+      <xsd:element name="Verify">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Token" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="VerifyResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Status" type="xsd:int"/>
+            <xsd:element name="Amount" type="xsd:long"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </types>
+  <message name="VerifySoapIn">
+    <part name="parameters" element="tns:Verify"/>
+  </message>
+  <message name="VerifySoapOut">
+    <part name="parameters" element="tns:VerifyResponse"/>
+  </message>
+  <portType name="SarmayehSoap">
+    <operation name="Verify">
+      <input message="tns:VerifySoapIn"/>
+      <output message="tns:VerifySoapOut"/>
+    </operation>
+  </portType>
+  <binding name="SarmayehSoapBinding" type="tns:SarmayehSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="Verify">
+      <soap:operation soapAction="http://sarmayehbank.ir/services/Verify" style="document"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+  <service name="SarmayehService">
+    <port name="SarmayehSoap" binding="tns:SarmayehSoapBinding">
+      <soap:address location="http://localhost:8080/sarmayeh/services"/>
+    </port>
+  </service>
+</definitions>

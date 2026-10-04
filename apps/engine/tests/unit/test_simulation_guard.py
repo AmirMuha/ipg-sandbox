@@ -153,14 +153,15 @@ def test_adapter_card_values_are_static_masked_literals():
         for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if not CARD_RE.search(line):
                 continue
-            # Every card-shaped key must be assigned a quoted, fully-masked constant.
+            # Every card-shaped key must be assigned a quoted, fully-masked constant or masked_pan generator.
             match = re.search(r"""["'](\w+)["']\s*:\s*(.+)""", line)
-            if match is None or not re.fullmatch(
-                r"""["'][^"']*["']\s*,?""", match.group(2).strip()
+            if match is None or not (
+                re.fullmatch(r"""["'][^"']*["']\s*,?""", match.group(2).strip())
+                or "masked_pan(" in match.group(2)
             ):
                 offenders.append(f"{adapter}/adapter.py:{line_number}: {line.strip()}")
                 continue
-            if not re.search(r"\*", match.group(2)):
+            if "masked_pan(" not in match.group(2) and not re.search(r"\*", match.group(2)):
                 offenders.append(
                     f"{adapter}/adapter.py:{line_number}: unmasked value {line.strip()}"
                 )

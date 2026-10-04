@@ -89,10 +89,25 @@ export interface AdapterStatus {
   last_activity_at: string | null;
 }
 
+export type Provider =
+  | "zarinpal"
+  | "idpay"
+  | "behpardakht"
+  | "saman"
+  | "sadad"
+  | "parsian"
+  | "pasargad"
+  | "asan_pardakht"
+  | "pardakht_novin"
+  | "irankish"
+  | "fanava"
+  | "sarmayeh"
+  | "sizpay";
+
 export interface AdapterConfig {
   id: string;
   project_id: string;
-  provider: "zarinpal" | "idpay" | "behpardakht";
+  provider: Provider;
   enabled: boolean;
   api_unit: "rial" | "toman";
   endpoint_path_prefix: string;

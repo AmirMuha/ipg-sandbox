@@ -6,10 +6,40 @@ RTL Persian default, LTR English supported via ?lang=en.
 """
 
 import html
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from src.models import Transaction
+    from src.models import Provider, Transaction
+
+
+def render_auto_submit_post_form(
+    action_url: str,
+    fields: dict[str, Any],
+) -> str:
+    """Render an auto-submitting HTML POST form for Shaparak PSP callbacks (FR-005, T006)."""
+    inputs = "\n".join(
+        f'        <input type="hidden" name="{html.escape(str(k))}" value="{html.escape(str(v))}" />'
+        for k, v in fields.items()
+    )
+    safe_action = html.escape(action_url)
+    return f"""<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <title>در حال بازگشت به سایت پذیرنده...</title>
+</head>
+<body onload="document.forms[0].submit()">
+    <noscript>
+        <p>لطفاً برای ادامه روی دکمه زیر کلیک کنید:</p>
+    </noscript>
+    <form method="post" action="{safe_action}">
+{inputs}
+        <noscript>
+            <button type="submit">بازگشت به سایت</button>
+        </noscript>
+    </form>
+</body>
+</html>"""
 
 
 def render_checkout_page(
@@ -18,6 +48,7 @@ def render_checkout_page(
     provider_name: str,
     action_url: str,
     lang: str = "fa",
+    provider: "Provider | None" = None,
 ) -> str:
     """Render hosted payment simulation page for `tx`."""
     is_fa = lang.lower() == "fa"
@@ -40,10 +71,27 @@ def render_checkout_page(
     btn_fail = "انصراف و لغو پرداخت" if is_fa else "Cancel Payment"
     btn_abandon = "بستن / رها کردن پنجره" if is_fa else "Abandon Checkout"
 
+    from src.checkout.styles import get_branding
+
+    primary_color = "#3b82f6"
+    primary_hover = "#2563eb"
+    logo_svg = ""
+    if provider is not None:
+        branding = get_branding(provider)
+        primary_color = branding["primary_color"]
+        primary_hover = branding["secondary_color"]
+        logo_svg = branding["logo_svg"]
+        if is_fa and branding["name_fa"]:
+            provider_title = f"درگاه {branding['name_fa']}"
+        elif not is_fa and branding["name_en"]:
+            provider_title = f"{branding['name_en']} Gateway"
+
     formatted_amount = f"{tx.amount_rial:,}"
     safe_authority = html.escape(str(tx.authority or ""))
     safe_reference = html.escape(str(tx.app_reference or "—"))
     safe_action = html.escape(action_url)
+
+    logo_html = f'<div style="display:flex;justify-content:center;margin-bottom:0.75rem;">{logo_svg}</div>' if logo_svg else ""
 
     return f"""<!DOCTYPE html>
 <html lang="{html_lang}" dir="{direction}">
@@ -58,8 +106,8 @@ def render_checkout_page(
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --border: #334155;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
+            --primary: {primary_color};
+            --primary-hover: {primary_hover};
             --danger: #ef4444;
             --danger-hover: #dc2626;
             --warning: #eab308;
@@ -164,6 +212,7 @@ def render_checkout_page(
 <body>
     <div class="card">
         <div class="header">
+            {logo_html}
             <h1>{title}</h1>
             <p>{provider_title}</p>
         </div>

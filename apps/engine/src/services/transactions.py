@@ -122,3 +122,9 @@ async def advance(
         tx.raw_response = raw_response
     await session.commit()
     return tx
+
+
+def is_already_verified(tx: Transaction) -> bool:
+    """Return True if transaction is already in settled/approved state (FR-011, T036)."""
+    return tx.status in (TransactionStatus.settled, TransactionStatus.approved)
+

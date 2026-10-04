@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="https://pec.shaparak.ir/pecpaymentgateway/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="https://pec.shaparak.ir/pecpaymentgateway/"
+             name="EShopService">
+  <types>
+    <xsd:schema targetNamespace="https://pec.shaparak.ir/pecpaymentgateway/" elementFormDefault="qualified">
+      <xsd:element name="SalePaymentRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Pin" type="xsd:string"/>
+            <xsd:element name="Amount" type="xsd:long"/>
+            <xsd:element name="OrderId" type="xsd:long"/>
+            <xsd:element name="AdditionalData" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="ReffererAddress" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="SalePaymentRequestResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="SalePaymentRequestResult">
+              <xsd:complexType>
+                <xsd:sequence>
+                  <xsd:element name="Token" type="xsd:long"/>
+                  <xsd:element name="Status" type="xsd:short"/>
+                </xsd:sequence>
+              </xsd:complexType>
+            </xsd:element>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ConfirmPayment">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Pin" type="xsd:string"/>
+            <xsd:element name="Token" type="xsd:long"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ConfirmPaymentResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ConfirmPaymentResult">
+              <xsd:complexType>
+                <xsd:sequence>
+                  <xsd:element name="Status" type="xsd:short"/>
+                  <xsd:element name="RRN" type="xsd:long"/>
+                  <xsd:element name="CardNumberMasked" type="xsd:string"/>
+                </xsd:sequence>
+              </xsd:complexType>
+            </xsd:element>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ReversalProcess">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Pin" type="xsd:string"/>
+            <xsd:element name="Token" type="xsd:long"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ReversalProcessResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ReversalProcessResult">
+              <xsd:complexType>
+                <xsd:sequence>
+                  <xsd:element name="Status" type="xsd:short"/>
+                </xsd:sequence>
+              </xsd:complexType>
+            </xsd:element>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </types>
+
+  <message name="SalePaymentRequestSoapIn">
+    <part name="parameters" element="tns:SalePaymentRequest"/>
+  </message>
+  <message name="SalePaymentRequestSoapOut">
+    <part name="parameters" element="tns:SalePaymentRequestResponse"/>
+  </message>
+  <message name="ConfirmPaymentSoapIn">
+    <part name="parameters" element="tns:ConfirmPayment"/>
+  </message>
+  <message name="ConfirmPaymentSoapOut">
+    <part name="parameters" element="tns:ConfirmPaymentResponse"/>
+  </message>
+  <message name="ReversalProcessSoapIn">
+    <part name="parameters" element="tns:ReversalProcess"/>
+  </message>
+  <message name="ReversalProcessSoapOut">
+    <part name="parameters" element="tns:ReversalProcessResponse"/>
+  </message>
+
+  <portType name="EShopServiceSoap">
+    <operation name="SalePaymentRequest">
+      <input message="tns:SalePaymentRequestSoapIn"/>
+      <output message="tns:SalePaymentRequestSoapOut"/>
+    </operation>
+    <operation name="ConfirmPayment">
+      <input message="tns:ConfirmPaymentSoapIn"/>
+      <output message="tns:ConfirmPaymentSoapOut"/>
+    </operation>
+    <operation name="ReversalProcess">
+      <input message="tns:ReversalProcessSoapIn"/>
+      <output message="tns:ReversalProcessSoapOut"/>
+    </operation>
+  </portType>
+
+  <binding name="EShopServiceSoap" type="tns:EShopServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="SalePaymentRequest">
+      <soap:operation soapAction="https://pec.shaparak.ir/pecpaymentgateway/SalePaymentRequest" style="document"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ConfirmPayment">
+      <soap:operation soapAction="https://pec.shaparak.ir/pecpaymentgateway/ConfirmPayment" style="document"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ReversalProcess">
+      <soap:operation soapAction="https://pec.shaparak.ir/pecpaymentgateway/ReversalProcess" style="document"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <service name="EShopService">
+    <port name="EShopServiceSoap" binding="tns:EShopServiceSoap">
+      <soap:address location="http://localhost:8080/parsian/EShopService.asmx"/>
+    </port>
+  </service>
+</definitions>

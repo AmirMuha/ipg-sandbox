@@ -9,6 +9,7 @@ from src.adapters.base import (
     PaymentAdapter,
     from_rial,
 )
+from src.adapters.metadata import masked_pan
 from src.api.errors import ApiError, ErrorCode
 from src.checkout.page import render_checkout_page
 from src.models import (
@@ -61,7 +62,7 @@ class IDPayAdapter(PaymentAdapter):
                 "id": tx.authority,
                 "order_id": tx.app_reference or "",
                 "amount": amount_toman,
-                "card_no": "502229******1234",
+                "card_no": masked_pan(self.provider, tx),
                 "hashed_card_no": "21EC2020-3AEA-4069-A2DD-08002B30309D",
                 "date": datetime.now(timezone.utc).isoformat(),
             }
@@ -82,7 +83,7 @@ class IDPayAdapter(PaymentAdapter):
                 "id": tx.authority,
                 "order_id": tx.app_reference or "",
                 "amount": amount_toman,
-                "card_no": "502229******1234",
+                "card_no": masked_pan(self.provider, tx),
                 "hashed_card_no": "21EC2020-3AEA-4069-A2DD-08002B30309D",
                 "date": datetime.now(timezone.utc).isoformat(),
             }

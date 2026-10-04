@@ -94,12 +94,12 @@ def test_funnel_is_monotonic(client: TestClient):
 
 def test_gateway_rollup_counts_configured_and_exercised(client: TestClient):
     """`active_total` is gateways actually used, not the number installed."""
-    assert _overview(client)["gateways"] == {"configured_total": 3, "active_total": 0}
+    assert _overview(client)["gateways"] == {"configured_total": 13, "active_total": 0}
 
     _seed(client, 1, adapter="zarinpal", auto_complete=True)
     _seed(client, 1, adapter="idpay", auto_complete=True)
 
-    assert _overview(client)["gateways"] == {"configured_total": 3, "active_total": 2}
+    assert _overview(client)["gateways"] == {"configured_total": 13, "active_total": 2}
 
 
 def test_webhook_rollup_reflects_delivery_attempts(client: TestClient):
