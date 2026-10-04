@@ -18,14 +18,24 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 
+from src.adapters.registry import seed_configs
 from src.api.app import create_app
 from src.models import (
     AdapterConfig,
-    ApiUnit,
     Base,
     Project,
     Provider,
 )
+
+_TEST_CREDENTIALS: dict[Provider, dict] = {
+    Provider.zarinpal: {"merchant_id": "test-merchant"},
+    Provider.idpay: {"api_key": "test-idpay-key"},
+    Provider.behpardakht: {
+        "terminal_id": 123456,
+        "username": "sandbox",
+        "password": "sandbox",
+    },
+}
 
 
 @compiles(JSONB, "sqlite")
@@ -79,34 +89,8 @@ def client(tmp_path: Path) -> Generator[TestClient, None, None]:
         session.add(project)
         session.add_all(
             [
-                AdapterConfig(
-                    id=uuid.uuid4(),
-                    project_id=project.id,
-                    provider=Provider.zarinpal,
-                    endpoint_path_prefix="/zarinpal",
-                    api_unit=ApiUnit.rial,
-                    credentials={"merchant_id": "test-merchant"},
-                ),
-                AdapterConfig(
-                    id=uuid.uuid4(),
-                    project_id=project.id,
-                    provider=Provider.idpay,
-                    endpoint_path_prefix="/idpay",
-                    api_unit=ApiUnit.toman,
-                    credentials={"api_key": "test-idpay-key"},
-                ),
-                AdapterConfig(
-                    id=uuid.uuid4(),
-                    project_id=project.id,
-                    provider=Provider.behpardakht,
-                    endpoint_path_prefix="/behpardakht",
-                    api_unit=ApiUnit.rial,
-                    credentials={
-                        "terminal_id": 123456,
-                        "username": "sandbox",
-                        "password": "sandbox",
-                    },
-                ),
+                AdapterConfig(id=uuid.uuid4(), **kw)
+                for kw in seed_configs(project.id, credentials=_TEST_CREDENTIALS)
             ]
         )
         session.commit()

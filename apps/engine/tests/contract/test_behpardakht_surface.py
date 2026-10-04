@@ -211,3 +211,15 @@ def test_behpardakht_unsupported_operation_envelope(client: TestClient):
     assert resp.status_code == 500
     assert "sandbox:UnsupportedOperation" in resp.text
     assert "bpInquiryRequest" in resp.text
+
+
+def test_behpardakht_malformed_xml_fault(client: TestClient):
+    """A completely broken request body must return a SOAP Fault, not a 500 stack trace."""
+    resp = client.post(
+        "/behpardakht/MellatPaymentGateway",
+        content=b"<not-even-xml",
+        headers={"Content-Type": "text/xml"},
+    )
+    assert resp.status_code == 500
+    assert "Fault" in resp.text
+    assert "MalformedXml" in resp.text

@@ -23,6 +23,13 @@ STAGE_REFUND = "refund"
 STAGE_SETTLE = "settle"
 STAGE_NOTIFY = "notify"
 
+# How the emulated gateway hands the result back to the merchant (FR-005). Real gateways are not
+# uniform about this and merchant code parses accordingly, so a sandbox that always answers JSON
+# cannot exercise the callback parser a Shaparak app actually ships.
+TRANSPORT_JSON_POST = "json_post"
+TRANSPORT_FORM_POST = "form_post"
+TRANSPORT_GET = "get"
+
 
 class PaymentAdapter(ABC):
     """One emulated gateway.
@@ -40,6 +47,9 @@ class PaymentAdapter(ABC):
     endpoint_path_prefix: ClassVar[str]
     #: Substrings that must appear in `AdapterConfig.credentials`, e.g. `("merchant_id",)`.
     credential_scheme: ClassVar[tuple[str, ...]]
+    #: Transport the *callback* to the merchant uses (FR-005): a Shaparak PSP form-POSTs, a
+    #: payment facilitator GETs with query params, some REST gateways post JSON.
+    callback_transport: ClassVar[str] = TRANSPORT_JSON_POST
 
     def __init__(self, config: AdapterConfig) -> None:
         self.config = config

@@ -26,11 +26,33 @@ class ScenarioOutcome(enum.StrEnum):
 
 
 class Provider(enum.StrEnum):
-    """The three v1 emulated gateways (FR-002)."""
+    """Every emulated gateway (FR-002).
 
+    Declaration order MUST match the label order in
+    `alembic/versions/0006_provider_labels.py` — the two are read together when a human has to
+    reason about the Postgres enum.
+    """
+
+    # v1 gateways (Phase 3 of 001-mvp)
     zarinpal = "zarinpal"
     idpay = "idpay"
     behpardakht = "behpardakht"
+
+    # Top-tier banking PSPs (003 US1)
+    saman = "saman"
+    sadad = "sadad"
+    parsian = "parsian"
+    pasargad = "pasargad"
+    asan_pardakht = "asan_pardakht"
+
+    # Specialized / institutional PSPs (003 US2)
+    pardakht_novin = "pardakht_novin"
+    irankish = "irankish"
+    fanava = "fanava"
+    sarmayeh = "sarmayeh"
+
+    # Payment facilitators (003 US3)
+    sizpay = "sizpay"
 
 
 class ApiUnit(enum.StrEnum):

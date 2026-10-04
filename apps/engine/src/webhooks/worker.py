@@ -49,6 +49,7 @@ async def _attempt(
     session: AsyncSession,
     project: Project,
     tx: Transaction,
+    config: AdapterConfig,
     stage: str,
     target: str,
     payload: dict[str, Any],
@@ -75,8 +76,20 @@ async def _attempt(
     await session.commit()
 
     try:
+        transport = getattr(config, "callback_transport", None)
+        if transport is None:
+            from src.adapters.registry import resolve_adapter_class
+
+            cls = resolve_adapter_class(config.provider)
+            transport = getattr(cls, "callback_transport", "json_post") if cls else "json_post"
+
         async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_S) as client:
-            resp = await client.post(target, json=payload)
+            if transport == "form_post":
+                resp = await client.post(target, data=payload)
+            elif transport == "get":
+                resp = await client.get(target, params=payload)
+            else:
+                resp = await client.post(target, json=payload)
         ok = resp.status_code in _SUCCESS
         row.result = DeliveryResult.delivered if ok else DeliveryResult.failed
         row.response_status = resp.status_code
@@ -116,7 +129,7 @@ async def deliver(
                 if delay > 0:
                     await asyncio.sleep(delay)
 
-            row = await _attempt(session, project, tx, stage, target, payload, attempt_num)
+            row = await _attempt(session, project, tx, config, stage, target, payload, attempt_num)
             if row.result is DeliveryResult.delivered:
                 return row
         return row
@@ -136,7 +149,7 @@ async def deliver_once(
 
     payload = payload_for(config, stage, tx)
     async with session_factory() as session:
-        return await _attempt(session, project, tx, stage, target, payload, attempt_num)
+        return await _attempt(session, project, tx, config, stage, target, payload, attempt_num)
 
 
 async def _run_scheduled_delivery(

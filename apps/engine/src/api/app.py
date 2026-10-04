@@ -16,11 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from src.adapters.behpardakht import router as behpardakht_router
 from src.adapters.idpay import router as idpay_router
+from src.adapters.registry import seed_configs
 from src.adapters.zarinpal import router as zarinpal_router
 from src.api.errors import install_error_handlers
 from src.api.routes import router
 from src.config import Settings
-from src.models import AdapterConfig, ApiUnit, Project, Provider
+from src.models import AdapterConfig, Project, Provider
 from src.scenarios.scheduler import run as run_scheduler
 
 
@@ -50,47 +51,15 @@ async def lifespan(app: FastAPI):
 
 
 async def _seed_adapters(session: AsyncSession, project: Project) -> None:
-    """Give `project` the three sandbox adapters if it has none.
-
-    Called for *every* project, not just the first: in the demo profile each visitor gets their
-    own project, and a project with no AdapterConfig answers every initiate with
-    `404 adapter zarinpal not found` — the demo flow could not create a payment at all.
-    """
+    """Seed adapters for `project` from the registry for all implemented gateways."""
     existing = (
         await session.scalars(select(AdapterConfig).where(AdapterConfig.project_id == project.id))
     ).first()
     if existing is not None:
         return
 
-    session.add_all(
-        [
-            AdapterConfig(
-                project_id=project.id,
-                provider=Provider.zarinpal,
-                endpoint_path_prefix="/zarinpal",
-                api_unit=ApiUnit.rial,
-                credentials={"merchant_id": "sandbox-merchant"},
-            ),
-            AdapterConfig(
-                project_id=project.id,
-                provider=Provider.idpay,
-                endpoint_path_prefix="/idpay",
-                api_unit=ApiUnit.toman,
-                credentials={"api_key": "sandbox-key"},
-            ),
-            AdapterConfig(
-                project_id=project.id,
-                provider=Provider.behpardakht,
-                endpoint_path_prefix="/behpardakht",
-                api_unit=ApiUnit.rial,
-                credentials={
-                    "terminal_id": 123456,
-                    "username": "sandbox",
-                    "password": "sandbox",
-                },
-            ),
-        ]
-    )
+    configs = [AdapterConfig(**kw) for kw in seed_configs(project.id)]
+    session.add_all(configs)
 
 
 async def _seed_default_project(session: AsyncSession, settings: Settings) -> None:
