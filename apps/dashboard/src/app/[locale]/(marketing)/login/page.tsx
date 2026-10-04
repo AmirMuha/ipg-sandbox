@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import { LoginForm } from "./LoginForm";
 
@@ -23,26 +24,16 @@ export default async function LoginPage({
       <div className="flex items-center justify-between">
         <Link
           href={`/${locale}/home`}
-          className="inline-flex items-center gap-2 font-display text-[17px] font-semibold"
+          className="inline-flex items-center gap-2.5 font-display text-[17px] font-semibold"
         >
-          <span className="w-7 h-7 grid place-items-center rounded-sm bg-accent text-accent-on shrink-0">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="2" y="5" width="20" height="14" rx="2" />
-              <line x1="2" y1="10" x2="22" y2="10" />
-              <line x1="6" y1="15" x2="6.01" y2="15" />
-              <line x1="10" y1="15" x2="12" y2="15" />
-            </svg>
-          </span>
+          <Image
+            src="/logo.webp"
+            alt="IPG Sandbox"
+            width={32}
+            height={32}
+            className="w-8 h-8 rounded-sm object-contain shrink-0"
+            priority
+          />
           سندباکس درگاه
         </Link>
         <Link href={`/${locale}/home`} className="text-sm text-muted hover:text-text">
