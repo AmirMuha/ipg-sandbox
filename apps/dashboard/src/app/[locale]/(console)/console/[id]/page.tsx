@@ -50,7 +50,7 @@ export default async function TransactionDetailPage({
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link
-          href={`/${locale}/transactions`}
+          href={`/${locale}/console`}
           className="text-xs text-muted hover:text-text border border-border px-3 py-1.5 rounded transition-colors"
         >
           &larr; Back

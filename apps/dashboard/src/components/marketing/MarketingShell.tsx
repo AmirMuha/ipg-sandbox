@@ -23,7 +23,7 @@ export function MarketingShell({
     { key: "pricing", href: `/${locale}/pricing`, label: "تعرفه‌ها" },
     {
       key: "console",
-      href: `/${locale}/transactions`,
+      href: `/${locale}/console`,
       label: "داشبورد تستی",
     },
   ] as const;

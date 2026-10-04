@@ -159,7 +159,7 @@ export function UserMenu({
           </div>
 
           <Link
-            href={`/${locale}/transactions`}
+            href={`/${locale}/console`}
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 px-3.5 py-2 text-xs text-text hover:bg-surface-subtle transition-colors"
             role="menuitem"

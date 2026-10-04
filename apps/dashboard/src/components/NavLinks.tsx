@@ -19,7 +19,7 @@ export function NavLinks({ locale }: { locale: string }) {
   const pathname = usePathname();
 
   const tabs = [
-    { key: "transactions", href: `/${locale}/transactions`, label: t("transactions"), icon: "list" as const },
+    { key: "console", href: `/${locale}/console`, label: t("transactions"), icon: "list" as const },
     { key: "webhooks", href: `/${locale}/webhooks`, label: t("webhooks"), icon: "bell" as const },
     {
       key: "settings",

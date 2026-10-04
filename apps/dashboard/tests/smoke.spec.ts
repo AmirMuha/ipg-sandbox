@@ -14,8 +14,8 @@ const ENGINE_URL = process.env.ENGINE_URL ?? "http://localhost:8080";
 
 test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
   test("1. Persian locale is RTL and the locale switcher is hidden", async ({ page }) => {
-    // Navigate to Persian transactions
-    await page.goto(`${BASE_URL}/fa/transactions`);
+    // Navigate to Persian console
+    await page.goto(`${BASE_URL}/fa/console`);
     const htmlFa = page.locator("html");
     await expect(htmlFa).toHaveAttribute("dir", "rtl");
     await expect(htmlFa).toHaveAttribute("lang", "fa");
@@ -27,7 +27,7 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
   test("2. Transactions list renders correctly with adapter, amount (Rial), status", async ({
     page,
   }) => {
-    await page.goto(`${BASE_URL}/fa/transactions`);
+    await page.goto(`${BASE_URL}/fa/console`);
     const table = page.locator('[data-testid="transactions-table"]');
     await expect(table).toBeVisible();
 
@@ -41,7 +41,7 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
     page,
     request,
   }) => {
-    await page.goto(`${BASE_URL}/fa/transactions`);
+    await page.goto(`${BASE_URL}/fa/console`);
 
     // Select 'decline' as project default in the settings form
     await page.goto(`${BASE_URL}/fa/settings`);
@@ -78,8 +78,8 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
     const verifyData = await verifyRes.json();
     expect(verifyData.code).toBe(-51);
 
-    // Reload transactions page and verify row has declined status
-    await page.goto(`${BASE_URL}/fa/transactions`);
+    // Reload console page and verify row has declined status
+    await page.goto(`${BASE_URL}/fa/console`);
     const declinedBadge = page.locator('[data-testid="tx-status"]:has-text("رد شده"), [data-testid="tx-status"]:has-text("declined")');
     await expect(declinedBadge.first()).toBeVisible();
 
@@ -118,7 +118,7 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
       return (await main.innerText()).replace(/\s+/g, " ").trim();
     };
 
-    for (const route of ["/transactions", "/settings"]) {
+    for (const route of ["/console", "/settings"]) {
       const fa = await collect(`/fa${route}`);
       const en = await collect(`/en${route}`);
 

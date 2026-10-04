@@ -19,11 +19,6 @@ export function SiteNav({
     { key: "home", href: `/${locale}/home`, label: isFa ? "خانه" : "Home" },
     { key: "providers", href: `/${locale}/providers`, label: isFa ? "درگاه‌ها" : "Gateways" },
     { key: "pricing", href: `/${locale}/pricing`, label: isFa ? "تعرفه‌ها" : "Pricing" },
-    {
-      key: "console",
-      href: `/${locale}/transactions`,
-      label: isFa ? "داشبورد تستی" : "Test Console",
-    },
   ] as const;
 
   return (

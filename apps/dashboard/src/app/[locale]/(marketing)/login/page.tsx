@@ -50,7 +50,7 @@ export default async function LoginPage({
             </p>
           </div>
 
-          <LoginForm consoleHref={`/${locale}/transactions`} />
+          <LoginForm consoleHref={`/${locale}/console`} />
 
           <p className="mt-6 text-center text-sm text-muted">
             حساب کاربری ندارید؟{" "}

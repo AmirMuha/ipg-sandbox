@@ -7,7 +7,7 @@ const intlMiddleware = createMiddleware(routing);
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isConsoleRoute =
-    pathname.includes("/transactions") ||
+    pathname.includes("/console") ||
     pathname.includes("/settings") ||
     pathname.includes("/webhooks");
 

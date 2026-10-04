@@ -376,7 +376,7 @@ async def oauth_callback(
     await db.commit()
 
     dashboard_url = dashboard_base_url()
-    resp = RedirectResponse(url=f"{dashboard_url}/fa/transactions", status_code=302)
+    resp = RedirectResponse(url=f"{dashboard_url}/fa/console", status_code=302)
     _set_session_cookie(resp, token, settings.session_ttl_days)
     resp.delete_cookie("oauth_state", path="/")
     return resp

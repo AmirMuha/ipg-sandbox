@@ -218,7 +218,7 @@ export default async function TransactionsPage({
                       </td>
                       <td className="px-4 py-3 border-b border-border-soft align-middle text-end">
                         <Link
-                          href={`/${locale}/transactions?tx=${tx.id}`}
+                          href={`/${locale}/console?tx=${tx.id}`}
                           scroll={false}
                           className="btn-secondary inline-flex items-center px-2.5 py-1 rounded-[6px] text-xs font-medium bg-surface text-text border border-border hover:bg-surface-subtle transition-colors duration-fast ease-standard"
                           data-testid={`tx-detail-link-${tx.id}`}

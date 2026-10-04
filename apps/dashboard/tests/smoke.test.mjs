@@ -18,17 +18,17 @@ test("1. Root redirect and Persian RTL layout", async () => {
   );
   const location = rootRes.headers.get("location");
   assert.ok(
-    location && (location.includes("/fa") || location.includes("/transactions")),
-    `Expected location to contain /fa or /transactions, got ${location}`
+    location && (location.includes("/fa") || location.includes("/console")),
+    `Expected location to contain /fa or /console, got ${location}`
   );
 
-  // Test /fa/transactions
-  const faRes = await fetch(`${DASHBOARD_URL}/fa/transactions`);
+  // Test /fa/console
+  const faRes = await fetch(`${DASHBOARD_URL}/fa/console`);
   assert.strictEqual(faRes.status, 200);
   const faHtml = await faRes.text();
 
-  assert.ok(faHtml.includes('dir="rtl"'), 'Expected dir="rtl" on /fa/transactions');
-  assert.ok(faHtml.includes('lang="fa"'), 'Expected lang="fa" on /fa/transactions');
+  assert.ok(faHtml.includes('dir="rtl"'), 'Expected dir="rtl" on /fa/console');
+  assert.ok(faHtml.includes('lang="fa"'), 'Expected lang="fa" on /fa/console');
   assert.ok(
     faHtml.includes('data-testid="transactions-table"'),
     "Expected transactions-table in HTML"
@@ -41,12 +41,12 @@ test("1. Root redirect and Persian RTL layout", async () => {
 });
 
 test("2. English LTR layout", async () => {
-  const enRes = await fetch(`${DASHBOARD_URL}/en/transactions`);
+  const enRes = await fetch(`${DASHBOARD_URL}/en/console`);
   assert.strictEqual(enRes.status, 200);
   const enHtml = await enRes.text();
 
-  assert.ok(enHtml.includes('dir="ltr"'), 'Expected dir="ltr" on /en/transactions');
-  assert.ok(enHtml.includes('lang="en"'), 'Expected lang="en" on /en/transactions');
+  assert.ok(enHtml.includes('dir="ltr"'), 'Expected dir="ltr" on /en/console');
+  assert.ok(enHtml.includes('lang="en"'), 'Expected lang="en" on /en/console');
   assert.ok(
     enHtml.includes('data-testid="transactions-table"'),
     "Expected transactions-table in HTML"
@@ -312,7 +312,7 @@ test("9. Transaction search filters and paginates", async () => {
 });
 
 test("10. Dashboard renders the analytics overview, filters, and simulate CTA", async () => {
-  const html = await (await fetch(`${DASHBOARD_URL}/fa/transactions`)).text();
+  const html = await (await fetch(`${DASHBOARD_URL}/fa/console`)).text();
 
   assert.ok(
     html.includes('data-testid="simulate-payment-btn"'),
@@ -359,7 +359,7 @@ test("11. Detail page offers checkout and delete for a payable transaction", asy
     ).json()
   ).transaction;
 
-  const html = await (await fetch(`${DASHBOARD_URL}/fa/transactions/${created.id}`)).text();
+  const html = await (await fetch(`${DASHBOARD_URL}/fa/console/${created.id}`)).text();
   assert.ok(
     html.includes('data-testid="checkout-link"'),
     "Expected the Open Gateway Checkout link on an initiated transaction"
@@ -380,7 +380,7 @@ test("11. Detail page offers checkout and delete for a payable transaction", asy
     ).json()
   ).transaction;
   const settledHtml = await (
-    await fetch(`${DASHBOARD_URL}/fa/transactions/${settled.id}`)
+    await fetch(`${DASHBOARD_URL}/fa/console/${settled.id}`)
   ).text();
   assert.ok(
     !settledHtml.includes('data-testid="checkout-link"'),

@@ -374,7 +374,7 @@ export default async function ProvidersPage({
             </p>
           </div>
           <a
-            href={`/${locale}/transactions`}
+            href={`/${locale}/console`}
             className="inline-flex items-center justify-center min-h-12 px-6 rounded-md bg-accent text-accent-on text-[17px] font-medium hover:bg-accent/92 transition-colors duration-fast ease-standard"
           >
             باز کردن داشبورد تستی

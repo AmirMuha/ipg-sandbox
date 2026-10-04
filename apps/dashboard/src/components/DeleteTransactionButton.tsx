@@ -23,7 +23,7 @@ export function DeleteTransactionButton({ transactionId }: { transactionId: stri
     setError(null);
     try {
       await deleteTransaction(transactionId);
-      router.push(`/${locale}/transactions`);
+      router.push(`/${locale}/console`);
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));

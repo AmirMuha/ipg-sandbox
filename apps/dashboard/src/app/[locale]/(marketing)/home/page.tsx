@@ -226,7 +226,7 @@ export default async function HomePage({
             تکرار است.
           </p>
           <a
-            href={`/${locale}/transactions`}
+            href={`/${locale}/console`}
             className="mt-4 inline-flex items-center justify-center w-full min-h-11 px-4 rounded-sm border border-border bg-surface text-text text-sm font-medium hover:bg-surface-subtle transition-colors duration-fast ease-standard"
           >
             باز کردن داشبورد تستی
