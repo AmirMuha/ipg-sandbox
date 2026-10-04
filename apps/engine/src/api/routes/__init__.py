@@ -9,6 +9,7 @@ need a parallel set of pydantic schemas mirroring `models.py`, and the one rule 
 matters here (meters exposing *only* counters, FR-011) is easier to guard with an explicit list.
 """
 
+from datetime import timedelta
 from typing import Annotated, Any
 from urllib.parse import urlparse
 from uuid import UUID
@@ -30,6 +31,7 @@ from src.models import (
     TransactionStatus,
     UsageMeter,
     WebhookDelivery,
+    utcnow,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -37,6 +39,20 @@ router = APIRouter(prefix="/api/v1")
 # FR-011: counters only — no billing fields, no invoices. This tuple *is* the contract; the
 # unit test asserts the response key set equals it.
 METER_FIELDS = ("requests_total", "transactions_total", "history_retained", "webhook_attempts")
+QUOTA_FIELDS = (
+    "tier",
+    "requests_total",
+    "requests_today",
+    "daily_requests_cap",
+    "requests_remaining_today",
+    "active_adapters_count",
+    "max_active_adapters",
+    "transactions_total",
+    "history_retained",
+    "history_cap",
+    "webhook_attempts",
+    "window_resets_at",
+)
 
 MAX_PAGE_SIZE = 100
 
@@ -281,6 +297,30 @@ async def patch_adapter(
         val = body["enabled"]
         if not isinstance(val, bool):
             raise ApiError(ErrorCode.validation_error, "enabled must be a boolean", status=422)
+        if val and not adapter.enabled and getattr(project, "max_active_adapters", 0) > 0:
+            active_count = (
+                await session.scalar(
+                    select(func.count())
+                    .select_from(AdapterConfig)
+                    .where(
+                        AdapterConfig.project_id == project.id,
+                        AdapterConfig.enabled.is_(True),
+                        AdapterConfig.id != adapter.id,
+                    )
+                )
+                or 0
+            )
+            if active_count >= project.max_active_adapters:
+                raise ApiError(
+                    ErrorCode.adapter_limit_exceeded,
+                    f"Developer plan is limited to {project.max_active_adapters} active payment gateways simultaneously.",
+                    status=403,
+                    details={
+                        "max_active": project.max_active_adapters,
+                        "currently_active": active_count,
+                        "upgrade_url": "/pricing",
+                    },
+                )
         adapter.enabled = val
 
     if "credentials" in body:
@@ -317,11 +357,47 @@ async def test_adapter(
 
 @router.get("/meters")
 async def get_meters(
+    request: Request,
     project: Annotated[Project, Depends(current_project)],
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict[str, int]:
-    """Counters only — FR-011. A project with no rows yet reports zeros."""
+) -> dict[str, Any]:
+    """Counters and quota tracking — FR-011 and 004-launch-readiness-flows."""
     meter = await session.get(UsageMeter, project.id)
+
+    if request.query_params.get("quota") == "true" or request.query_params.get("details") == "true":
+        requests_today = (getattr(meter, "requests_today", 0) or 0) if meter else 0
+        daily_cap = getattr(project, "daily_requests_cap", 100) or 0
+        requests_remaining = max(0, daily_cap - requests_today) if daily_cap > 0 else None
+
+        active_adapters = (
+            await session.scalar(
+                select(func.count())
+                .select_from(AdapterConfig)
+                .where(AdapterConfig.project_id == project.id, AdapterConfig.enabled.is_(True))
+            )
+            or 0
+        )
+
+        window_started = getattr(meter, "window_started_at", None) if meter else None
+        if not window_started:
+            window_started = utcnow()
+        window_resets_at = (window_started + timedelta(days=1)).isoformat()
+
+        return {
+            "tier": getattr(project, "tier", "developer") or "developer",
+            "requests_total": (getattr(meter, "requests_total", 0) or 0) if meter else 0,
+            "requests_today": requests_today,
+            "daily_requests_cap": daily_cap,
+            "requests_remaining_today": requests_remaining,
+            "active_adapters_count": active_adapters,
+            "max_active_adapters": getattr(project, "max_active_adapters", 2) or 0,
+            "transactions_total": (getattr(meter, "transactions_total", 0) or 0) if meter else 0,
+            "history_retained": (getattr(meter, "history_retained", 0) or 0) if meter else 0,
+            "history_cap": getattr(project, "history_cap", 1000) or 1000,
+            "webhook_attempts": (getattr(meter, "webhook_attempts", 0) or 0) if meter else 0,
+            "window_resets_at": window_resets_at,
+        }
+
     return {field: (getattr(meter, field, 0) or 0) if meter else 0 for field in METER_FIELDS}
 
 

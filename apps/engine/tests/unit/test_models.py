@@ -264,7 +264,7 @@ def test_required_indexes_declared():
 
 
 def test_models_cover_only_the_four_t008_tables():
-    """VisitorSession belongs to T052; webhook_deliveries landed in T037."""
+    """VisitorSession belongs to T052; webhook_deliveries landed in T037; auth/billing in 004."""
     assert set(Transaction.metadata.tables) == {
         "projects",
         "adapter_configs",
@@ -272,6 +272,9 @@ def test_models_cover_only_the_four_t008_tables():
         "usage_meters",
         "webhook_deliveries",
         "visitor_sessions",
+        "users",
+        "user_sessions",
+        "subscriptions",
     }
 
 

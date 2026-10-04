@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { MarketingShell } from "../../../../components/marketing/MarketingShell";
 import { Badge, PageHead } from "../../../../components/marketing/PageHead";
+import { UpgradeButton } from "../../../../components/marketing/UpgradeButton";
 
 export const metadata: Metadata = {
   title: "تعرفه‌ها | سندباکس درگاه",
@@ -133,16 +134,16 @@ export default async function PricingPage({
                 </li>
               ))}
             </ul>
-            <a
-              href={`/${locale}/login`}
-              className={`mt-auto inline-flex items-center justify-center min-h-11 px-4 rounded-sm text-sm font-medium transition-colors duration-fast ease-standard ${
-                plan.primary
-                  ? "bg-accent text-accent-on hover:bg-accent/92"
-                  : "border border-border bg-surface text-text hover:bg-surface-subtle"
-              }`}
-            >
-              {plan.cta}
-            </a>
+            {plan.primary ? (
+              <UpgradeButton locale={locale} label={plan.cta} primary={plan.primary} />
+            ) : (
+              <a
+                href={`/${locale}/login`}
+                className="mt-auto inline-flex items-center justify-center min-h-11 px-4 rounded-sm text-sm font-medium transition-colors duration-fast ease-standard border border-border bg-surface text-text hover:bg-surface-subtle"
+              >
+                {plan.cta}
+              </a>
+            )}
           </article>
         ))}
       </section>

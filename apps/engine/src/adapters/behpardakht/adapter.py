@@ -80,6 +80,7 @@ class BehpardakhtAdapter(PaymentAdapter):
             provider_name="به‌پرداخت ملت (Behpardakht Mellat)",
             action_url=f"{self.endpoint_path_prefix}/checkout/{tx.authority}",
             lang=lang,
+            provider=self.provider,
         )
 
     def callback_payload(self, stage: CallbackStage, tx: Transaction) -> dict[str, Any]:

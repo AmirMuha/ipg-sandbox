@@ -8,10 +8,71 @@ Cap semantics (FR-006): `transactions_total` is lifetime and never shrinks; `his
 `min(transactions_total, history_cap)`.
 """
 
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Project, Transaction, UsageMeter
+from src.api.errors import ApiError, ErrorCode
+from src.models import Project, Transaction, UsageMeter, utcnow
+
+
+def _ensure_aware(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+async def check_and_bump_quota(
+    session: AsyncSession, project: Project
+) -> UsageMeter:
+    """Verify daily request quota and atomically increment request counters."""
+    await session.execute(select(Project.id).where(Project.id == project.id).with_for_update())
+
+    meter = await session.get(UsageMeter, project.id, with_for_update=True)
+    if meter is None:
+        meter = UsageMeter(
+            project_id=project.id,
+            requests_total=0,
+            requests_today=0,
+            transactions_total=0,
+            history_retained=0,
+            window_started_at=utcnow(),
+        )
+        session.add(meter)
+        await session.flush()
+
+    now = utcnow()
+    window_start = _ensure_aware(meter.window_started_at)
+    if (now - window_start).total_seconds() >= 86400:
+        meter.requests_today = 0
+        meter.window_started_at = now
+        window_start = now
+
+    if project.daily_requests_cap > 0 and meter.requests_today >= project.daily_requests_cap:
+        seconds_left = max(1, int(86400 - (now - window_start).total_seconds()))
+        reset_ts = int((window_start + timedelta(days=1)).timestamp())
+        raise ApiError(
+            ErrorCode.daily_quota_exceeded,
+            f"Daily request quota of {project.daily_requests_cap} requests has been exhausted for this workspace.",
+            status=429,
+            details={
+                "limit": project.daily_requests_cap,
+                "current": meter.requests_today,
+                "resets_in_seconds": seconds_left,
+                "upgrade_url": "/pricing",
+            },
+            headers={
+                "Retry-After": str(seconds_left),
+                "X-RateLimit-Limit": str(project.daily_requests_cap),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(reset_ts),
+            },
+        )
+
+    meter.requests_today += 1
+    meter.requests_total += 1
+    await session.flush()
+    return meter
 
 
 async def record_transaction(
@@ -59,12 +120,46 @@ async def record_transaction(
     meter = await session.get(UsageMeter, project.id, with_for_update=True)
     if meter is None:
         meter = UsageMeter(
-            project_id=project.id, requests_total=0, transactions_total=0, history_retained=0
+            project_id=project.id,
+            requests_total=0,
+            requests_today=0,
+            transactions_total=0,
+            history_retained=0,
+            window_started_at=utcnow(),
         )
         session.add(meter)
 
+    now = utcnow()
+    window_start = _ensure_aware(meter.window_started_at)
+    if (now - window_start).total_seconds() >= 86400:
+        meter.requests_today = 0
+        meter.window_started_at = now
+        window_start = now
+
+    if project.daily_requests_cap > 0 and meter.requests_today >= project.daily_requests_cap:
+        seconds_left = max(1, int(86400 - (now - window_start).total_seconds()))
+        reset_ts = int((window_start + timedelta(days=1)).timestamp())
+        raise ApiError(
+            ErrorCode.daily_quota_exceeded,
+            f"Daily request quota of {project.daily_requests_cap} requests has been exhausted for this workspace.",
+            status=429,
+            details={
+                "limit": project.daily_requests_cap,
+                "current": meter.requests_today,
+                "resets_in_seconds": seconds_left,
+                "upgrade_url": "/pricing",
+            },
+            headers={
+                "Retry-After": str(seconds_left),
+                "X-RateLimit-Limit": str(project.daily_requests_cap),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(reset_ts),
+            },
+        )
+
     # The row lock above is what keeps this read-modify-write atomic against a concurrent insert
     # for the same project. SQLite ignores FOR UPDATE, but it serialises writers anyway.
+    meter.requests_today += 1
     meter.requests_total += 1
     meter.transactions_total += 1
     meter.history_retained = min(meter.transactions_total, project.history_cap)

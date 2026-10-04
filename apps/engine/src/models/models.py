@@ -44,6 +44,7 @@ ALLOWED_TRANSITIONS: dict[TransactionStatus, frozenset[TransactionStatus]] = {
             TransactionStatus.pending,  # approve / pending_settle path
             TransactionStatus.declined,  # decline / verify_fail at verify
             TransactionStatus.failed,  # timeout outcome, unsupported op, invalid credentials
+            TransactionStatus.expired,  # checkout TTL expired before action
         }
     ),
     TransactionStatus.pending: frozenset(
@@ -84,9 +85,21 @@ class Project(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     kind: Mapped[ProjectKind] = mapped_column(
         default=ProjectKind.local, server_default=ProjectKind.local.value, nullable=False
+    )
+    tier: Mapped[str] = mapped_column(
+        String(32), default="developer", server_default=text("'developer'"), nullable=False
+    )
+    daily_requests_cap: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+    max_active_adapters: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
     )
     default_scenario: Mapped[ScenarioOutcome] = mapped_column(
         default=ScenarioOutcome.approve,
@@ -236,6 +249,12 @@ class UsageMeter(Base):
     )
     requests_total: Mapped[int] = mapped_column(
         BigInteger, default=0, server_default=text("0"), nullable=False
+    )
+    requests_today: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+    window_started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=text("now()"), nullable=False
     )
     transactions_total: Mapped[int] = mapped_column(
         BigInteger, default=0, server_default=text("0"), nullable=False

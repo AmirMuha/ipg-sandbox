@@ -67,6 +67,9 @@ export interface Project {
   id: string;
   name: string;
   kind: "local" | "demo";
+  tier?: "developer" | "team" | "unlimited";
+  daily_requests_cap?: number;
+  max_active_adapters?: number;
   default_scenario: ScenarioOutcome;
   history_cap: number;
   webhook_retry_max: number;
@@ -75,6 +78,41 @@ export interface Project {
   timeout_delay_s: number;
   webhook_url?: string | null;
   created_at: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  auth_provider: string;
+}
+
+export interface Subscription {
+  tier: string;
+  status: string;
+  amount_toman: number;
+  started_at: string | null;
+  expires_at: string | null;
+  entitlements: {
+    daily_requests_limit: string | number;
+    active_adapters_limit: string | number;
+    history_retention_days: number;
+  };
+}
+
+export interface QuotaMeters {
+  tier: string;
+  requests_total: number;
+  requests_today: number;
+  daily_requests_cap: number;
+  requests_remaining_today: number | null;
+  active_adapters_count: number;
+  max_active_adapters: number;
+  transactions_total: number;
+  history_retained: number;
+  history_cap: number;
+  webhook_attempts: number;
+  window_resets_at: string;
 }
 
 // T075: FR-008 asks for per-adapter configuration *and status*. The engine derives this from
@@ -203,14 +241,28 @@ export class ApiError extends Error {
 
 async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}/api/v1${path}`;
-  const headers = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers || {}),
+    ...((options.headers as Record<string, string>) || {}),
   };
+
+  if (typeof window === "undefined") {
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = cookies();
+      const session = cookieStore.get("ipg_session");
+      if (session && !headers["Cookie"]) {
+        headers["Cookie"] = `ipg_session=${session.value}`;
+      }
+    } catch {
+      // not in a server component context
+    }
+  }
 
   const res = await fetch(url, {
     ...options,
     headers,
+    credentials: "include",
     cache: "no-store",
   });
 
@@ -354,3 +406,55 @@ export async function updateProjectWebhookUrl(webhook_url: string | null): Promi
     body: JSON.stringify({ webhook_url }),
   });
 }
+
+export async function getQuotaMeters(): Promise<QuotaMeters> {
+  return fetchApi<QuotaMeters>("/meters?quota=true");
+}
+
+export async function getSubscription(): Promise<Subscription> {
+  return fetchApi<Subscription>("/billing/subscription");
+}
+
+export async function upgradePlan(
+  tier: string = "team"
+): Promise<{ subscription_id: string; amount_rial: number; authority: string; payment_url: string }> {
+  return fetchApi<{ subscription_id: string; amount_rial: number; authority: string; payment_url: string }>(
+    "/billing/upgrade",
+    {
+      method: "POST",
+      body: JSON.stringify({ tier }),
+    }
+  );
+}
+
+export async function loginUser(credentials: {
+  email: string;
+  password: string;
+}): Promise<{ user: User; token: string }> {
+  return fetchApi<{ user: User; token: string }>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(credentials),
+  });
+}
+
+export async function registerUser(data: {
+  email: string;
+  password: string;
+  full_name?: string;
+}): Promise<{ user: User; project: Project; token: string }> {
+  return fetchApi<{ user: User; project: Project; token: string }>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function logoutUser(): Promise<{ status: string }> {
+  return fetchApi<{ status: string }>("/auth/logout", {
+    method: "POST",
+  });
+}
+
+export async function getMe(): Promise<{ user: User; project: Project }> {
+  return fetchApi<{ user: User; project: Project }>("/auth/me");
+}
+

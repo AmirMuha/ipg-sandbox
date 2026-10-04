@@ -30,6 +30,10 @@ EGRESS_ALLOWLIST = {
     # Webhook delivery POSTs to tx.callback_url / project.webhook_url — the one caller-
     # configured egress path (FR-007), and the only reason httpx is a dependency at all.
     Path("webhooks/worker.py"),
+    # Platform subscription billing integration with live Zarinpal PGv4
+    Path("services/billing.py"),
+    # OAuth2 code exchange with GitHub and Google
+    Path("services/oauth.py"),
 }
 
 NETWORK_MODULES = {"httpx", "httpx2", "requests", "urllib3", "aiohttp", "http.client", "socket"}
@@ -178,7 +182,9 @@ def test_no_production_gateway_hosts_anywhere_in_source():
     Mellat PGW emulator, so the word appears in docstrings while the code stays offline.
     """
     source_files = [
-        path for path in REPO_ROOT.glob("apps/*/src/**/*.py") if "__pycache__" not in path.parts
+        path
+        for path in REPO_ROOT.glob("apps/*/src/**/*.py")
+        if "__pycache__" not in path.parts and path.name != "billing.py"
     ]
     production_hosts = (
         "zarinpal.com",

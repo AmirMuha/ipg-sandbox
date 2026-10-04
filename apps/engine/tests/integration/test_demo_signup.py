@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 DEMO_SRC = Path(__file__).parents[4] / "apps" / "demo" / "src"
+pytestmark = pytest.mark.skipif(not DEMO_SRC.exists(), reason="apps/demo removed in 0c1672d")
 
 _SCHEMA = """
 CREATE TABLE projects (

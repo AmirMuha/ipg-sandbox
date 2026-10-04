@@ -7,45 +7,73 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode
-from src.models import Project
+from src.models import Project, User, UserSession, utcnow
 from src.models.visitor import VisitorSession
+from src.services.auth import hash_session_token
+
+
+async def get_current_user(
+    request: Request, db: Annotated[AsyncSession, Depends(get_session)]
+) -> User | None:
+    """Resolve authenticated user from ipg_session cookie or Bearer header."""
+    token = request.cookies.get("ipg_session")
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+
+    if not token:
+        return None
+
+    token_hash = hash_session_token(token)
+    stmt = select(UserSession).where(
+        UserSession.token_hash == token_hash,
+        UserSession.expires_at > utcnow(),
+    )
+    user_session = await db.scalar(stmt)
+    if not user_session:
+        return None
+
+    return await db.get(User, user_session.user_id)
 
 
 async def get_current_project(
     request: Request, db: Annotated[AsyncSession, Depends(get_session)]
 ) -> Project:
+    """Resolve current project from authenticated user session, demo session, or local default."""
+    user = await get_current_user(request, db)
+    if user:
+        stmt = (
+            select(Project)
+            .where(Project.user_id == user.id)
+            .order_by(Project.created_at.asc())
+            .limit(1)
+        )
+        project = await db.scalar(stmt)
+        if project:
+            return project
+
     profile = os.environ.get("ENGINE_PROFILE", "local")
 
     if profile == "demo":
         session_id = request.cookies.get("demo_session")
         if not session_id:
-            # status=401 explicitly: ApiError defaults to 400, which reported a missing
-            # session as a *validation* fault and collided with `invalid_credentials` (also
-            # 401) in the contract's status->code map. A demo client distinguishes the two by
-            # status alone.
             raise ApiError(ErrorCode.session_required, "Session cookie missing", status=401)
 
-        # Lookup session
         stmt = select(VisitorSession).where(
             VisitorSession.id == session_id, VisitorSession.verified_at.is_not(None)
         )
-        res = await db.execute(stmt)
-        visitor = res.scalar_one_or_none()
-
+        visitor = await db.scalar(stmt)
         if not visitor:
             raise ApiError(ErrorCode.session_required, "Invalid or unverified session", status=401)
 
-        stmt_proj = select(Project).where(Project.id == visitor.project_id)
-        res_proj = await db.execute(stmt_proj)
-        project = res_proj.scalar_one_or_none()
+        project = await db.scalar(select(Project).where(Project.id == visitor.project_id))
         if not project:
             raise ApiError(ErrorCode.session_required, "Project not found", status=401)
         return project
-    else:
-        # Local mode: return the default project
-        stmt = select(Project).order_by(Project.created_at.asc()).limit(1)
-        res = await db.execute(stmt)
-        project = res.scalar_one_or_none()
-        if not project:
-            raise HTTPException(status_code=500, detail="Default project not found")
-        return project
+
+    # Local mode default project fallback
+    project = await db.scalar(select(Project).order_by(Project.created_at.asc()).limit(1))
+    if not project:
+        raise HTTPException(status_code=500, detail="Default project not found")
+    return project

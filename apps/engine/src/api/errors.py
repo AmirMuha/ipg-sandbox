@@ -24,6 +24,8 @@ NOT_FOUND = "not_found"
 RATE_LIMITED = "rate_limited"
 SCENARIO_INVALID = "scenario_invalid"
 SESSION_REQUIRED = "session_required"
+DAILY_QUOTA_EXCEEDED = "daily_quota_exceeded"
+ADAPTER_LIMIT_EXCEEDED = "adapter_limit_exceeded"
 
 # Not one of the seven above: those are errors the API raises deliberately. This one marks an
 # unexpected server fault, which still has to reach the caller in the documented envelope shape.
@@ -40,6 +42,8 @@ class ErrorCode(enum.StrEnum):
     rate_limited = RATE_LIMITED
     scenario_invalid = SCENARIO_INVALID
     session_required = SESSION_REQUIRED
+    daily_quota_exceeded = DAILY_QUOTA_EXCEEDED
+    adapter_limit_exceeded = ADAPTER_LIMIT_EXCEEDED
 
 
 class ApiError(Exception):
@@ -52,12 +56,14 @@ class ApiError(Exception):
         *,
         status: int = 400,
         details: Any = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.code = code
         self.message = message
         self.status = status
         self.details = details
+        self.headers = headers
 
     def envelope(self) -> dict[str, Any]:
         """`details` is omitted entirely when unset — the contract says `details?`."""
@@ -89,7 +95,7 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ApiError)
     async def _api_error(_: Request, exc: ApiError) -> JSONResponse:
-        return JSONResponse(status_code=exc.status, content=exc.envelope())
+        return JSONResponse(status_code=exc.status, content=exc.envelope(), headers=exc.headers)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:

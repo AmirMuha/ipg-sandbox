@@ -98,7 +98,7 @@ BRANDING: dict[Provider, GatewayBranding] = {
         "logo_svg": '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#eab308" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>',
     },
     Provider.idpay: {
-        "name_fa": "آیدی‌پی",
+        "name_fa": "آیدی پی (IDPay)",
         "name_en": "IDPay",
         "primary_color": "#06b6d4",
         "secondary_color": "#0891b2",

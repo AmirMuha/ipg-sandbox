@@ -28,6 +28,8 @@ from src.adapters.saman import router as saman_router
 from src.adapters.sarmayeh import router as sarmayeh_router
 from src.adapters.sizpay import router as sizpay_router
 from src.adapters.zarinpal import router as zarinpal_router
+from src.api.auth import router as auth_router
+from src.api.billing import router as billing_router
 from src.api.errors import install_error_handlers
 from src.api.routes import router
 from src.config import Settings
@@ -76,8 +78,12 @@ async def _seed_default_project(session: AsyncSession, settings: Settings) -> No
     """Local self-host runs one project; `GET /project` and `/adapters` answer on a bare stack."""
     project = await session.scalar(select(Project).limit(1))
     if project is None:
+        is_local = os.environ.get("ENGINE_PROFILE", "local") == "local"
         project = Project(
             name="default",
+            tier="developer",
+            daily_requests_cap=0 if is_local else 100,
+            max_active_adapters=0 if is_local else 2,
             history_cap=settings.history_cap,
             webhook_retry_max=settings.webhook_retry_max,
             pending_settle_delay_s=settings.pending_settle_delay_s,
@@ -109,6 +115,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     install_error_handlers(app)
+    app.include_router(auth_router)
+    app.include_router(billing_router)
     app.include_router(router)
     app.include_router(zarinpal_router)
     app.include_router(idpay_router)

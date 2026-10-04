@@ -109,6 +109,15 @@ class Settings:
     webhook_retry_max: int
     pending_settle_delay_s: int
     timeout_delay_s: int
+    session_ttl_days: int = 7
+    zarinpal_merchant_id: str = "00000000-0000-0000-0000-000000000000"
+    zarinpal_sandbox: bool = True
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    github_redirect_uri: str = "http://localhost:8080/api/v1/auth/oauth/github/callback"
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = "http://localhost:8080/api/v1/auth/oauth/google/callback"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -116,6 +125,9 @@ class Settings:
         # asyncpg is the project's only async driver; alembic/env.py performs the same upgrade.
         if url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        zarinpal_sandbox_raw = os.environ.get("ZARINPAL_SANDBOX", "true").strip().lower()
+        zarinpal_sandbox = zarinpal_sandbox_raw not in ("false", "0", "no")
 
         return cls(
             database_url=url,
@@ -128,4 +140,17 @@ class Settings:
                 "DEFAULT_PENDING_SETTLE_DELAY_S", 5, low=0, high=DELAY_MAX_S
             ),
             timeout_delay_s=_env_int("DEFAULT_TIMEOUT_DELAY_S", 30, low=0, high=DELAY_MAX_S),
+            session_ttl_days=_env_int("SESSION_TTL_DAYS", 7, low=1, high=365),
+            zarinpal_merchant_id=os.environ.get("ZARINPAL_MERCHANT_ID", "00000000-0000-0000-0000-000000000000").strip(),
+            zarinpal_sandbox=zarinpal_sandbox,
+            github_client_id=os.environ.get("GITHUB_CLIENT_ID", "").strip(),
+            github_client_secret=os.environ.get("GITHUB_CLIENT_SECRET", "").strip(),
+            github_redirect_uri=os.environ.get(
+                "GITHUB_REDIRECT_URI", "http://localhost:8080/api/v1/auth/oauth/github/callback"
+            ).strip(),
+            google_client_id=os.environ.get("GOOGLE_CLIENT_ID", "").strip(),
+            google_client_secret=os.environ.get("GOOGLE_CLIENT_SECRET", "").strip(),
+            google_redirect_uri=os.environ.get(
+                "GOOGLE_REDIRECT_URI", "http://localhost:8080/api/v1/auth/oauth/google/callback"
+            ).strip(),
         )

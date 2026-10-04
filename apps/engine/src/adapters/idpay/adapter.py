@@ -122,6 +122,7 @@ class IDPayAdapter(PaymentAdapter):
             provider_name="آیدی پی (IDPay)",
             action_url=f"{self.endpoint_path_prefix}/payment/start/{tx.authority}",
             lang=lang,
+            provider=self.provider,
         )
 
     def callback_payload(self, stage: CallbackStage, tx: Transaction) -> dict[str, Any]:

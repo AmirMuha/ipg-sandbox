@@ -4,7 +4,9 @@ Importing this package registers every table on `Base.metadata`, which is what A
 `target_metadata` and autogenerate rely on.
 """
 
+from .auth import User, UserSession
 from .base import Base
+from .billing import Subscription, SubscriptionStatus, SubscriptionTier
 from .enums import (
     ApiUnit,
     ProjectKind,
@@ -35,9 +37,14 @@ __all__ = [
     "ProjectKind",
     "Provider",
     "ScenarioOutcome",
+    "Subscription",
+    "SubscriptionStatus",
+    "SubscriptionTier",
     "Transaction",
     "TransactionStatus",
     "UsageMeter",
+    "User",
+    "UserSession",
     "VisitorSession",
     "WebhookDelivery",
     "utcnow",

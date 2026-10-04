@@ -8,6 +8,7 @@ Single owner of:
 """
 
 import uuid
+from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import select
@@ -20,6 +21,7 @@ from src.models import (
     ScenarioOutcome,
     Transaction,
     TransactionStatus,
+    utcnow,
 )
 from src.scenarios.resolve import resolve_scenario
 from src.services.cap import record_transaction
@@ -87,6 +89,19 @@ async def load_by_authority(
     tx = await session.scalar(stmt)
     if tx is None:
         raise not_found("transaction")
+
+    # 15-minute checkout TTL check (004-launch-readiness-flows)
+    created_at = (
+        tx.created_at.replace(tzinfo=utcnow().tzinfo)
+        if tx.created_at.tzinfo is None
+        else tx.created_at
+    )
+    if tx.status in (TransactionStatus.initiated, TransactionStatus.pending) and (
+        utcnow() - created_at
+    ) > timedelta(minutes=15):
+        tx.transition_to(TransactionStatus.expired)
+        await session.commit()
+
     return tx
 
 
