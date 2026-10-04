@@ -33,3 +33,4 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+apps/dashboard/tsconfig.tsbuildinfo
