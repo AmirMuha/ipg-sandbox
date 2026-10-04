@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode
 from src.api.scoping import get_current_project, get_current_user
-from src.config import Settings, public_base_url
+from src.config import Settings, dashboard_base_url, public_base_url
 from src.models import (
     Project,
     Subscription,
@@ -64,6 +64,7 @@ async def callback(
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> RedirectResponse:
     settings = Settings.from_env()
+    dashboard_url = dashboard_base_url()
     try:
         sub = await verify_plan_upgrade(
             authority=Authority,
@@ -72,11 +73,11 @@ async def callback(
             settings=settings,
         )
         if sub.status == SubscriptionStatus.active.value:
-            return RedirectResponse(url="/console/settings?payment=success", status_code=302)
+            return RedirectResponse(url=f"{dashboard_url}/fa/settings?payment=success", status_code=302)
         else:
-            return RedirectResponse(url="/console/settings?payment=cancelled", status_code=302)
+            return RedirectResponse(url=f"{dashboard_url}/fa/settings?payment=cancelled", status_code=302)
     except ApiError:
-        return RedirectResponse(url="/console/settings?payment=failed", status_code=302)
+        return RedirectResponse(url=f"{dashboard_url}/fa/settings?payment=failed", status_code=302)
 
 
 @router.get("/subscription")

@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.adapters.registry import seed_configs
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode
-from src.config import Settings
+from src.config import Settings, dashboard_base_url
 from src.models import (
     AdapterConfig,
     Project,
@@ -375,7 +375,8 @@ async def oauth_callback(
     db.add(session)
     await db.commit()
 
-    resp = RedirectResponse(url="/console", status_code=302)
+    dashboard_url = dashboard_base_url()
+    resp = RedirectResponse(url=f"{dashboard_url}/fa/transactions", status_code=302)
     _set_session_cookie(resp, token, settings.session_ttl_days)
     resp.delete_cookie("oauth_state", path="/")
     return resp

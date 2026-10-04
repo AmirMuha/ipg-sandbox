@@ -83,6 +83,15 @@ def public_base_url() -> str:
     return f"http://localhost:{port}"
 
 
+def dashboard_base_url() -> str:
+    """Origin a browser uses to reach the dashboard."""
+    base = os.environ.get("DASHBOARD_URL", "").strip()
+    if base:
+        return base.rstrip("/")
+    port = os.environ.get("DASHBOARD_PORT", "").strip() or "3000"
+    return f"http://localhost:{port}"
+
+
 def _env_int(name: str, default: int, *, low: int, high: int | None = None) -> int:
     """Read an integer env var, or raise `ConfigError`. `low`/`high` are inclusive."""
     raw = os.environ.get(name)
