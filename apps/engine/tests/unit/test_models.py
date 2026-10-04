@@ -275,6 +275,7 @@ def test_models_cover_only_the_four_t008_tables():
         "users",
         "user_sessions",
         "subscriptions",
+        "email_verifications",
     }
 
 

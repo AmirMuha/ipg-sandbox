@@ -1,6 +1,9 @@
 """Authentication API routes: registration, login, session inspection, and OAuth (004-launch-readiness-flows)."""
 
+import logging
+import os
 import re
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 from urllib.parse import urlencode
@@ -16,6 +19,7 @@ from src.api.errors import ApiError, ErrorCode
 from src.config import Settings, dashboard_base_url
 from src.models import (
     AdapterConfig,
+    EmailVerification,
     Project,
     UsageMeter,
     User,
@@ -78,6 +82,95 @@ async def get_current_user_and_session(
     return user, user_session
 
 
+logger = logging.getLogger(__name__)
+
+
+@router.post("/otp/send")
+async def send_otp(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    try:
+        body = await request.json()
+    except Exception:
+        raise ApiError(ErrorCode.validation_error, "Invalid JSON body", status=422)
+
+    raw_email = body.get("email")
+    if not isinstance(raw_email, str):
+        raise ApiError(ErrorCode.validation_error, "ایمیل الزامی است", status=422)
+
+    email = raw_email.strip().lower()
+    if not EMAIL_RE.match(email):
+        raise ApiError(ErrorCode.validation_error, "قالب ایمیل معتبر نیست", status=422)
+
+    existing = await db.scalar(select(User).where(User.email == email))
+    if existing is not None:
+        raise ApiError(ErrorCode.validation_error, "این ایمیل قبلاً ثبت‌نام کرده است", status=400)
+
+    code = f"{secrets.randbelow(900000) + 100000}"
+    expires_at = utcnow() + timedelta(minutes=5)
+
+    verification = EmailVerification(
+        email=email,
+        code=code,
+        expires_at=expires_at,
+    )
+    db.add(verification)
+    await db.commit()
+
+    from src.services.email import send_otp_email
+
+    send_otp_email(email, code)
+
+    return {
+        "status": "sent",
+        "resend_in_seconds": 60,
+    }
+
+
+@router.post("/otp/verify")
+async def verify_otp(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    try:
+        body = await request.json()
+    except Exception:
+        raise ApiError(ErrorCode.validation_error, "Invalid JSON body", status=422)
+
+    raw_email = body.get("email")
+    raw_code = body.get("code")
+    if not isinstance(raw_email, str) or not isinstance(raw_code, str):
+        raise ApiError(ErrorCode.validation_error, "ایمیل و کد تأیید الزامی است", status=422)
+
+    email = raw_email.strip().lower()
+    code = raw_code.strip()
+
+    stmt = (
+        select(EmailVerification)
+        .where(
+            EmailVerification.email == email,
+            EmailVerification.code == code,
+            EmailVerification.expires_at > utcnow(),
+        )
+        .order_by(EmailVerification.created_at.desc())
+        .limit(1)
+    )
+    verification = await db.scalar(stmt)
+    if not verification:
+        raise ApiError(ErrorCode.validation_error, "کد تأیید نامعتبر یا منقضی شده است", status=400)
+
+    verification_token = secrets.token_hex(32)
+    verification.verified_at = utcnow()
+    verification.verification_token = verification_token
+    await db.commit()
+
+    return {
+        "verified": True,
+        "verification_token": verification_token,
+    }
+
+
 @router.post("/register", status_code=201)
 async def register(
     request: Request,
@@ -91,21 +184,36 @@ async def register(
 
     raw_email = body.get("email")
     raw_password = body.get("password")
+    raw_confirm = body.get("password_confirmation")
     full_name = body.get("full_name")
+    raw_token = body.get("verification_token")
 
     if not isinstance(raw_email, str) or not isinstance(raw_password, str):
-        raise ApiError(ErrorCode.validation_error, "Email and password are required", status=422)
+        raise ApiError(ErrorCode.validation_error, "ایمیل و رمز عبور الزامی است", status=422)
+
+    if raw_confirm is not None and raw_password != raw_confirm:
+        raise ApiError(ErrorCode.validation_error, "رمز عبور با تکرار آن یکسان نیست", status=422)
 
     email = raw_email.strip().lower()
     if not EMAIL_RE.match(email):
-        raise ApiError(ErrorCode.validation_error, "Invalid email format", status=422)
+        raise ApiError(ErrorCode.validation_error, "قالب ایمیل معتبر نیست", status=422)
 
     if len(raw_password) < 8:
-        raise ApiError(ErrorCode.validation_error, "Password must be at least 8 characters", status=422)
+        raise ApiError(ErrorCode.validation_error, "رمز عبور باید حداقل ۸ نویسه باشد", status=422)
+
+    if raw_token:
+        v_stmt = select(EmailVerification).where(
+            EmailVerification.email == email,
+            EmailVerification.verification_token == raw_token,
+            EmailVerification.verified_at.is_not(None),
+        )
+        v = await db.scalar(v_stmt)
+        if not v:
+            raise ApiError(ErrorCode.validation_error, "اعتبار تأییدیه ایمیل یافت نشد", status=400)
 
     existing = await db.scalar(select(User).where(User.email == email))
     if existing is not None:
-        raise ApiError(ErrorCode.validation_error, "Email is already registered", status=400)
+        raise ApiError(ErrorCode.validation_error, "این ایمیل قبلاً ثبت نام کرده است", status=400)
 
     settings = Settings.from_env()
     user = User(

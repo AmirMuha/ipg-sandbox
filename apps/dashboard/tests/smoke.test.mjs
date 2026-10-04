@@ -9,6 +9,39 @@ import assert from "node:assert";
 const DASHBOARD_URL = process.env.DASHBOARD_URL ?? "http://localhost:3000";
 const ENGINE_URL = process.env.ENGINE_URL ?? "http://localhost:8080";
 
+let cachedCookie = "";
+async function getSessionHeaders() {
+  if (cachedCookie) return { Cookie: cachedCookie };
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/v1/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: `smoke-${Date.now()}@example.com`,
+        password: "Password123!",
+        full_name: "Smoke Tester",
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      cachedCookie = `ipg_session=${data.token}`;
+      return { Cookie: cachedCookie };
+    }
+  } catch {
+    // fallback
+  }
+  return {};
+}
+
+test("0. Unauthenticated access to /fa/console redirects to login", async () => {
+  const res = await fetch(`${DASHBOARD_URL}/fa/console`, { redirect: "manual" });
+  assert.ok(
+    res.status === 307 || res.status === 308 || res.status === 302,
+    `Expected redirect status, got ${res.status}`
+  );
+  assert.ok(res.headers.get("location")?.includes("/login"));
+});
+
 test("1. Root redirect and Persian RTL layout", async () => {
   // Test redirect from /
   const rootRes = await fetch(`${DASHBOARD_URL}/`, { redirect: "manual" });
@@ -23,7 +56,7 @@ test("1. Root redirect and Persian RTL layout", async () => {
   );
 
   // Test /fa/console
-  const faRes = await fetch(`${DASHBOARD_URL}/fa/console`);
+  const faRes = await fetch(`${DASHBOARD_URL}/fa/console`, { headers: await getSessionHeaders() });
   assert.strictEqual(faRes.status, 200);
   const faHtml = await faRes.text();
 
@@ -41,7 +74,7 @@ test("1. Root redirect and Persian RTL layout", async () => {
 });
 
 test("2. English LTR layout", async () => {
-  const enRes = await fetch(`${DASHBOARD_URL}/en/console`);
+  const enRes = await fetch(`${DASHBOARD_URL}/en/console`, { headers: await getSessionHeaders() });
   assert.strictEqual(enRes.status, 200);
   const enHtml = await enRes.text();
 
@@ -116,7 +149,7 @@ test("2e. Provider API references are downloadable", async () => {
 });
 
 test("3. Webhooks view renders table", async () => {
-  const res = await fetch(`${DASHBOARD_URL}/fa/webhooks`);
+  const res = await fetch(`${DASHBOARD_URL}/fa/webhooks`, { headers: await getSessionHeaders() });
   assert.strictEqual(res.status, 200);
   const html = await res.text();
 
@@ -127,7 +160,7 @@ test("3. Webhooks view renders table", async () => {
 });
 
 test("4. Settings view renders adapter cards", async () => {
-  const res = await fetch(`${DASHBOARD_URL}/fa/settings`);
+  const res = await fetch(`${DASHBOARD_URL}/fa/settings`, { headers: await getSessionHeaders() });
   assert.strictEqual(res.status, 200);
   const html = await res.text();
 
@@ -312,7 +345,8 @@ test("9. Transaction search filters and paginates", async () => {
 });
 
 test("10. Dashboard renders the analytics overview, filters, and simulate CTA", async () => {
-  const html = await (await fetch(`${DASHBOARD_URL}/fa/console`)).text();
+  const headers = await getSessionHeaders();
+  const html = await (await fetch(`${DASHBOARD_URL}/fa/console`, { headers })).text();
 
   assert.ok(
     html.includes('data-testid="simulate-payment-btn"'),
@@ -327,13 +361,13 @@ test("10. Dashboard renders the analytics overview, filters, and simulate CTA", 
     "Expected the payment funnel card"
   );
 
-  const webhooks = await (await fetch(`${DASHBOARD_URL}/fa/webhooks`)).text();
+  const webhooks = await (await fetch(`${DASHBOARD_URL}/fa/webhooks`, { headers })).text();
   assert.ok(
     webhooks.includes('data-testid="webhook-ping-btn"'),
     "Expected the webhook ping button"
   );
   // The webhook URL input moved to the settings form; the webhooks page keeps the ping probe.
-  const settings = await (await fetch(`${DASHBOARD_URL}/fa/settings`)).text();
+  const settings = await (await fetch(`${DASHBOARD_URL}/fa/settings`, { headers })).text();
   assert.ok(
     settings.includes('data-testid="project-webhook-url-input"'),
     "Expected the default webhook URL input"
@@ -349,17 +383,18 @@ test("10. Dashboard renders the analytics overview, filters, and simulate CTA", 
 });
 
 test("11. Detail page offers checkout and delete for a payable transaction", async () => {
+  const headers = await getSessionHeaders();
   const created = (
     await (
       await fetch(`${ENGINE_URL}/api/v1/transactions/simulate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ adapter: "zarinpal", amount_rial: 250000, auto_complete: false }),
       })
     ).json()
   ).transaction;
 
-  const html = await (await fetch(`${DASHBOARD_URL}/fa/console/${created.id}`)).text();
+  const html = await (await fetch(`${DASHBOARD_URL}/fa/console/${created.id}`, { headers })).text();
   assert.ok(
     html.includes('data-testid="checkout-link"'),
     "Expected the Open Gateway Checkout link on an initiated transaction"
@@ -374,13 +409,13 @@ test("11. Detail page offers checkout and delete for a payable transaction", asy
     await (
       await fetch(`${ENGINE_URL}/api/v1/transactions/simulate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ adapter: "zarinpal", amount_rial: 260000, auto_complete: true }),
       })
     ).json()
   ).transaction;
   const settledHtml = await (
-    await fetch(`${DASHBOARD_URL}/fa/console/${settled.id}`)
+    await fetch(`${DASHBOARD_URL}/fa/console/${settled.id}`, { headers })
   ).text();
   assert.ok(
     !settledHtml.includes('data-testid="checkout-link"'),

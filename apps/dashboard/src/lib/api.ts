@@ -437,10 +437,32 @@ export async function loginUser(credentials: {
   });
 }
 
+export async function sendOtp(data: {
+  email: string;
+  full_name?: string;
+}): Promise<{ status: string; resend_in_seconds: number }> {
+  return fetchApi<{ status: string; resend_in_seconds: number }>("/auth/otp/send", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function verifyOtp(data: {
+  email: string;
+  code: string;
+}): Promise<{ verified: boolean; verification_token: string }> {
+  return fetchApi<{ verified: boolean; verification_token: string }>("/auth/otp/verify", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export async function registerUser(data: {
   email: string;
   password: string;
+  password_confirmation?: string;
   full_name?: string;
+  verification_token?: string;
 }): Promise<{ user: User; project: Project; token: string }> {
   return fetchApi<{ user: User; project: Project; token: string }>("/auth/register", {
     method: "POST",

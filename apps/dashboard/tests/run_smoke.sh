@@ -50,13 +50,13 @@ DASH_PID=$!
 
 # Wait for dashboard up to 15s
 for i in {1..75}; do
-  if curl -sf "http://localhost:$DASH_PORT/fa/console" >/dev/null 2>&1; then
+  if curl -sf "http://localhost:$DASH_PORT/fa/home" >/dev/null 2>&1; then
     break
   fi
   sleep 0.2
 done
 
-if ! curl -sf "http://localhost:$DASH_PORT/fa/console" >/dev/null 2>&1; then
+if ! curl -sf "http://localhost:$DASH_PORT/fa/home" >/dev/null 2>&1; then
   echo "Dashboard failed to start"
   exit 1
 fi

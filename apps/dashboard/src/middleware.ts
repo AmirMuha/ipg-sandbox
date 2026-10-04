@@ -13,7 +13,7 @@ export default function middleware(request: NextRequest) {
 
   const hasSession = request.cookies.has("ipg_session");
 
-  if (isConsoleRoute && !hasSession && process.env.ENGINE_PROFILE === "hosted") {
+  if (isConsoleRoute && !hasSession) {
     const locale = pathname.startsWith("/en") ? "en" : "fa";
     return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
   }

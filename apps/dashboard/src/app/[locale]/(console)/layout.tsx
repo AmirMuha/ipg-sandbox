@@ -1,9 +1,10 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { Shell } from "../../../components/Shell";
 
 /**
- * Console frame. Sits in a route group so its URLs stay `/[locale]/transactions`
- * etc. while marketing pages render their own header/footer — one route tree,
- * two frames, no marketing header nested inside the console chrome.
+ * Console frame. Sits in a route group so its URLs stay `/[locale]/console`
+ * etc. Guarded so unauthenticated requests are redirected to login.
  */
 export default function ConsoleLayout({
   children,
@@ -12,5 +13,10 @@ export default function ConsoleLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
+  const cookieStore = cookies();
+  if (!cookieStore.has("ipg_session")) {
+    redirect(`/${locale}/login`);
+  }
+
   return <Shell locale={locale}>{children}</Shell>;
 }
