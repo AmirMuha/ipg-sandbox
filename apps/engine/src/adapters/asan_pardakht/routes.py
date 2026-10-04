@@ -49,6 +49,7 @@ async def get_adapter(
 
 
 @router.post("/Token")
+@router.post("/v1/Token")
 async def initiate_token(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -123,6 +124,7 @@ async def services_wsdl(request: Request) -> Response:
 
 
 @router.post("/Verify")
+@router.post("/v1/Verify")
 async def verify(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],

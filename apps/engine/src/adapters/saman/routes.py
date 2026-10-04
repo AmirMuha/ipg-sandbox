@@ -143,6 +143,7 @@ async def service_wsdl(request: Request) -> Response:
 
 
 @router.post("/verifyTxn")
+@router.post("/verifyTxnRandomSessionkey/ipg/VerifyTransaction")
 async def verify_txn(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -192,6 +193,7 @@ async def verify_txn(
 
 
 @router.post("/reverseTxn")
+@router.post("/verifyTxnRandomSessionkey/ipg/ReverseTransaction")
 async def reverse_txn(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],

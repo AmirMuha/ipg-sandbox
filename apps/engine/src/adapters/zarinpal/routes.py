@@ -225,8 +225,119 @@ _ZARINPAL_OPERATIONS = frozenset(
         "callback/{authority}",
         "payment/verification",
         "payment/refund",
+        "pg/v4/payment/request.json",
+        "pg/StartPay/{authority}",
+        "pg/v4/payment/verify.json",
+        "pg/v4/payment/refund.json",
     }
 )
+
+
+@router.post("/pg/v4/payment/request.json")
+async def initiate_payment_v4(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[ZarinpalAdapter, Depends(get_adapter)],
+    x_sandbox_scenario: Annotated[str | None, Header()] = None,
+) -> dict[str, Any]:
+    body: dict[str, Any] = await request.json()
+    merchant_id = body.get("merchant_id") or body.get("MerchantID")
+    adapter.verify_supplied_credentials({"merchant_id": merchant_id})
+
+    amount = body.get("amount") or body.get("Amount")
+    if amount is None:
+        raise ApiError(ErrorCode.validation_error, "amount is required", status=422)
+
+    amount_rial = to_rial(int(amount), adapter.api_unit)
+    callback_url = body.get("callback_url") or body.get("CallbackURL")
+    return_url = body.get("return_url") or body.get("ReturnURL") or callback_url
+    description = body.get("description") or body.get("Description")
+    currency = body.get("currency") or body.get("Currency") or "IRR"
+
+    tx = await transactions.initiate(
+        session,
+        project,
+        adapter.config,
+        amount_rial=amount_rial,
+        header=x_sandbox_scenario,
+        callback_url=callback_url,
+        return_url=return_url,
+        description=description,
+        currency=currency,
+        raw_request=body,
+    )
+
+    if await apply_initiate_outcome(tx, project) is ScenarioOutcome.timeout:
+        timeout_resp = {"data": [], "errors": [{"code": -33, "message": "Payment session expired"}]}
+        tx.raw_response = timeout_resp
+        await session.commit()
+        return timeout_resp
+
+    resp = await adapter.create_payment(tx, body)
+    v4_resp = {
+        "data": {
+            "code": 100,
+            "message": "Success",
+            "authority": resp["authority"],
+            "fee_type": "Merchant",
+            "fee": 0,
+        },
+        "errors": [],
+    }
+    tx.raw_response = v4_resp
+    await session.commit()
+    return v4_resp
+
+
+@router.get("/pg/StartPay/{authority}", response_class=HTMLResponse)
+async def start_pay_v4(
+    authority: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[ZarinpalAdapter, Depends(get_adapter)],
+) -> HTMLResponse:
+    tx = await transactions.load_by_authority(session, project, authority)
+    html = await adapter.checkout_page(tx)
+    return HTMLResponse(content=html)
+
+
+@router.post("/pg/v4/payment/verify.json")
+async def verify_payment_v4(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[ZarinpalAdapter, Depends(get_adapter)],
+) -> dict[str, Any]:
+    body: dict[str, Any] = await request.json()
+    authority = body.get("authority") or body.get("Authority")
+    if not authority:
+        raise ApiError(ErrorCode.validation_error, "authority is required", status=422)
+
+    tx = await transactions.load_by_authority(session, project, authority)
+    resp = await adapter.verify(tx, body)
+    if resp.get("code") in (100, 101):
+        v4_resp = {
+            "data": {
+                "code": resp["code"],
+                "message": resp.get("message", "Verified"),
+                "card_pan": resp.get("card_pan", "603799******1234"),
+                "ref_id": resp.get("ref_id", 12345678),
+            },
+            "errors": [],
+        }
+    else:
+        v4_resp = {
+            "data": [],
+            "errors": [{"code": resp.get("code", -9), "message": resp.get("message", "Error")}],
+        }
+    tx.raw_response = v4_resp
+    await session.commit()
+    if tx.status == TransactionStatus.settled:
+        schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_SETTLE)
+    elif tx.status == TransactionStatus.declined:
+        schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_NOTIFY)
+    return v4_resp
 
 
 @router.api_route(

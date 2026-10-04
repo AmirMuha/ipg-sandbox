@@ -80,6 +80,21 @@ async def checkout_view(
     return HTMLResponse(content=html)
 
 
+@router.get("/Purchase", response_class=HTMLResponse)
+async def purchase_get_entry(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[SadadAdapter, Depends(get_adapter)],
+    token: str = "",
+    Token: str = "",
+) -> HTMLResponse:
+    t = token or Token
+    tx = await transactions.load_by_authority(session, project, t)
+    html = await adapter.checkout_page(tx)
+    return HTMLResponse(content=html)
+
+
 @router.post("/Purchase")
 async def purchase_post_entry(
     request: Request,

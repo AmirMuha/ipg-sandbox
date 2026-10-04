@@ -38,6 +38,7 @@ async def get_adapter(
 
 
 @router.post("/api/Payment/Token")
+@router.post("/api/Payment/GetToken")
 async def get_token(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -81,6 +82,21 @@ async def checkout_view(
 ) -> HTMLResponse:
     tx = await transactions.load_by_authority(session, project, token)
     html = await adapter.checkout_page(tx, lang=lang)
+    return HTMLResponse(content=html)
+
+
+@router.get("/api/Payment/Start", response_class=HTMLResponse)
+async def payment_start_get(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[SizpayAdapter, Depends(get_adapter)],
+    token: str = "",
+    Token: str = "",
+) -> HTMLResponse:
+    t = token or Token
+    tx = await transactions.load_by_authority(session, project, t)
+    html = await adapter.checkout_page(tx)
     return HTMLResponse(content=html)
 
 

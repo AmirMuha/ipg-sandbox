@@ -16,7 +16,9 @@ from src.models import (
     Transaction,
     TransactionStatus,
 )
+from src.scenarios.adapter_mappings import get_duplicate_verify_code
 from src.scenarios.outcomes import apply_verify_outcome
+from src.services.transactions import is_already_verified
 
 
 class BehpardakhtAdapter(PaymentAdapter):
@@ -54,8 +56,8 @@ class BehpardakhtAdapter(PaymentAdapter):
 
     async def verify(self, tx: Transaction, request: dict[str, Any]) -> dict[str, Any]:
         """Verify payment outcome per tx.effective_scenario."""
-        if tx.status == TransactionStatus.settled:
-            return {"ResCode": 0}
+        if is_already_verified(tx):
+            return {"ResCode": get_duplicate_verify_code(self.provider)}
 
         await apply_verify_outcome(tx)
 

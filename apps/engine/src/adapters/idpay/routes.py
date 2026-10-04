@@ -59,6 +59,7 @@ def _append_query(base_url: str, params: dict[str, Any]) -> str:
 
 
 @router.post("/payment")
+@router.post("/v1.1/payment")
 async def initiate_payment(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -112,6 +113,7 @@ async def initiate_payment(
 
 
 @router.get("/payment/start/{id}", response_class=HTMLResponse)
+@router.get("/v1.1/payment/start/{id}", response_class=HTMLResponse)
 async def checkout_view(
     id: str,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -125,6 +127,7 @@ async def checkout_view(
 
 
 @router.post("/payment/start/{id}")
+@router.post("/v1.1/payment/start/{id}")
 async def checkout_action(
     request: Request,
     id: str,
@@ -167,6 +170,7 @@ async def checkout_action(
 
 
 @router.post("/payment/verify")
+@router.post("/v1.1/payment/verify")
 async def verify_payment(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -190,6 +194,7 @@ async def verify_payment(
 
 
 @router.post("/payment/refund")
+@router.post("/v1.1/payment/refund")
 async def refund_payment(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -219,6 +224,10 @@ _IDPAY_OPERATIONS = frozenset(
         "payment/start/{id}",
         "payment/verify",
         "payment/refund",
+        "v1.1/payment",
+        "v1.1/payment/start/{id}",
+        "v1.1/payment/verify",
+        "v1.1/payment/refund",
     }
 )
 

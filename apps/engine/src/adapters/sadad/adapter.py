@@ -64,6 +64,7 @@ class SadadAdapter(PaymentAdapter):
                 "ResCode": get_duplicate_verify_code(self.provider),
                 "Description": "Already verified",
                 "RetrivalReferenceNumber": meta["rrn"],
+                "RetrivalRefNo": meta["rrn"],
                 "SystemTraceNo": meta["trace_no"],
             }
 
@@ -81,6 +82,7 @@ class SadadAdapter(PaymentAdapter):
             "Amount": tx.amount_rial,
             "Description": "Success",
             "RetrivalReferenceNumber": meta["rrn"],
+            "RetrivalRefNo": meta["rrn"],
             "SystemTraceNo": meta["trace_no"],
         }
 

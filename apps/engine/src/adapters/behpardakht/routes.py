@@ -97,11 +97,13 @@ def _append_query(base_url: str, params: dict[str, Any]) -> str:
 
 
 @router.get("/MellatPaymentGateway")
+@router.get("/services/pgw")
 async def get_wsdl(request: Request) -> Response:
     return wsdl_file_response(WSDL_PATH, request)
 
 
 @router.post("/MellatPaymentGateway")
+@router.post("/services/pgw")
 async def handle_soap(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -115,16 +117,20 @@ async def handle_soap(
     except MalformedEnvelope:
         return malformed_fault()
 
-    if op_name == "bpPaymentRequest":
+    if op_name in ("bpPaymentRequest", "bpPayRequest"):
         term_id = params.get("terminalId")
         user_name = params.get("userName")
         user_pass = params.get("userPassword")
         amount_str = params.get("amount")
 
         if not term_id or not user_name or not user_pass:
+            if op_name == "bpPayRequest":
+                return Response(content=envelope(f"    <bpPayRequestResponse {_BP_NS}><return>21</return></bpPayRequestResponse>"), media_type=SOAP_CONTENT_TYPE)
             return Response(content=_bp_pay_xml(21), media_type=SOAP_CONTENT_TYPE)
 
         if not amount_str or not amount_str.isdigit():
+            if op_name == "bpPayRequest":
+                return Response(content=envelope(f"    <bpPayRequestResponse {_BP_NS}><return>11</return></bpPayRequestResponse>"), media_type=SOAP_CONTENT_TYPE)
             return Response(content=_bp_pay_xml(11), media_type=SOAP_CONTENT_TYPE)
 
         amount_rial = int(amount_str)
@@ -145,7 +151,7 @@ async def handle_soap(
         )
 
         if await apply_initiate_outcome(tx, project) is ScenarioOutcome.timeout:
-            resp_xml = _bp_pay_xml(59)
+            resp_xml = _bp_pay_xml(59) if op_name != "bpPayRequest" else envelope(f"    <bpPayRequestResponse {_BP_NS}><return>59</return></bpPayRequestResponse>")
             tx.raw_response = {"ResCode": 59, "RefId": "", "RedirectUrl": ""}
             await session.commit()
             return Response(content=resp_xml, media_type=SOAP_CONTENT_TYPE)
@@ -154,14 +160,18 @@ async def handle_soap(
         tx.raw_response = resp_dict
         await session.commit()
 
-        resp_xml = _bp_pay_xml(
-            resp_dict["ResCode"],
-            ref_id=resp_dict["RefId"],
-            redirect_url=resp_dict["RedirectUrl"],
-        )
+        if op_name == "bpPayRequest":
+            ret = f"{resp_dict['ResCode']},{resp_dict['RefId']}" if resp_dict["ResCode"] == 0 else str(resp_dict["ResCode"])
+            resp_xml = envelope(f"    <bpPayRequestResponse {_BP_NS}>\n      <return>{ret}</return>\n    </bpPayRequestResponse>")
+        else:
+            resp_xml = _bp_pay_xml(
+                resp_dict["ResCode"],
+                ref_id=resp_dict["RefId"],
+                redirect_url=resp_dict["RedirectUrl"],
+            )
         return Response(content=resp_xml, media_type=SOAP_CONTENT_TYPE)
 
-    elif op_name == "bpPaymentVerification":
+    elif op_name in ("bpPaymentVerification", "bpVerifyRequest"):
         sale_order_id = params.get("saleOrderId", "")
         sale_ref_id = params.get("saleReferenceId", "")
         order_id = params.get("orderId", "")
@@ -182,6 +192,8 @@ async def handle_soap(
         )
         tx = await session.scalar(stmt)
         if tx is None:
+            if op_name == "bpVerifyRequest":
+                return Response(content=envelope(f"    <bpVerifyRequestResponse {_BP_NS}><return>24</return></bpVerifyRequestResponse>"), media_type=SOAP_CONTENT_TYPE)
             return Response(content=_bp_verify_xml(24), media_type=SOAP_CONTENT_TYPE)
 
         resp_dict = await adapter.verify(tx, params)
@@ -192,9 +204,36 @@ async def handle_soap(
         elif tx.status == TransactionStatus.declined:
             schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_NOTIFY)
 
-        return Response(content=_bp_verify_xml(resp_dict["ResCode"]), media_type=SOAP_CONTENT_TYPE)
+        if op_name == "bpVerifyRequest":
+            resp_xml = envelope(f"    <bpVerifyRequestResponse {_BP_NS}>\n      <return>{resp_dict['ResCode']}</return>\n    </bpVerifyRequestResponse>")
+        else:
+            resp_xml = _bp_verify_xml(resp_dict["ResCode"])
+        return Response(content=resp_xml, media_type=SOAP_CONTENT_TYPE)
 
-    elif op_name == "bpReverseTransaction":
+    elif op_name == "bpSettleRequest":
+        sale_order_id = params.get("saleOrderId", "")
+        sale_ref_id = params.get("saleReferenceId", "")
+        order_id = params.get("orderId", "")
+
+        stmt = (
+            select(Transaction)
+            .where(
+                Transaction.project_id == project.id,
+                or_(
+                    Transaction.authority == sale_ref_id,
+                    Transaction.authority == sale_order_id,
+                    Transaction.app_reference == order_id,
+                    Transaction.app_reference == sale_order_id,
+                ),
+            )
+            .limit(1)
+        )
+        tx = await session.scalar(stmt)
+        res_code = 0 if (tx and tx.status in (TransactionStatus.settled, TransactionStatus.approved)) else 24
+        resp_xml = envelope(f"    <bpSettleRequestResponse {_BP_NS}>\n      <return>{res_code}</return>\n    </bpSettleRequestResponse>")
+        return Response(content=resp_xml, media_type=SOAP_CONTENT_TYPE)
+
+    elif op_name in ("bpReverseTransaction", "bpReversalRequest"):
         sale_order_id = params.get("saleOrderId", "")
         sale_ref_id = params.get("saleReferenceId", "")
         order_id = params.get("orderId", "")
@@ -214,6 +253,8 @@ async def handle_soap(
         )
         tx = await session.scalar(stmt)
         if tx is None:
+            if op_name == "bpReversalRequest":
+                return Response(content=envelope(f"    <bpReversalRequestResponse {_BP_NS}><return>24</return></bpReversalRequestResponse>"), media_type=SOAP_CONTENT_TYPE)
             return Response(content=_bp_reverse_xml(24), media_type=SOAP_CONTENT_TYPE)
 
         resp_dict = await adapter.refund(tx, params)
@@ -222,7 +263,11 @@ async def handle_soap(
         if tx.status == TransactionStatus.refunded:
             schedule_delivery(request.app.state.session_factory, project.id, tx.id, STAGE_REFUND)
 
-        return Response(content=_bp_reverse_xml(resp_dict["ResCode"]), media_type=SOAP_CONTENT_TYPE)
+        if op_name == "bpReversalRequest":
+            resp_xml = envelope(f"    <bpReversalRequestResponse {_BP_NS}>\n      <return>{resp_dict['ResCode']}</return>\n    </bpReversalRequestResponse>")
+        else:
+            resp_xml = _bp_reverse_xml(resp_dict["ResCode"])
+        return Response(content=resp_xml, media_type=SOAP_CONTENT_TYPE)
 
     return fault(op_name or "Unknown")
 

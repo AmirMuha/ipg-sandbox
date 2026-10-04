@@ -49,11 +49,13 @@ async def get_adapter(
 
 
 @router.get("/EShopService.asmx")
+@router.get("/pecpaymentgateway/eshopservice.asmx")
 async def eshop_wsdl(request: Request) -> Response:
     return wsdl_file_response(WSDL_PATH, request)
 
 
 @router.post("/EShopService.asmx")
+@router.post("/pecpaymentgateway/eshopservice.asmx")
 async def eshop_soap(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -148,6 +150,23 @@ async def checkout_view(
 ) -> HTMLResponse:
     tx = await transactions.load_by_authority(session, project, token)
     html = await adapter.checkout_page(tx, lang=lang)
+    return HTMLResponse(content=html)
+
+
+@router.get("/payment", response_class=HTMLResponse)
+@router.get("/default.aspx", response_class=HTMLResponse)
+async def payment_get_entry(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    project: Annotated[Project, Depends(current_project)],
+    adapter: Annotated[ParsianAdapter, Depends(get_adapter)],
+    token: str = "",
+    Token: str = "",
+    au: str = "",
+) -> HTMLResponse:
+    t = token or Token or au
+    tx = await transactions.load_by_authority(session, project, t)
+    html = await adapter.checkout_page(tx)
     return HTMLResponse(content=html)
 
 
