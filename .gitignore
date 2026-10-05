@@ -34,3 +34,5 @@ Thumbs.db
 .vscode/
 .idea/
 apps/dashboard/tsconfig.tsbuildinfo
+apps/web/tsconfig.tsbuildinfo
+*.tsbuildinfo

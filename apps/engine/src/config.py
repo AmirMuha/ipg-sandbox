@@ -84,11 +84,15 @@ def public_base_url() -> str:
 
 
 def dashboard_base_url() -> str:
-    """Origin a browser uses to reach the dashboard."""
-    base = os.environ.get("DASHBOARD_URL", "").strip()
+    """Origin a browser uses to reach the web frontend."""
+    base = os.environ.get("WEB_URL", "").strip() or os.environ.get("DASHBOARD_URL", "").strip()
     if base:
         return base.rstrip("/")
-    port = os.environ.get("DASHBOARD_PORT", "").strip() or "3000"
+    port = (
+        os.environ.get("WEB_PORT", "").strip()
+        or os.environ.get("DASHBOARD_PORT", "").strip()
+        or "3000"
+    )
     return f"http://localhost:{port}"
 
 

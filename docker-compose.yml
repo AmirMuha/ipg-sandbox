@@ -25,7 +25,7 @@ services:
   dashboard:
     build:
       context: .
-      dockerfile: apps/dashboard/Dockerfile
+      dockerfile: apps/web/Dockerfile
       args:
         # Baked into the client bundle at build time; must be a host-reachable URL.
         NEXT_PUBLIC_API_URL: http://localhost:${ENGINE_PORT:-8080}

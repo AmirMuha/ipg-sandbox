@@ -12,7 +12,9 @@ importers:
         specifier: ^2.11.4
         version: 2.11.4
 
-  apps/dashboard:
+  apps/engine: {}
+
+  apps/web:
     dependencies:
       next:
         specifier: ^14.2.0
@@ -63,8 +65,6 @@ importers:
       typescript:
         specifier: ^5.4.5
         version: 5.9.3
-
-  apps/engine: {}
 
 packages:
 
