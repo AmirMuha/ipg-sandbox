@@ -89,7 +89,7 @@ def client(tmp_path: Path) -> Generator[TestClient, None, None]:
         session.add(project)
         session.add_all(
             [
-                AdapterConfig(id=uuid.uuid4(), **kw)
+                AdapterConfig(id=uuid.uuid4(), **{**kw, "enabled": True})
                 for kw in seed_configs(project.id, credentials=_TEST_CREDENTIALS)
             ]
         )
