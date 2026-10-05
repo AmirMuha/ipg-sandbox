@@ -119,7 +119,7 @@ export function TransactionDrawer({ locale = "fa" }: { locale?: string }) {
         type="button"
         aria-label={fa ? "بستن" : "Close"}
         onClick={close}
-        className="absolute inset-0 bg-overlay backdrop-blur-sm"
+        className="absolute inset-0 bg-overlay/20 backdrop-blur-sm transition-opacity"
         data-testid="tx-drawer-backdrop"
       />
       <aside

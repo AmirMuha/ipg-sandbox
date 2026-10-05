@@ -1,0 +1,18 @@
+{
+    email {$ACME_EMAIL:admin@example.com}
+}
+
+{$DOMAIN:localhost} {
+    encode gzip zstd
+
+    # Engine API and IPG adapter routes
+    @engine path /api/* /zarinpal/* /idpay/* /behpardakht/* /saman/* /sadad/* /pasargad/* /asan_pardakht/* /pardakht_novin/* /irankish/* /sizpay/* /fanava/* /sarmayeh/*
+    handle @engine {
+        reverse_proxy engine:8080
+    }
+
+    # Frontend web application
+    handle {
+        reverse_proxy web:3000
+    }
+}

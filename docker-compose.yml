@@ -1,5 +1,6 @@
 services:
   engine:
+    restart: unless-stopped
     build:
       context: ./apps/engine
     ports:
@@ -12,7 +13,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
-      # stdlib urllib rather than curl: the engine image ships neither curl nor wget (T077).
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/api/v1/project', timeout=3).status == 200 else 1)"]
       interval: 10s
       timeout: 5s
@@ -21,50 +21,47 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
-  dashboard:
+  web:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Baked into the client bundle at build time; must be a host-reachable URL.
-        NEXT_PUBLIC_API_URL: http://localhost:${ENGINE_PORT:-8080}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:${ENGINE_PORT:-8080}}
     ports:
-      - "${DASHBOARD_PORT:-3000}:3000"
+      - "${WEB_PORT:-${DASHBOARD_PORT:-3000}}:3000"
     environment:
-      # Server components fetch the engine during SSR, from inside the container, so they
-      # need the compose-internal hostname. NEXT_PUBLIC_API_URL stays the host-reachable
-      # value baked in at build time for the browser.
       - ENGINE_URL=http://engine:8080
     healthcheck:
-      # wget is present in the node image; the engine's urllib probe is not. `/fa/transactions`
-      # is a real rendered route, so this fails if SSR cannot reach the engine (T077).
-      # timeout is 20s, not 5s: that route SSRs against the engine, and the first cold render
-      # takes longer than 5s — a 5s budget marked a working dashboard `unhealthy`.
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--timeout=15", "--spider", "http://127.0.0.1:3000/fa/transactions"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--timeout=15", "--spider", "http://127.0.0.1:3000/fa/home"]
       interval: 15s
       timeout: 20s
       retries: 5
       start_period: 30s
-
-  demo:
-    profiles: ["demo"]
-    build:
-      context: apps/demo
-    ports:
-      - "${DEMO_PORT:-8000}:8000"
-    environment:
-      - ENGINE_URL=http://engine:8080
-      - DASHBOARD_URL=http://dashboard:3000
-      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ipg_sandbox}
     depends_on:
-      postgres:
+      engine:
         condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - dashboard
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   postgres:
+    restart: unless-stopped
     image: postgres:16-alpine
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
@@ -76,6 +73,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
 volumes:
   postgres_data:
