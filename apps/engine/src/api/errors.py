@@ -26,6 +26,10 @@ SCENARIO_INVALID = "scenario_invalid"
 SESSION_REQUIRED = "session_required"
 DAILY_QUOTA_EXCEEDED = "daily_quota_exceeded"
 ADAPTER_LIMIT_EXCEEDED = "adapter_limit_exceeded"
+# 006-admin-ipg-visibility: authenticated, but the account lacks the privilege. Distinct
+# from session_required so the dashboard can say "you are signed in, this is not yours"
+# rather than sending the user back to the login page.
+FORBIDDEN = "forbidden"
 
 # Not one of the seven above: those are errors the API raises deliberately. This one marks an
 # unexpected server fault, which still has to reach the caller in the documented envelope shape.
@@ -44,6 +48,7 @@ class ErrorCode(enum.StrEnum):
     session_required = SESSION_REQUIRED
     daily_quota_exceeded = DAILY_QUOTA_EXCEEDED
     adapter_limit_exceeded = ADAPTER_LIMIT_EXCEEDED
+    forbidden = FORBIDDEN
 
 
 class ApiError(Exception):

@@ -85,6 +85,7 @@ export interface User {
   email: string;
   full_name?: string | null;
   auth_provider: string;
+  is_admin?: boolean;
 }
 
 export interface Subscription {
@@ -151,6 +152,7 @@ export interface AdapterConfig {
   endpoint_path_prefix: string;
   credentials?: Record<string, unknown>;
   status?: AdapterStatus;
+  withdrawn_by_operator?: boolean;
 }
 
 export interface WebhookDelivery {
@@ -363,9 +365,28 @@ export async function getAdapters(): Promise<AdapterConfig[]> {
   return fetchApi<AdapterConfig[]>("/adapters");
 }
 
+export interface OfferedProvidersResponse {
+  providers: string[];
+  count: number;
+}
+
+export async function getPlatformProviders(): Promise<OfferedProvidersResponse> {
+  return fetchApi<OfferedProvidersResponse>("/providers");
+}
+
+export async function setPlatformProvider(
+  provider: string,
+  enabled: boolean
+): Promise<OfferedProvidersResponse> {
+  return fetchApi<OfferedProvidersResponse>(`/admin/providers/${provider}`, {
+    method: "PATCH",
+    body: JSON.stringify({ enabled }),
+  });
+}
+
 export async function patchAdapter(
   id: string,
-  updates: { enabled?: boolean; credentials?: Record<string, unknown> }
+  updates: { credentials?: Record<string, unknown> }
 ): Promise<AdapterConfig> {
   return fetchApi<AdapterConfig>(`/adapters/${id}`, {
     method: "PATCH",

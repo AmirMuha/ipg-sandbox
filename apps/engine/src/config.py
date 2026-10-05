@@ -131,6 +131,7 @@ class Settings:
     google_client_id: str = ""
     google_client_secret: str = ""
     google_redirect_uri: str = "http://localhost:8080/api/v1/auth/oauth/google/callback"
+    admin_emails: frozenset[str] = frozenset()
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -154,7 +155,9 @@ class Settings:
             ),
             timeout_delay_s=_env_int("DEFAULT_TIMEOUT_DELAY_S", 30, low=0, high=DELAY_MAX_S),
             session_ttl_days=_env_int("SESSION_TTL_DAYS", 7, low=1, high=365),
-            zarinpal_merchant_id=os.environ.get("ZARINPAL_MERCHANT_ID", "00000000-0000-0000-0000-000000000000").strip(),
+            zarinpal_merchant_id=os.environ.get(
+                "ZARINPAL_MERCHANT_ID", "00000000-0000-0000-0000-000000000000"
+            ).strip(),
             zarinpal_sandbox=zarinpal_sandbox,
             github_client_id=os.environ.get("GITHUB_CLIENT_ID", "").strip(),
             github_client_secret=os.environ.get("GITHUB_CLIENT_SECRET", "").strip(),
@@ -166,4 +169,13 @@ class Settings:
             google_redirect_uri=os.environ.get(
                 "GOOGLE_REDIRECT_URI", "http://localhost:8080/api/v1/auth/oauth/google/callback"
             ).strip(),
+            # 006-admin-ipg-visibility: the only people allowed to change which gateways are
+            # offered platform-wide. Emails are stored lowercased by the auth routes, so the
+            # allowlist is lowercased here too and the guard is a plain set lookup. An unset or
+            # empty value means *no* admin — the feature goes inert rather than open.
+            admin_emails=frozenset(
+                part.strip().lower()
+                for part in os.environ.get("ADMIN_EMAILS", "").split(",")
+                if part.strip()
+            ),
         )

@@ -324,6 +324,7 @@ async def login(
             "email": user.email,
             "full_name": user.full_name,
             "auth_provider": user.auth_provider,
+            "is_admin": user.email.lower() in Settings.from_env().admin_emails,
         },
         "project": {
             "id": str(project.id) if project else None,
@@ -350,6 +351,7 @@ async def me(
             "email": user.email,
             "full_name": user.full_name,
             "auth_provider": user.auth_provider,
+            "is_admin": user.email.lower() in Settings.from_env().admin_emails,
         },
         "project": {
             "id": str(project.id) if project else None,

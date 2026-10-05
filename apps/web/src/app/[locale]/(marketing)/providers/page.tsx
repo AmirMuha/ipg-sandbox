@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { MarketingShell } from "../../../../components/marketing/MarketingShell";
 import { Badge, PageHead } from "../../../../components/marketing/PageHead";
+import { getPlatformProviders } from "../../../../lib/api";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "درگاه‌های پشتیبانی‌شده | سندباکس درگاه",
@@ -260,32 +263,65 @@ export default async function ProvidersPage({
 }) {
   setRequestLocale(locale);
 
+  let offeredIds: string[] = [];
+  try {
+    const res = await getPlatformProviders();
+    offeredIds = res.providers;
+  } catch {
+    offeredIds = [];
+  }
+
+  const visibleGateways = GATEWAYS.filter((g) => offeredIds.includes(g.id));
+  const numFormatter = new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US");
+  const countStr = numFormatter.format(visibleGateways.length);
+  const countBadge = locale === "fa" ? `${countStr} درگاه` : `${countStr} Gateways`;
+  const stableBadge = locale === "fa" ? `${countStr} پایدار` : `${countStr} Stable`;
+
   return (
     <MarketingShell locale={locale} active="providers">
       <PageHead
-        eyebrow="آداپتورها"
-        title="درگاه‌های پشتیبانی‌شده"
+        eyebrow={locale === "fa" ? "آداپتورها" : "Adapters"}
+        title={locale === "fa" ? "درگاه‌های پشتیبانی‌شده" : "Supported Gateways"}
         badges={
           <>
-            <Badge dot>۱۳ درگاه</Badge>
+            <Badge dot>{countBadge}</Badge>
             <Badge tone="success" dot>
-              ۱۳ پایدار
+              {stableBadge}
             </Badge>
             <Badge tone="success" dot>
-              شاپرک و پرداخت‌یار
+              {locale === "fa" ? "شاپرک و پرداخت‌یار" : "Shaparak & Payment Facilitators"}
             </Badge>
           </>
         }
       >
-        هر آداپتور مسیر، امضای پاسخ و کدهای خطای درگاه اصلی را بازتولید می‌کند.
-        کافی است دامنه را به <code className="font-mono">localhost:8080</code> تغییر
-        دهید.
+        {locale === "fa" ? (
+          <>
+            هر آداپتور مسیر، امضای پاسخ و کدهای خطای درگاه اصلی را بازتولید می‌کند.
+            کافی است دامنه را به <code className="font-mono">localhost:8080</code> تغییر دهید.
+          </>
+        ) : (
+          <>
+            Each adapter replicates the routes, response signatures, and error codes of the real gateway.
+            Simply point your domain to <code className="font-mono">localhost:8080</code>.
+          </>
+        )}
       </PageHead>
 
       <section className="w-full max-w-[1180px] mx-auto px-4 md:px-6 grid gap-4">
-        {GATEWAYS.map((g) => (
-          <article
-            key={g.id}
+        {visibleGateways.length === 0 ? (
+          <div
+            className="p-8 text-center bg-surface border border-border rounded-lg text-sm text-muted"
+            data-testid="no-providers-message"
+          >
+            {locale === "fa"
+              ? "در حال حاضر هیچ درگاه پرداختی در دسترس نیست."
+              : "No payment gateways are currently offered."}
+          </div>
+        ) : (
+          visibleGateways.map((g) => (
+            <article
+              key={g.id}
+              data-gateway-id={g.id}
             className="bg-surface border border-border rounded-lg p-6 grid gap-4 transition-colors duration-base ease-standard hover:border-accent-border hover:shadow-raised"
           >
             <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -359,7 +395,7 @@ export default async function ProvidersPage({
               </span>
             </div>
           </article>
-        ))}
+        ))) }
       </section>
 
       <section className="w-full max-w-[1180px] mx-auto px-4 md:px-6 my-12 md:my-28">

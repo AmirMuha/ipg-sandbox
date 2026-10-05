@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode
+from src.config import Settings
 from src.models import Project, User, UserSession, utcnow
 from src.models.visitor import VisitorSession
 from src.services.auth import hash_session_token
@@ -77,3 +78,31 @@ async def get_current_project(
     if not project:
         raise HTTPException(status_code=500, detail="Default project not found")
     return project
+
+
+async def require_admin(
+    request: Request, db: Annotated[AsyncSession, Depends(get_session)]
+) -> User:
+    """The signed-in administrator, or raise. FR-001/002/003.
+
+    Reuses `get_current_user` rather than re-reading the session, so token expiry and the
+    Bearer-header fallback are handled once. The allowlist is read per request rather than
+    cached, so it is never stale relative to a restarted process.
+
+    `forbidden` (403) and `session_required` (401) are deliberately different: a merchant who is
+    correctly signed in should be told they lack the privilege, not bounced to the login page.
+    """
+    user = await get_current_user(request, db)
+    if user is None:
+        raise ApiError(ErrorCode.session_required, "Authentication required", status=401)
+
+    allowlist = Settings.from_env().admin_emails
+    if not allowlist:
+        raise ApiError(
+            ErrorCode.forbidden,
+            "No administrator is configured; set ADMIN_EMAILS to grant this access",
+            status=403,
+        )
+    if user.email.lower() not in allowlist:
+        raise ApiError(ErrorCode.forbidden, "Administrator privileges required", status=403)
+    return user

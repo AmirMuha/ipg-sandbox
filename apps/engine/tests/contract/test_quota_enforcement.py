@@ -82,16 +82,22 @@ def quota_client(tmp_path):
         yield client
 
 
-def test_adapter_ceiling_enforced_with_403(quota_client: TestClient):
-    """Enabling a 3rd adapter when max_active_adapters=2 returns HTTP 403 adapter_limit_exceeded."""
+def test_adapter_ceiling_no_longer_applies(quota_client: TestClient):
+    """The per-project active-adapter ceiling is gone (006-admin-ipg-visibility, FR-024).
+
+    It used to return 403 adapter_limit_exceeded when a merchant enabled a 3rd gateway. That
+    limit had exactly one trigger — a merchant toggling `enabled` — and merchants no longer can.
+    The field is now rejected as a whole, which is a different failure with a different cause, so
+    this asserts the replacement behaviour rather than deleting the coverage.
+    """
     resp = quota_client.patch(
         f"/api/v1/adapters/{quota_client.ad3_id}",
         json={"enabled": True},
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 422
     body = resp.json()
-    assert body["code"] == "adapter_limit_exceeded"
-    assert "Developer plan is limited to 2 active payment gateways" in body["message"]
+    assert body["code"] == "validation_error"
+    assert body["details"]["allowed"] == ["credentials"]
 
 
 def test_daily_request_quota_enforced_with_429(quota_client: TestClient):

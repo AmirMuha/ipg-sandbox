@@ -28,6 +28,7 @@ from src.adapters.saman import router as saman_router
 from src.adapters.sarmayeh import router as sarmayeh_router
 from src.adapters.sizpay import router as sizpay_router
 from src.adapters.zarinpal import router as zarinpal_router
+from src.api.admin_providers import router as admin_providers_router
 from src.api.auth import router as auth_router
 from src.api.billing import router as billing_router
 from src.api.errors import install_error_handlers
@@ -117,6 +118,7 @@ def create_app() -> FastAPI:
     )
     install_error_handlers(app)
     app.include_router(auth_router)
+    app.include_router(admin_providers_router)
     app.include_router(billing_router)
     app.include_router(router)
     app.include_router(zarinpal_router)

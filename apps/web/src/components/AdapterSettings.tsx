@@ -11,33 +11,20 @@ const usesSoap = (provider: AdapterConfig["provider"]) => provider === "behparda
 
 export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
   const router = useRouter();
-  // T073: per-adapter config/status is the FR-008 surface; it rendered in English under /fa/
-  // because every string was hardcoded.
   const tAdapter = useTranslations("adapter_settings");
   const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
-  const [enabled, setEnabled] = useState(adapter.enabled);
   const [credentials, setCredentials] = useState<string>(
     JSON.stringify(adapter.credentials ?? {}, null, 2)
   );
 
+  const isWithdrawn = Boolean(adapter.withdrawn_by_operator);
+  const isEnabled = adapter.enabled && !isWithdrawn;
+
   // What a merchant's client actually posts to: the engine's own base URL, which the
   // browser already knows (NEXT_PUBLIC_API_URL) but the server-only ENGINE_URL may differ.
   const endpoint = `${apiBase}${adapter.endpoint_path_prefix}`;
-
-  async function handleToggle(newEnabled: boolean) {
-    setLoading(true);
-    try {
-      await patchAdapter(adapter.id, { enabled: newEnabled });
-      setEnabled(newEnabled);
-      router.refresh();
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : tAdapter("toggle_failed"));
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleSaveCredentials() {
     setLoading(true);
@@ -92,16 +79,22 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
           <span className="flex items-center gap-1.5 text-xs" data-testid={`adapter-status-${adapter.provider}`}>
             <span
               className={`inline-block w-2 h-2 rounded-full ${
-                enabled
-                  ? adapter.status?.state === "degraded"
-                    ? "bg-warning"
-                    : "bg-success"
-                  : "bg-border"
+                isWithdrawn
+                  ? "bg-border"
+                  : isEnabled
+                    ? adapter.status?.state === "degraded"
+                      ? "bg-warning"
+                      : "bg-success"
+                    : "bg-border"
               }`}
               aria-hidden="true"
             />
-            <span className={enabled ? "text-success-ink" : "text-muted"}>
-              {enabled ? tCommon("enabled") : tCommon("disabled")}
+            <span className={isWithdrawn ? "text-amber-400" : isEnabled ? "text-success-ink" : "text-muted"}>
+              {isWithdrawn
+                ? tAdapter("withdrawn_badge")
+                : isEnabled
+                  ? tCommon("enabled")
+                  : tCommon("disabled")}
             </span>
           </span>
           <span
@@ -120,18 +113,65 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
           )}
         </div>
 
-        <label className="flex items-center gap-2 cursor-pointer text-xs shrink-0">
-          <input
-            type="checkbox"
-            checked={enabled}
-            disabled={loading}
-            onChange={(e) => handleToggle(e.target.checked)}
-            className="accent-accent"
-            data-testid={`adapter-toggle-${adapter.provider}`}
-          />
-          <span>{enabled ? tCommon("enabled") : tCommon("disabled")}</span>
-        </label>
+        {/* 006-admin-ipg-visibility (FR-016, FR-017): Merchant cannot toggle availability. */}
+        <div>
+          {isWithdrawn ? (
+            <span
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium"
+              data-testid={`adapter-withdrawn-badge-${adapter.provider}`}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span>{tAdapter("withdrawn_badge")}</span>
+            </span>
+          ) : (
+            <span
+              className="text-xs text-muted font-mono"
+              title={tAdapter("not_editable")}
+              data-testid={`adapter-locked-status-${adapter.provider}`}
+            >
+              {isEnabled ? tCommon("enabled") : tCommon("disabled")}
+            </span>
+          )}
+        </div>
       </div>
+
+      {isWithdrawn && (
+        <div
+          className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded text-xs flex items-center gap-2"
+          data-testid={`adapter-withdrawn-notice-${adapter.provider}`}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className="shrink-0"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{tAdapter("withdrawn_by_operator")}</span>
+        </div>
+      )}
 
       {/* Endpoint snippet — the one line a merchant copies into their client config. */}
       <div className="bg-surface-2 border border-border rounded p-3" dir="ltr">
@@ -150,11 +190,6 @@ export function AdapterSettings({ adapter }: { adapter: AdapterConfig }) {
           {endpoint}
         </code>
       </div>
-
-      {/* Enable switch, spelled out as the control API call it maps to. */}
-      <p className="text-[11px] text-muted font-mono" dir="ltr">
-        PATCH /adapters/{adapter.id}
-      </p>
 
       {testResult && (
         <div

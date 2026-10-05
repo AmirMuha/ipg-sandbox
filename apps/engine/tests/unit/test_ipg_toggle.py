@@ -59,3 +59,38 @@ def test_patch_adapter_unauthorized_in_demo_profile(monkeypatch, tmp_path):
         assert res.json()["code"] == "session_required"
 
     asyncio.run(async_engine.dispose())
+
+
+def test_patch_adapter_enabled_rejected_with_422(monkeypatch, tmp_path):
+    """006-admin-ipg-visibility (FR-017): enabled is removed from merchant patchable fields."""
+    monkeypatch.setenv("ENGINE_PROFILE", "local")
+
+    url = f"sqlite:///{tmp_path / 'local_test.db'}"
+    sync_engine = create_engine(url)
+    Base.metadata.create_all(sync_engine)
+    with Session(sync_engine) as session:
+        project = Project(id=uuid.uuid4(), name="default")
+        session.add(project)
+        adapter = AdapterConfig(
+            id=uuid.uuid4(),
+            project_id=project.id,
+            provider=Provider.zarinpal,
+            endpoint_path_prefix="/zarinpal",
+        )
+        session.add(adapter)
+        session.commit()
+        adapter_id = adapter.id
+    sync_engine.dispose()
+
+    app = create_app()
+    async_engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'local_test.db'}")
+    app.state.session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
+
+    with TestClient(app) as client:
+        res = client.patch(f"/api/v1/adapters/{adapter_id}", json={"enabled": True})
+        assert res.status_code == 422
+        body = res.json()
+        assert body["code"] == "validation_error"
+        assert body["details"]["allowed"] == ["credentials"]
+
+    asyncio.run(async_engine.dispose())

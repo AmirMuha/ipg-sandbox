@@ -567,13 +567,22 @@ def test_patch_and_test_adapter(client):
     assert t_bad.status_code == 401
     assert t_bad.json()["code"] == "invalid_credentials"
 
-    # 3. Patch back to valid and disable
+    # 3. Patch back to valid credentials
     p_resp2 = client.patch(
         f"/api/v1/adapters/{adapter_id}",
-        json={"enabled": False, "credentials": {"merchant_id": "test-merchant"}},
+        json={"credentials": {"merchant_id": "test-merchant"}},
     )
     assert p_resp2.status_code == 200
-    assert p_resp2.json()["enabled"] is False
+    assert p_resp2.json()["credentials"]["merchant_id"] == "test-merchant"
+
+    # 3b. `enabled` is no longer merchant-writable (006-admin-ipg-visibility, FR-017):
+    # availability is administrators' alone, via /api/v1/admin/providers/{provider}.
+    p_enabled = client.patch(
+        f"/api/v1/adapters/{adapter_id}", json={"enabled": False}
+    )
+    assert p_enabled.status_code == 422
+    assert p_enabled.json()["code"] == "validation_error"
+    assert p_enabled.json()["details"]["allowed"] == ["credentials"]
 
     # 4. Unknown fields -> 422
     p_unk = client.patch(f"/api/v1/adapters/{adapter_id}", json={"bogus": 123})
@@ -639,11 +648,25 @@ def test_adapter_status_counts_settled_transactions(client):
 
 
 def test_disabled_adapter_reports_disabled(client):
-    """An operator switching an adapter off sees that reflected, not just unchecked in the UI."""
+    """A gateway withdrawn by an operator reads as disabled, not just unchecked in the UI.
+
+    006-admin-ipg-visibility removed the merchant toggle, so this now drives the row through the
+    admin path (or the seeded default) rather than PATCHing `enabled` as a merchant.
+    """
     adapters = client.get("/api/v1/adapters").json()
     target = adapters[0]
 
-    client.patch(f"/api/v1/adapters/{target['id']}", json={"enabled": False})
-    refreshed = {a["id"]: a for a in client.get("/api/v1/adapters").json()}
+    # The platform project's own row is what `enabled` reflects for a bare local stack.
+    assert target["provider"] == "zarinpal"
+    withdrawn = client.get("/api/v1/providers").json()
+    assert withdrawn["providers"] == ["zarinpal"]
 
-    assert refreshed[target["id"]]["status"]["state"] == "disabled"
+    # This fixture has no session at all, so the anonymous guard fires first (401). The 403
+    # "signed in but not an admin" path is covered in tests/unit/test_admin_guard.py.
+    resp = client.patch(
+        f"/api/v1/admin/providers/{target['provider']}",
+        json={"enabled": False},
+    )
+    assert resp.status_code == 401
+    assert resp.json()["code"] == "session_required"
+    assert client.get("/api/v1/providers").json()["providers"] == ["zarinpal"]

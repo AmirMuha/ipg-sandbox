@@ -153,7 +153,10 @@
     "version_soap": "SOAP",
     "merchant_id": "Merchant ID",
     "api_key": "API Key",
-    "docs_link": "Download API reference"
+    "docs_link": "Download API reference",
+    "withdrawn_by_operator": "Withdrawn by platform administrator",
+    "not_editable": "Gateway availability is managed by platform administrator",
+    "withdrawn_badge": "Withdrawn by admin"
   },
   "simulate": {
     "title": "Simulate Payment",
@@ -226,5 +229,15 @@
     "scenario_updated": "Default scenario updated",
     "update_failed": "Update failed",
     "seconds": "s"
+  },
+  "admin_providers": {
+    "title": "Payment Gateways Management",
+    "subtitle": "Enable or withdraw payment gateways across the platform (Admin only)",
+    "offered": "Offered platform-wide",
+    "withdrawn": "Withdrawn platform-wide",
+    "saved": "Gateway availability updated successfully.",
+    "save_failed": "Failed to update gateway availability",
+    "last_gateway_guard": "At least one payment gateway must remain available.",
+    "only_admin": "Only platform administrators can access this area."
   }
 }

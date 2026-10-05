@@ -33,6 +33,7 @@ from src.models import (
     WebhookDelivery,
     utcnow,
 )
+from src.services.provider_availability import get_offered_providers
 
 router = APIRouter(prefix="/api/v1")
 
@@ -132,7 +133,11 @@ async def _adapter_status(session: AsyncSession, adapter: AdapterConfig) -> dict
 
 
 def _adapter_body(
-    adapter: AdapterConfig, *, kind: ProjectKind, status: dict[str, Any] | None = None
+    adapter: AdapterConfig,
+    *,
+    kind: ProjectKind,
+    status: dict[str, Any] | None = None,
+    withdrawn_by_operator: bool = False,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
         "id": adapter.id,
@@ -141,6 +146,7 @@ def _adapter_body(
         "enabled": adapter.enabled,
         "api_unit": adapter.api_unit,
         "endpoint_path_prefix": adapter.endpoint_path_prefix,
+        "withdrawn_by_operator": withdrawn_by_operator,
     }
     if status is not None:
         body["status"] = status
@@ -259,13 +265,24 @@ async def list_adapters(
         .where(AdapterConfig.project_id == project.id)
         .order_by(AdapterConfig.provider)
     )
+    offered = await get_offered_providers(session)
     return [
-        _adapter_body(adapter, kind=project.kind, status=await _adapter_status(session, adapter))
+        _adapter_body(
+            adapter,
+            kind=project.kind,
+            status=await _adapter_status(session, adapter),
+            withdrawn_by_operator=adapter.provider not in offered,
+        )
         for adapter in adapters
     ]
 
 
-_PATCHABLE_ADAPTER = {"enabled", "credentials"}
+# 006-admin-ipg-visibility: `enabled` is gone. Whether a gateway is *offered* is a platform-wide
+# fact owned by administrators (PATCH /api/v1/admin/providers/{provider}); a merchant configures
+# their own credentials but no longer decides availability. Keeping the field here would leave two
+# writers and two meanings for one flag. `max_active_adapters` went with it — with no merchant-side
+# enable, the plan limit has no reachable path (FR-024).
+_PATCHABLE_ADAPTER = {"credentials"}
 
 
 @router.patch("/adapters/{adapter_id}")
@@ -293,36 +310,6 @@ async def patch_adapter(
     if adapter is None:
         raise not_found("adapter")
 
-    if "enabled" in body:
-        val = body["enabled"]
-        if not isinstance(val, bool):
-            raise ApiError(ErrorCode.validation_error, "enabled must be a boolean", status=422)
-        if val and not adapter.enabled and getattr(project, "max_active_adapters", 0) > 0:
-            active_count = (
-                await session.scalar(
-                    select(func.count())
-                    .select_from(AdapterConfig)
-                    .where(
-                        AdapterConfig.project_id == project.id,
-                        AdapterConfig.enabled.is_(True),
-                        AdapterConfig.id != adapter.id,
-                    )
-                )
-                or 0
-            )
-            if active_count >= project.max_active_adapters:
-                raise ApiError(
-                    ErrorCode.adapter_limit_exceeded,
-                    f"Developer plan is limited to {project.max_active_adapters} active payment gateways simultaneously.",
-                    status=403,
-                    details={
-                        "max_active": project.max_active_adapters,
-                        "currently_active": active_count,
-                        "upgrade_url": "/pricing",
-                    },
-                )
-        adapter.enabled = val
-
     if "credentials" in body:
         val = body["credentials"]
         if not isinstance(val, dict):
@@ -330,7 +317,13 @@ async def patch_adapter(
         adapter.credentials = val
 
     await session.commit()
-    return _adapter_body(adapter, kind=project.kind, status=await _adapter_status(session, adapter))
+    offered = await get_offered_providers(session)
+    return _adapter_body(
+        adapter,
+        kind=project.kind,
+        status=await _adapter_status(session, adapter),
+        withdrawn_by_operator=adapter.provider not in offered,
+    )
 
 
 @router.post("/adapters/{adapter_id}/test")

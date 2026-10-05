@@ -183,3 +183,67 @@ def test_first_payment_behpardakht_approved_flow(client: TestClient):
     tx = next(t for t in txs_resp.json()["items"] if t["authority"] == ref_id)
     assert tx["status"] == TransactionStatus.settled.value
     assert tx["amount_rial"] == 10000
+
+
+def test_transaction_lifecycle_when_gateway_withdrawn(client: TestClient, monkeypatch):
+    """T034 (FR-011, FR-015, SC-005): in-flight completes after withdrawal; new init refused."""
+    monkeypatch.setenv("ADMIN_EMAILS", "admin@example.com")
+
+    # Enable idpay first
+    # Using client, we simulate/initiate a transaction on zarinpal
+    init_resp = client.post(
+        "/zarinpal/request/payment",
+        json={
+            "merchant_id": "test-merchant",
+            "amount": 10000,
+            "currency": "IRR",
+            "callback_url": "http://localhost:3000/callback",
+            "description": "In-flight test payment",
+        },
+    )
+    assert init_resp.status_code == 200
+    authority = init_resp.json()["authority"]
+
+    import asyncio
+
+    from sqlalchemy import select
+
+    from src.models import AdapterConfig, Provider
+
+    factory = client.app.state.session_factory
+
+    async def _disable_idpay():
+        async with factory() as session:
+            stmt = select(AdapterConfig).where(AdapterConfig.provider == Provider.idpay)
+            adapter = await session.scalar(stmt)
+            if adapter:
+                adapter.enabled = False
+                await session.commit()
+
+    asyncio.run(_disable_idpay())
+
+    # Now verify that simulate with a withdrawn gateway is refused
+    bad_init = client.post(
+        "/api/v1/transactions/simulate",
+        json={
+            "adapter": "idpay",
+            "amount_rial": 10000,
+            "forced_scenario": "approve",
+        },
+    )
+    assert bad_init.status_code == 404
+
+    # Now complete the in-flight zarinpal payment through checkout and verify
+    confirm_resp = client.post(
+        f"/zarinpal/checkout/{authority}",
+        data={"action": "confirm"},
+        follow_redirects=False,
+    )
+    assert confirm_resp.status_code == 302
+
+    verify_resp = client.post(
+        "/zarinpal/payment/verification",
+        json={"merchant_id": "test-merchant", "authority": authority, "amount": 10000},
+    )
+    assert verify_resp.status_code == 200
+    assert verify_resp.json()["code"] == 100

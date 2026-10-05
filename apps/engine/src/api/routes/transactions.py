@@ -27,6 +27,7 @@ from src.models import (
 from src.scenarios.outcomes import apply_verify_outcome, checkout_confirm_status, set_due_at
 from src.scenarios.resolve import resolve_scenario
 from src.services import transactions
+from src.services.provider_availability import is_offered
 from src.webhooks.worker import schedule_delivery
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -104,6 +105,9 @@ async def _resolve_adapter(session: AsyncSession, project: Project, value: Any) 
         )
     adapter = await session.scalar(stmt)
     if adapter is None:
+        raise not_found(f"adapter {value}")
+    # 006-admin-ipg-visibility (FR-015): platform project must also offer the gateway
+    if not await is_offered(session, adapter.provider):
         raise not_found(f"adapter {value}")
     return adapter
 
