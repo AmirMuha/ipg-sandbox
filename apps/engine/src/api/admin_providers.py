@@ -75,7 +75,7 @@ async def set_provider_availability(
 
     adapter = await platform_adapter(session, prov)
     if adapter is None:
-        raise not_found(f"provider {provider.value}")
+        raise not_found(f"provider {prov.value}")
 
     if not enabled and adapter.enabled:
         # FR-010: at least one gateway must stay offered, or the platform cannot take a payment

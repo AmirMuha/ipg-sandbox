@@ -3,20 +3,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { getMe } from "../lib/api";
 
 /**
  * Sub-bar tabs from ipg-sandbox-dashboard.html (.seg / .seg-btn).
  * Client-only: the active route needs usePathname, which a server component
  * can't read.
- *
- * The three segments point at /transactions, /webhooks and /settings. The third
- * is the adapters+SDK page but keeps its /settings URL — the route and its
- * `project-history-cap-input` / `project-webhook-retry-max-input` testids are
- * the console's settings surface under test.
  */
 export function NavLinks({ locale }: { locale: string }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    getMe()
+      .then((data) => {
+        if (mounted && data.user?.is_admin) {
+          setIsAdmin(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const tabs = [
     { key: "console", href: `/${locale}/console`, label: t("transactions"), icon: "list" as const },
@@ -27,6 +39,16 @@ export function NavLinks({ locale }: { locale: string }) {
       label: locale === "fa" ? "درگاه‌ها و SDK" : "Adapters & SDK",
       icon: "code" as const,
     },
+    ...(isAdmin
+      ? [
+          {
+            key: "admin-providers",
+            href: `/${locale}/admin/providers`,
+            label: locale === "fa" ? "مدیریت سراسری درگاه‌ها (مدیر)" : "Admin Gateways",
+            icon: "shield" as const,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -57,7 +79,7 @@ export function NavLinks({ locale }: { locale: string }) {
   );
 }
 
-function TabIcon({ kind }: { kind: "list" | "bell" | "code" }) {
+function TabIcon({ kind }: { kind: "list" | "bell" | "code" | "shield" }) {
   const common = {
     width: 15,
     height: 15,
@@ -81,6 +103,12 @@ function TabIcon({ kind }: { kind: "list" | "bell" | "code" }) {
       <svg {...common}>
         <polyline points="16 18 22 12 16 6" />
         <polyline points="8 6 2 12 8 18" />
+      </svg>
+    );
+  if (kind === "shield")
+    return (
+      <svg {...common}>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
       </svg>
     );
   return (

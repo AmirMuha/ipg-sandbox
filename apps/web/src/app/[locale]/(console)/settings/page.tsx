@@ -1,16 +1,21 @@
+import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   AdapterConfig,
   apiBase,
   getAdapters,
+  getMe,
+  getPlatformProviders,
   getProject,
   getQuotaMeters,
   getSubscription,
   Project,
   QuotaMeters,
   Subscription,
+  User,
 } from "../../../../lib/api";
 import { AdapterSettings } from "../../../../components/AdapterSettings";
+import { AdminProviderList } from "../../../../components/AdminProviderList";
 import { ProjectSettingsForm } from "../../../../components/ProjectSettingsForm";
 import { ScenarioCiGuide } from "../../../../components/ScenarioCiGuide";
 
@@ -31,23 +36,30 @@ export default async function SettingsPage({
   let adapters: AdapterConfig[] = [];
   let subscription: Subscription | null = null;
   let meters: QuotaMeters | null = null;
+  let user: User | null = null;
+  let offeredProviders: string[] = ["zarinpal"];
   let errorMsg: string | null = null;
 
   try {
-    const [prj, adps, sub, qm] = await Promise.all([
+    const [prj, adps, sub, qm, meData, platProv] = await Promise.all([
       getProject(),
       getAdapters(),
       getSubscription().catch(() => null),
       getQuotaMeters().catch(() => null),
+      getMe().catch(() => null),
+      getPlatformProviders().catch(() => null),
     ]);
     project = prj;
     adapters = adps;
     subscription = sub;
     meters = qm;
+    if (meData?.user) user = meData.user;
+    if (platProv?.providers) offeredProviders = platProv.providers;
   } catch (err: unknown) {
     errorMsg = err instanceof Error ? err.message : "Failed to load settings";
   }
 
+  const isAdmin = Boolean(user?.is_admin);
   const paymentStatus = searchParams?.payment;
 
   return (
@@ -157,6 +169,37 @@ export default async function SettingsPage({
         <div className="space-y-4">
           <h2 className="font-display text-[17px] font-semibold tracking-display">{t("project_settings")}</h2>
           <ProjectSettingsForm project={project} locale={locale} />
+        </div>
+      )}
+
+      {/* Admin Global IPG Management Section — visible when logged in as an administrator */}
+      {isAdmin && (
+        <div className="p-6 bg-accent/5 border border-accent/25 rounded-console space-y-4" data-testid="admin-gateways-panel">
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-accent/15">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 text-xs font-semibold rounded bg-accent/20 text-accent font-mono">
+                  ADMIN
+                </span>
+                <h2 className="font-display text-[17px] font-semibold tracking-display">
+                  {locale === "fa" ? "مدیریت سراسری درگاه‌ها (ویژه مدیر)" : "Global Gateway Management (Admin)"}
+                </h2>
+              </div>
+              <p className="text-xs text-muted mt-1">
+                {locale === "fa"
+                  ? "با تغییر وضعیت هر درگاه، دسترسی به آن در تمام سامانه و صفحه درگاه‌ها (/providers) بلافاصله تغییر می‌کند."
+                  : "Enable or withdraw payment gateways across the platform and public /providers page."}
+              </p>
+            </div>
+            <Link
+              href={`/${locale}/admin/providers`}
+              className="btn-secondary text-xs bg-surface border border-border text-text hover:bg-surface-subtle px-3 py-1.5 rounded-[6px] transition-colors"
+            >
+              {locale === "fa" ? "صفحه مستقل مدیریت &larr;" : "Dedicated Admin Page &rarr;"}
+            </Link>
+          </div>
+
+          <AdminProviderList initialOffered={offeredProviders} />
         </div>
       )}
 

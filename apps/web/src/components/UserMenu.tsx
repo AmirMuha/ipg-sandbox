@@ -207,6 +207,32 @@ export function UserMenu({
             {isFa ? "تنظیمات و پلن" : "Settings & Plan"}
           </Link>
 
+          {user.is_admin && (
+            <Link
+              href={`/${locale}/admin/providers`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3.5 py-2 text-xs text-accent-ink hover:bg-accent/10 transition-colors font-medium"
+              role="menuitem"
+              data-testid="admin-providers-nav"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0 text-accent"
+                aria-hidden="true"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              {isFa ? "مدیریت درگاه‌ها (مدیر)" : "Admin Gateways"}
+            </Link>
+          )}
+
           <div className="border-t border-border my-1" />
 
           <button

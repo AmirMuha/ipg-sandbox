@@ -60,9 +60,19 @@ async def platform_adapter(session: AsyncSession, provider: Provider) -> Adapter
     project = await platform_project(session)
     if project is None:
         return None
-    return await session.scalar(
+    adapter = await session.scalar(
         select(AdapterConfig).where(
             AdapterConfig.project_id == project.id,
             AdapterConfig.provider == provider,
         )
     )
+    if adapter is None:
+        from src.adapters.registry import seed_configs
+
+        for kw in seed_configs(project.id):
+            if kw["provider"] == provider:
+                adapter = AdapterConfig(**{**kw, "enabled": False})
+                session.add(adapter)
+                await session.flush()
+                break
+    return adapter
