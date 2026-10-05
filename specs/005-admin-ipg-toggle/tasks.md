@@ -38,13 +38,13 @@
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T001 [P] [US1] Add a test in `apps/engine/tests/api/test_auth.py` or a dedicated test file to assert that newly registered projects only have Zarinpal enabled.
-- [ ] T004 [P] [US1] Add a test in `apps/engine/tests/api/test_adapters.py` (or similar) to verify that unauthorized (non-admin) requests to `PATCH /api/v1/adapters/{id}` are rejected (SC-003).
+- [x] T001 [P] [US1] Add a test in `apps/engine/tests/api/test_auth.py` or a dedicated test file to assert that newly registered projects only have Zarinpal enabled.
+- [x] T004 [P] [US1] Add a test in `apps/engine/tests/api/test_adapters.py` (or similar) to verify that unauthorized (non-admin) requests to `PATCH /api/v1/adapters/{id}` are rejected (SC-003).
 
 ### Implementation for User Story 1
 
-- [ ] T002 [US1] Update `seed_configs` in `apps/engine/src/adapters/registry.py` to set `enabled=True` for `Provider.zarinpal` and `enabled=False` for all other providers.
-- [ ] T003 [US1] Generate and write an Alembic migration in `apps/engine/alembic/versions/` to update existing `adapter_configs` rows in the database, setting `enabled = false` where `provider != 'zarinpal'`.
+- [x] T002 [US1] Update `seed_configs` in `apps/engine/src/adapters/registry.py` to set `enabled=True` for `Provider.zarinpal` and `enabled=False` for all other providers.
+- [x] T003 [US1] Generate and write an Alembic migration in `apps/engine/alembic/versions/` to update existing `adapter_configs` rows in the database, setting `enabled = false` where `provider != 'zarinpal'`.
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -54,7 +54,7 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T005 [P] Run `quickstart.md` validation to ensure the default state and toggle behavior work as expected end-to-end.
+- [x] T005 [P] Run `quickstart.md` validation to ensure the default state and toggle behavior work as expected end-to-end.
 
 ---
 
