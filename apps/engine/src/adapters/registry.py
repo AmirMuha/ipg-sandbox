@@ -86,6 +86,9 @@ def seed_configs(
             {
                 "project_id": project_id,
                 "provider": provider,
+                # Zarinpal is the only gateway enabled out of the box; the rest are parked
+                # disabled so a fresh project does not route to every mock adapter at once.
+                "enabled": provider == Provider.zarinpal,
                 "endpoint_path_prefix": adapter_cls.endpoint_path_prefix,
                 "api_unit": adapter_cls.api_unit,
                 "credentials": creds,
