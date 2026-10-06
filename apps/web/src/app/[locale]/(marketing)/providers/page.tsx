@@ -398,25 +398,6 @@ export default async function ProvidersPage({
         ))) }
       </section>
 
-      <section className="w-full max-w-[1180px] mx-auto px-4 md:px-6 my-12 md:my-28">
-        <div className="border border-border bg-surface-subtle rounded-lg p-8 flex flex-wrap items-center justify-between gap-6">
-          <div>
-            <h2 className="font-display text-xl font-semibold mb-2">
-              یکی را انتخاب کنید و اولین درخواست را بزنید
-            </h2>
-            <p className="text-sm text-muted">
-              داشبورد تستی هر سیزده آداپتور را با داده‌های نمونه و سناریوهای آماده در
-              اختیار شما می‌گذارد.
-            </p>
-          </div>
-          <a
-            href={`/${locale}/console`}
-            className="inline-flex items-center justify-center min-h-12 px-6 rounded-md bg-accent text-accent-on text-[17px] font-medium hover:bg-accent/92 transition-colors duration-fast ease-standard"
-          >
-            باز کردن داشبورد تستی
-          </a>
-        </div>
-      </section>
     </MarketingShell>
   );
 }
