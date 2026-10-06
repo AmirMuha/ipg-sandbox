@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   AdapterConfig,
+  AdminSubscription,
   apiBase,
   getAdapters,
+  getAdminSubscriptions,
   getMe,
   getPlatformProviders,
   getProject,
@@ -16,6 +18,7 @@ import {
 } from "../../../../lib/api";
 import { AdapterSettings } from "../../../../components/AdapterSettings";
 import { AdminProviderList } from "../../../../components/AdminProviderList";
+import { AdminSubscriptionList } from "../../../../components/AdminSubscriptionList";
 import { ProjectSettingsForm } from "../../../../components/ProjectSettingsForm";
 import { ScenarioCiGuide } from "../../../../components/ScenarioCiGuide";
 
@@ -61,6 +64,11 @@ export default async function SettingsPage({
 
   const isAdmin = Boolean(user?.is_admin);
   const paymentStatus = searchParams?.payment;
+
+  let adminSubscriptions: AdminSubscription[] = [];
+  if (isAdmin) {
+    adminSubscriptions = await getAdminSubscriptions().catch(() => []);
+  }
 
   return (
     <div className="space-y-8">
@@ -200,6 +208,10 @@ export default async function SettingsPage({
           </div>
 
           <AdminProviderList initialOffered={offeredProviders} />
+
+          <div className="pt-4 border-t border-accent/15">
+            <AdminSubscriptionList initialSubscriptions={adminSubscriptions} />
+          </div>
         </div>
       )}
 

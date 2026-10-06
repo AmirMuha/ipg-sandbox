@@ -3,11 +3,14 @@
 Allowlisted in test_simulation_guard.py for platform subscription payments.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Any
+import asyncio
+import logging
+import uuid
+from datetime import timedelta
+
 import httpx
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.api.errors import ApiError, ErrorCode
 from src.config import Settings
@@ -21,6 +24,13 @@ from src.models import (
 )
 
 TEAM_PLAN_AMOUNT_RIAL = 1_990_000  # 199,000 Toman
+
+# Free-tier constants, matching what signup writes (src/api/auth.py): 100 requests/day, 2 gateways.
+FREE_DAILY_REQUESTS_CAP = 100
+FREE_MAX_ACTIVE_ADAPTERS = 2
+
+EXPIRY_SWEEP_INTERVAL_S = 60
+logger = logging.getLogger(__name__)
 
 
 def _zarinpal_base_url(settings: Settings) -> str:
@@ -38,6 +48,22 @@ async def initiate_plan_upgrade(
     """Request payment authority from Zarinpal PGv4 and persist pending Subscription."""
     if tier != SubscriptionTier.team.value:
         raise ApiError(ErrorCode.validation_error, f"Unsupported subscription tier: {tier}", status=400)
+
+    # No-downgrade / no-double-charge: a project already on an active paid plan cannot buy
+    # again (and therefore cannot re-buy its way to a "different" state) until it lapses.
+    active = await db.scalar(
+        select(Subscription.id).where(
+            Subscription.project_id == project.id,
+            Subscription.status == SubscriptionStatus.active.value,
+            Subscription.expires_at > utcnow(),
+        )
+    )
+    if active is not None:
+        raise ApiError(
+            ErrorCode.unsupported_operation,
+            "Project already has an active Team subscription; purchase again after it expires",
+            status=409,
+        )
 
     amount = TEAM_PLAN_AMOUNT_RIAL
     base_url = _zarinpal_base_url(settings)
@@ -134,3 +160,89 @@ async def verify_plan_upgrade(
         await db.commit()
         msg = data.get("errors", {}).get("message") or f"Payment verification failed (code {code})"
         raise ApiError(ErrorCode.validation_error, msg, status=400)
+
+
+def revert_to_free(project: Project) -> None:
+    """Put a project back on the free tier — the single writer for deactivation and expiry.
+
+    ponytail: always 100/2, so the local-profile bootstrap project (0/0 = unlimited) also gets
+    capped if someone deactivates a paid sub there; per-profile restore only if local billing
+    becomes a real scenario. `history_cap` is left alone: upgrade never raises it.
+    """
+    project.tier = SubscriptionTier.developer.value
+    project.daily_requests_cap = FREE_DAILY_REQUESTS_CAP
+    project.max_active_adapters = FREE_MAX_ACTIVE_ADAPTERS
+
+
+async def _has_other_active(db: AsyncSession, project_id: uuid.UUID, exclude_id: uuid.UUID) -> bool:
+    """True when another unexpired active subscription still pays for this project."""
+    other = await db.scalar(
+        select(Subscription.id).where(
+            Subscription.project_id == project_id,
+            Subscription.id != exclude_id,
+            Subscription.status == SubscriptionStatus.active.value,
+            Subscription.expires_at > utcnow(),
+        )
+    )
+    return other is not None
+
+
+async def deactivate_subscription(db: AsyncSession, subscription: Subscription) -> Subscription:
+    """Cancel an already-paid plan immediately and revert its project to the free tier.
+
+    Only `active` rows may be deactivated — expiring or cancelling a pending payment is the
+    gateway callback's job, not the admin's.
+    """
+    if subscription.status != SubscriptionStatus.active.value:
+        raise ApiError(
+            ErrorCode.unsupported_operation,
+            f"Only an active subscription can be deactivated (status: {subscription.status})",
+            status=409,
+        )
+
+    subscription.status = SubscriptionStatus.cancelled.value
+    if not await _has_other_active(db, subscription.project_id, subscription.id):
+        project = await db.get(Project, subscription.project_id)
+        if project:
+            revert_to_free(project)
+    await db.commit()
+    return subscription
+
+
+async def expire_due_subscriptions(db: AsyncSession) -> int:
+    """Lapse every active subscription past its paid period; returns how many were transitioned.
+
+    Without this, entitlements never end: `GET /billing/subscription` falls back to
+    `project.tier`, which would stay `team` forever.
+    """
+    due = (
+        await db.scalars(
+            select(Subscription).where(
+                Subscription.status == SubscriptionStatus.active.value,
+                Subscription.expires_at.is_not(None),
+                Subscription.expires_at <= utcnow(),
+            )
+        )
+    ).all()
+    for sub in due:
+        sub.status = SubscriptionStatus.expired.value
+        if not await _has_other_active(db, sub.project_id, sub.id):
+            project = await db.get(Project, sub.project_id)
+            if project:
+                revert_to_free(project)
+    if due:
+        await db.commit()
+    return len(due)
+
+
+async def run_subscription_expiry(session_factory: async_sessionmaker[AsyncSession]) -> None:
+    """Sweep expired subscriptions every EXPIRY_SWEEP_INTERVAL_S (a lifespan task)."""
+    while True:
+        try:
+            async with session_factory() as session:
+                await expire_due_subscriptions(session)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("subscription expiry sweep failed")
+        await asyncio.sleep(EXPIRY_SWEEP_INTERVAL_S)

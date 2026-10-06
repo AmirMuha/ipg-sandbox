@@ -29,6 +29,7 @@ from src.adapters.sarmayeh import router as sarmayeh_router
 from src.adapters.sizpay import router as sizpay_router
 from src.adapters.zarinpal import router as zarinpal_router
 from src.api.admin_providers import router as admin_providers_router
+from src.api.admin_subscriptions import router as admin_subscriptions_router
 from src.api.auth import router as auth_router
 from src.api.billing import router as billing_router
 from src.api.errors import install_error_handlers
@@ -36,6 +37,7 @@ from src.api.routes import router
 from src.config import Settings
 from src.models import AdapterConfig, Project, Provider
 from src.scenarios.scheduler import run as run_scheduler
+from src.services.billing import run_subscription_expiry
 
 
 @asynccontextmanager
@@ -53,12 +55,16 @@ async def lifespan(app: FastAPI):
         await _seed_default_project(session, settings)
 
     scheduler_task = asyncio.create_task(run_scheduler(app.state.session_factory))
+    expiry_task = asyncio.create_task(run_subscription_expiry(app.state.session_factory))
     try:
         yield
     finally:
         scheduler_task.cancel()
+        expiry_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await scheduler_task
+        with contextlib.suppress(asyncio.CancelledError):
+            await expiry_task
         if owned_engine is not None:
             await owned_engine.dispose()
 
@@ -119,6 +125,7 @@ def create_app() -> FastAPI:
     install_error_handlers(app)
     app.include_router(auth_router)
     app.include_router(admin_providers_router)
+    app.include_router(admin_subscriptions_router)
     app.include_router(billing_router)
     app.include_router(router)
     app.include_router(zarinpal_router)

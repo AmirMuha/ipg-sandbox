@@ -101,6 +101,18 @@ export interface Subscription {
   };
 }
 
+export interface AdminSubscription {
+  subscription_id: string;
+  project_id: string;
+  project_name: string | null;
+  buyer_email: string | null;
+  tier: string;
+  status: string;
+  amount_toman: number;
+  started_at: string | null;
+  expires_at: string | null;
+}
+
 export interface QuotaMeters {
   tier: string;
   requests_total: number;
@@ -382,6 +394,20 @@ export async function setPlatformProvider(
     method: "PATCH",
     body: JSON.stringify({ enabled }),
   });
+}
+
+export async function getAdminSubscriptions(): Promise<AdminSubscription[]> {
+  const res = await fetchApi<{ subscriptions: AdminSubscription[] }>("/admin/subscriptions");
+  return res.subscriptions;
+}
+
+export async function deactivateAdminSubscription(
+  subscriptionId: string
+): Promise<{ subscription: AdminSubscription }> {
+  return fetchApi<{ subscription: AdminSubscription }>(
+    `/admin/subscriptions/${subscriptionId}/deactivate`,
+    { method: "POST" }
+  );
 }
 
 export async function patchAdapter(

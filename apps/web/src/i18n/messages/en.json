@@ -239,5 +239,20 @@
     "save_failed": "Failed to update gateway availability",
     "last_gateway_guard": "At least one payment gateway must remain available.",
     "only_admin": "Only platform administrators can access this area."
+  },
+  "admin_subscriptions": {
+    "title": "Paid subscriptions",
+    "subtitle": "Deactivate active plans immediately; the project drops back to the free tier. (Admin only)",
+    "empty": "No subscriptions to show.",
+    "deactivate": "Deactivate plan",
+    "deactivating": "Deactivating...",
+    "deactivated": "Plan deactivated; the project is back on the free tier.",
+    "deactivate_failed": "Failed to deactivate the plan",
+    "amount_unit": "Toman",
+    "expires": "Expires",
+    "status_active": "Active",
+    "status_pending": "Pending payment",
+    "status_expired": "Expired",
+    "status_cancelled": "Cancelled"
   }
 }
