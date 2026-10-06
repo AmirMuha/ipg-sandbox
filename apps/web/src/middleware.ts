@@ -10,6 +10,8 @@ export default function middleware(request: NextRequest) {
     pathname.includes("/console") ||
     pathname.includes("/settings") ||
     pathname.includes("/webhooks") ||
+    pathname.includes("/gateways") ||
+    pathname.includes("/sdk") ||
     pathname.includes("/admin");
 
   const hasSession = request.cookies.has("ipg_session");

@@ -1,28 +1,15 @@
-import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
-  AdapterConfig,
-  AdminSubscription,
-  apiBase,
-  getAdapters,
-  getAdminSubscriptions,
-  getMe,
-  getPlatformProviders,
   getProject,
   getQuotaMeters,
   getSubscription,
   Project,
   QuotaMeters,
   Subscription,
-  User,
 } from "../../../../lib/api";
-import { AdapterSettings } from "../../../../components/AdapterSettings";
-import { AdminProviderList } from "../../../../components/AdminProviderList";
-import { AdminSubscriptionList } from "../../../../components/AdminSubscriptionList";
 import { ProjectSettingsForm } from "../../../../components/ProjectSettingsForm";
-import { ScenarioCiGuide } from "../../../../components/ScenarioCiGuide";
 
-// Adapter credentials and project defaults are live engine state.
+// Project defaults are live engine state.
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage({
@@ -36,39 +23,25 @@ export default async function SettingsPage({
   const t = await getTranslations("settings");
 
   let project: Project | null = null;
-  let adapters: AdapterConfig[] = [];
   let subscription: Subscription | null = null;
   let meters: QuotaMeters | null = null;
-  let user: User | null = null;
-  let offeredProviders: string[] = ["zarinpal"];
   let errorMsg: string | null = null;
 
   try {
-    const [prj, adps, sub, qm, meData, platProv] = await Promise.all([
+    const [prj, sub, qm] = await Promise.all([
       getProject(),
-      getAdapters(),
       getSubscription().catch(() => null),
       getQuotaMeters().catch(() => null),
-      getMe().catch(() => null),
-      getPlatformProviders().catch(() => null),
     ]);
     project = prj;
-    adapters = adps;
     subscription = sub;
     meters = qm;
-    if (meData?.user) user = meData.user;
-    if (platProv?.providers) offeredProviders = platProv.providers;
   } catch (err: unknown) {
     errorMsg = err instanceof Error ? err.message : "Failed to load settings";
   }
 
-  const isAdmin = Boolean(user?.is_admin);
   const paymentStatus = searchParams?.payment;
-
-  let adminSubscriptions: AdminSubscription[] = [];
-  if (isAdmin) {
-    adminSubscriptions = await getAdminSubscriptions().catch(() => []);
-  }
+  const isTeam = project?.tier === "team" || subscription?.tier === "team";
 
   return (
     <div className="space-y-8">
@@ -79,19 +52,19 @@ export default async function SettingsPage({
 
       {paymentStatus === "success" && (
         <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-console text-sm">
-          پرداخت شما با موفقیت در زرین‌پال تأیید شد. پلن پروژه به تیم حرفه‌ای ارتقا یافت!
+          {t("pay_success")}
         </div>
       )}
 
       {paymentStatus === "cancelled" && (
         <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-console text-sm">
-          پرداخت ارتقای پلن لغو شد.
+          {t("pay_cancelled")}
         </div>
       )}
 
       {paymentStatus === "failed" && (
         <div className="p-4 bg-danger-bg border border-danger-border text-danger-ink rounded-console text-sm">
-          خطا در تأیید پرداخت درگاه زرین‌پال. لطفاً مجدداً تلاش کنید یا با پشتیبانی تماس بگیرید.
+          {t("pay_failed")}
         </div>
       )}
 
@@ -106,49 +79,45 @@ export default async function SettingsPage({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-display text-[17px] font-semibold tracking-display">
-              پلن و محدودیت‌های مصرف
+              {t("plan_title")}
             </h2>
-            <p className="text-xs text-muted">
-              وضعیت اشتراک تجاری و سقف مجاز درخواست‌ها در ۲۴ ساعت جاری
-            </p>
+            <p className="text-xs text-muted">{t("plan_subtitle")}</p>
           </div>
           <span className="px-3 py-1 text-xs font-semibold rounded-full bg-accent/15 text-accent border border-accent/25">
-            {subscription?.tier === "team" || project?.tier === "team"
-              ? "پلن تیم حرفه‌ای (فعال)"
-              : "پلن توسعه‌دهنده (رایگان)"}
+            {isTeam ? t("tier_team") : t("tier_free")}
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
           <div className="p-3 bg-surface-subtle border border-border rounded-sm">
-            <div className="text-xs text-muted">درخواست‌های امروز</div>
+            <div className="text-xs text-muted">{t("meter_requests")}</div>
             <div className="text-lg font-semibold mt-1 font-mono">
               {meters?.requests_today ?? 0}
               <span className="text-xs text-muted font-sans mr-1">
-                / {meters?.daily_requests_cap === 0 ? "نامحدود" : (meters?.daily_requests_cap ?? 100)}
+                / {meters?.daily_requests_cap === 0 ? t("meter_unlimited") : (meters?.daily_requests_cap ?? 100)}
               </span>
             </div>
           </div>
 
           <div className="p-3 bg-surface-subtle border border-border rounded-sm">
-            <div className="text-xs text-muted">درگاه‌های هم‌زمان فعال</div>
+            <div className="text-xs text-muted">{t("meter_adapters")}</div>
             <div className="text-lg font-semibold mt-1 font-mono">
               {meters?.active_adapters_count ?? 0}
               <span className="text-xs text-muted font-sans mr-1">
-                / {meters?.max_active_adapters === 0 ? "۱۳ (همه)" : (meters?.max_active_adapters ?? 2)}
+                / {meters?.max_active_adapters === 0 ? t("meter_all_gateways") : (meters?.max_active_adapters ?? 2)}
               </span>
             </div>
           </div>
 
           <div className="p-3 bg-surface-subtle border border-border rounded-sm">
-            <div className="text-xs text-muted">کل تراکنش‌های ثبت‌شده</div>
+            <div className="text-xs text-muted">{t("meter_transactions")}</div>
             <div className="text-lg font-semibold mt-1 font-mono">
               {meters?.transactions_total ?? 0}
             </div>
           </div>
 
           <div className="p-3 bg-surface-subtle border border-border rounded-sm">
-            <div className="text-xs text-muted">سقف نگهداری لاگ</div>
+            <div className="text-xs text-muted">{t("meter_history")}</div>
             <div className="text-lg font-semibold mt-1 font-mono">
               {meters?.history_retained ?? 0}
               <span className="text-xs text-muted font-sans mr-1">
@@ -158,16 +127,14 @@ export default async function SettingsPage({
           </div>
         </div>
 
-        {project?.tier !== "team" && subscription?.tier !== "team" && (
+        {!isTeam && (
           <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-xs text-muted">
-              نیاز به درخواست‌های بیشتر و همه ۱۳ درگاه پرداخت دارید؟
-            </span>
+            <span className="text-xs text-muted">{t("upgrade_hint")}</span>
             <a
               href={`/${locale}/pricing`}
               className="text-xs text-accent hover:underline font-medium"
             >
-              ارتقا به پلن تیمی با زرین‌پال &larr;
+              {t("upgrade_cta")} &larr;
             </a>
           </div>
         )}
@@ -179,52 +146,6 @@ export default async function SettingsPage({
           <ProjectSettingsForm project={project} locale={locale} />
         </div>
       )}
-
-      {/* Admin Global IPG Management Section — visible when logged in as an administrator */}
-      {isAdmin && (
-        <div className="p-6 bg-accent/5 border border-accent/25 rounded-console space-y-4" data-testid="admin-gateways-panel">
-          <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-accent/15">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 text-xs font-semibold rounded bg-accent/20 text-accent font-mono">
-                  ADMIN
-                </span>
-                <h2 className="font-display text-[17px] font-semibold tracking-display">
-                  {locale === "fa" ? "مدیریت سراسری درگاه‌ها (ویژه مدیر)" : "Global Gateway Management (Admin)"}
-                </h2>
-              </div>
-              <p className="text-xs text-muted mt-1">
-                {locale === "fa"
-                  ? "با تغییر وضعیت هر درگاه، دسترسی به آن در تمام سامانه و صفحه درگاه‌ها (/providers) بلافاصله تغییر می‌کند."
-                  : "Enable or withdraw payment gateways across the platform and public /providers page."}
-              </p>
-            </div>
-            <Link
-              href={`/${locale}/admin/providers`}
-              className="btn-secondary text-xs bg-surface border border-border text-text hover:bg-surface-subtle px-3 py-1.5 rounded-[6px] transition-colors"
-            >
-              {locale === "fa" ? "صفحه مستقل مدیریت &larr;" : "Dedicated Admin Page &rarr;"}
-            </Link>
-          </div>
-
-          <AdminProviderList initialOffered={offeredProviders} />
-
-          <div className="pt-4 border-t border-accent/15">
-            <AdminSubscriptionList initialSubscriptions={adminSubscriptions} />
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <h2 className="font-display text-[17px] font-semibold tracking-display">{t("adapter_settings")}</h2>
-        <div className="grid grid-cols-1 gap-4">
-          {adapters.map((adapter) => (
-            <AdapterSettings key={adapter.id} adapter={adapter} />
-          ))}
-        </div>
-      </div>
-
-      <ScenarioCiGuide apiBase={apiBase} />
     </div>
   );
 }

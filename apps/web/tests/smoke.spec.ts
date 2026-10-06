@@ -35,6 +35,7 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
     await expect(page.locator('[data-testid="nav-transactions"]')).toBeVisible();
     await expect(page.locator('[data-testid="nav-webhooks"]')).toBeVisible();
     await expect(page.locator('[data-testid="nav-settings"]')).toBeVisible();
+    await expect(page.locator('[data-testid="nav-gateways"]')).toBeVisible();
   });
 
   test("3. Force decline from UI affects next payment (Quickstart §7 check 2)", async ({
@@ -83,7 +84,8 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
     const declinedBadge = page.locator('[data-testid="tx-status"]:has-text("رد شده"), [data-testid="tx-status"]:has-text("declined")');
     await expect(declinedBadge.first()).toBeVisible();
 
-    // Restore default to approve
+    // Restore default to approve — the form lives on /settings, not the console we just landed on
+    await page.goto(`${BASE_URL}/fa/settings`);
     await select.selectOption("approve");
     await saveBtn.click();
   });
@@ -118,7 +120,7 @@ test.describe("Dashboard Smoke Tests (SC-006, Quickstart §7)", () => {
       return (await main.innerText()).replace(/\s+/g, " ").trim();
     };
 
-    for (const route of ["/console", "/settings"]) {
+    for (const route of ["/console", "/settings", "/gateways", "/sdk"]) {
       const fa = await collect(`/fa${route}`);
       const en = await collect(`/en${route}`);
 

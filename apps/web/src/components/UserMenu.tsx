@@ -209,7 +209,7 @@ export function UserMenu({
 
           {user.is_admin && (
             <Link
-              href={`/${locale}/admin/providers`}
+              href={`/${locale}/admin`}
               onClick={() => setOpen(false)}
               className="flex items-center gap-2 px-3.5 py-2 text-xs text-accent-ink hover:bg-accent/10 transition-colors font-medium"
               role="menuitem"
@@ -229,7 +229,7 @@ export function UserMenu({
               >
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              {isFa ? "مدیریت درگاه‌ها (مدیر)" : "Admin Gateways"}
+              {isFa ? "مدیریت سامانه (مدیر)" : "Platform Admin"}
             </Link>
           )}
 

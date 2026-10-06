@@ -159,8 +159,8 @@ test("3. Webhooks view renders table", async () => {
   );
 });
 
-test("4. Settings view renders adapter cards", async () => {
-  const res = await fetch(`${DASHBOARD_URL}/fa/settings`, { headers: await getSessionHeaders() });
+test("4. Gateways view renders adapter cards", async () => {
+  const res = await fetch(`${DASHBOARD_URL}/fa/gateways`, { headers: await getSessionHeaders() });
   assert.strictEqual(res.status, 200);
   const html = await res.text();
 

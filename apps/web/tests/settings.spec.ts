@@ -2,11 +2,11 @@ import { test, expect } from "@playwright/test";
 
 const BASE_URL = process.env.DASHBOARD_URL ?? "http://localhost:3000";
 
-test.describe("Settings Page Gateway Status (006-admin-ipg-visibility)", () => {
-  test("1. Merchant settings shows locked withdrawn state and no toggle", async ({ page }) => {
-    await page.goto(`${BASE_URL}/fa/settings`);
+test.describe("Gateways Page Gateway Status (006-admin-ipg-visibility)", () => {
+  test("1. Merchant gateways shows locked withdrawn state and no toggle", async ({ page }) => {
+    await page.goto(`${BASE_URL}/fa/gateways`);
 
-    // In settings, cards have data-testid="adapter-card-<provider>"
+    // On /gateways, cards have data-testid="adapter-card-<provider>"
     const cards = page.locator('[data-testid^="adapter-card-"]');
     const cardCount = await cards.count();
     expect(cardCount).toBeGreaterThan(0);

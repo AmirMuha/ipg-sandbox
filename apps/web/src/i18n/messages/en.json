@@ -3,9 +3,12 @@
     "title": "IPG Sandbox",
     "transactions": "Transactions",
     "webhooks": "Webhooks",
-    "settings": "Settings",
+    "settings": "Settings & Plan",
     "switch_lang": "فارسی",
-    "simulate_payment": "Simulate Payment"
+    "simulate_payment": "Simulate Payment",
+    "gateways": "Gateways",
+    "sdk": "SDK & CI",
+    "admin": "Admin"
   },
   "common": {
     "save": "Save",
@@ -17,7 +20,8 @@
     "test": "Test",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "back": "Back"
+    "back": "Back",
+    "copy": "Copy"
   },
   "transactions": {
     "title": "Transactions",
@@ -65,10 +69,9 @@
     "payloads_title": "Delivery Payloads"
   },
   "settings": {
-    "title": "Adapters & Integration Guide",
-    "subtitle": "Configure payment gateways and wire the sandbox into your CI pipeline",
+    "title": "Settings & Plan",
+    "subtitle": "Project configuration, usage limits and subscription plan",
     "project_settings": "Project Configuration",
-    "adapter_settings": "Gateway Adapters",
     "default_scenario": "Default Scenario",
     "pending_settle_delay": "Pending Settle Delay (seconds)",
     "timeout_delay": "Timeout Delay (seconds)",
@@ -84,7 +87,22 @@
     "ci_title": "CI / Headless Automated Testing",
     "ci_body": "Force any scenario per request with the X-IPG-Scenario header — no dashboard, no browser. Each value resolves the next payment's outcome without creating a row first.",
     "ci_scenarios": "Scenarios",
-    "ci_copy": "Copy command"
+    "ci_copy": "Copy command",
+    "pay_success": "Your Zarinpal payment was confirmed. The project plan is now upgraded to the team tier!",
+    "pay_cancelled": "The plan upgrade payment was cancelled.",
+    "pay_failed": "Zarinpal could not confirm the payment. Please retry or contact support.",
+    "plan_title": "Plan & Usage Limits",
+    "plan_subtitle": "Commercial subscription status and the request cap for the current 24 hours",
+    "tier_team": "Team plan (active)",
+    "tier_free": "Developer plan (free)",
+    "meter_requests": "Requests today",
+    "meter_adapters": "Concurrent active gateways",
+    "meter_transactions": "Total recorded transactions",
+    "meter_history": "Log retention cap",
+    "meter_unlimited": "Unlimited",
+    "meter_all_gateways": "13 (all)",
+    "upgrade_hint": "Need more requests and all 13 payment gateways?",
+    "upgrade_cta": "Upgrade to the team plan via Zarinpal"
   },
   "scenario_controls": {
     "title": "Scenario Controls",
@@ -254,5 +272,17 @@
     "status_pending": "Pending payment",
     "status_expired": "Expired",
     "status_cancelled": "Cancelled"
+  },
+  "gateways": {
+    "title": "My Payment Gateways",
+    "subtitle": "Credentials, endpoint and docs for each adapter"
+  },
+  "sdk": {
+    "title": "SDK & Integration",
+    "subtitle": "Force scenarios via a header and wire the sandbox into your CI pipeline"
+  },
+  "admin": {
+    "title": "Platform Administration",
+    "subtitle": "Platform-wide gateways and paid subscriptions (Admin only)"
   }
 }

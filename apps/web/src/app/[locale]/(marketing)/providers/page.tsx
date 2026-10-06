@@ -386,7 +386,7 @@ export default async function ProvidersPage({
                 </span>
                 {g.live && (
                   <a
-                    href={`/${locale}/settings`}
+                    href={`/${locale}/gateways`}
                     className="block mt-1 text-accent-ink hover:text-accent"
                   >
                     باز کردن آداپتور در داشبورد

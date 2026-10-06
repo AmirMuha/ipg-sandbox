@@ -36,6 +36,7 @@ export default async function TransactionsPage({
   const t = await getTranslations("transactions");
   const tStatus = await getTranslations("status");
   const tSettings = await getTranslations("settings");
+  const tCommon = await getTranslations("common");
 
   const num = (v: string | string[] | undefined, fallback: number) => {
     const n = Number(Array.isArray(v) ? v[0] : v);
@@ -167,7 +168,7 @@ export default async function TransactionsPage({
                           <span className="font-mono text-xs text-text truncate max-w-[220px]">
                             {tx.authority}
                           </span>
-                          <CopyButton value={tx.authority} />
+                          <CopyButton value={tx.authority} label={tCommon("copy")} />
                         </div>
                       </td>
                       <td className="px-4 py-3 border-b border-border-soft align-middle">
