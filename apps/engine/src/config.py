@@ -48,8 +48,13 @@ def load_env_file(path: Path) -> None:
             os.environ[key] = value
 
 
-# apps/engine/src/config.py -> apps/engine/src -> apps/engine -> repo root
-load_env_file(Path(__file__).resolve().parents[3] / ".env")
+# Repo layout: apps/engine/src/config.py -> src -> engine -> apps -> repo root. In the Docker
+# image the package sits at /app/src/config.py, which has no parents[3] (and no `.env` — the
+# build context excludes it and compose passes `environment:` directly), so skip rather than
+# raise IndexError and kill uvicorn at import time.
+_repo_parents = Path(__file__).resolve().parents
+if len(_repo_parents) > 3:
+    load_env_file(_repo_parents[3] / ".env")
 
 
 class ConfigError(ValueError):
