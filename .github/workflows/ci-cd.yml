@@ -49,16 +49,23 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: appleboy/ssh-action@v1.0.3
+        env:
+          # The repo is private, so the checkout on the VPS needs the job's token. It expires
+          # when the run ends, so the remote URL is rewritten every deploy rather than once.
+          DEPLOY_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
           username: ${{ secrets.VPS_SSH_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DEPLOY_GH_TOKEN
           script: |
             set -e
             mkdir -p "${{ secrets.DEPLOY_DIR }}"
             cd "${{ secrets.DEPLOY_DIR }}"
+            remote="https://x-access-token:${DEPLOY_GH_TOKEN}@github.com/${{ github.repository }}.git"
             # First deploy: no checkout yet (reset alone needs one).
-            [ -d .git ] || git clone https://github.com/AmirMuha/ipg-sandbox.git .
+            [ -d .git ] || git clone "${remote}" .
+            git remote set-url origin "${remote}"
             git fetch origin
             git reset --hard origin/main
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
