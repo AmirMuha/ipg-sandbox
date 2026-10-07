@@ -75,7 +75,7 @@ jobs:
             docker image prune -f
       # A bind failure on 80/443 means something else already owns them on the box; this
       # prints who, so the next failure is diagnosable from the run log alone.
-      - if: failure()
+      - if: always()
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
