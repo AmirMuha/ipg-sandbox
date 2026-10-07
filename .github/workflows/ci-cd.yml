@@ -81,6 +81,7 @@ jobs:
               sudo -n swapon /swapfile
               sudo -n grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo -n tee -a /etc/fstab >/dev/null
             fi
+            swapon --show
             # nginx owns 80/443 on this box: put our vhost in place and prove the config is
             # good before touching the stack. Reload happens after `up` so a caddy container
             # from an earlier deploy has already released the port.
