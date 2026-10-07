@@ -2,17 +2,18 @@
 # mail.amirmuha.com with certbot certs), so caddy here would never win the bind and, when it
 # did, would take those sites down. The edge lives in deploy/nginx/ipg.sandboxed.ir.conf;
 # containers publish loopback-only ports for nginx to proxy to.
+#
+# The box never builds: CI pushes these images to GHCR (sha-<short> plus :latest) and the
+# deploy job just pulls. IMAGE_TAG is exported by the deploy script; unset, compose falls
+# back to :latest for manual pulls.
 services:
   engine:
+    image: ghcr.io/amirmuha/ipg-sandbox-engine:${IMAGE_TAG:-latest}
     ports: !override ["127.0.0.1:8081:8080"]
 
   web:
+    image: ghcr.io/amirmuha/ipg-sandbox-web:${IMAGE_TAG:-latest}
     ports: !override ["127.0.0.1:3001:3000"]
-    build:
-      args:
-        # Baked into the client bundle: the browser calls the API on the same origin nginx
-        # serves, so /api/* routes straight through to engine.
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://ipg.sandboxed.ir}
 
   postgres:
     ports: !override []
