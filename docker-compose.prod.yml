@@ -22,16 +22,18 @@ services:
         max-file: "3"
 
   engine:
-    ports: []
+    # `ports: []` alone doesn't clear the base mapping — Compose concatenates `ports`
+    # across files. !override actually drops it (post is caddy's job).
+    ports: !override []
 
   web:
-    ports: []
+    ports: !override []
     build:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://${DOMAIN:-localhost}}
 
   postgres:
-    ports: []
+    ports: !override []
 
 volumes:
   caddy_data:
