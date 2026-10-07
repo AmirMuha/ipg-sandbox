@@ -152,6 +152,10 @@
 /* ---------- gateway cards ---------- */
 .gws{display:grid;gap:var(--sp-4);grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
 .gw{display:grid;gap:var(--sp-4);align-content:start;background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);padding:var(--sp-4)}
+/* A grid item's default `min-inline-size:auto` lets one wide child — a long
+   endpoint in a .term pre, or the credentials textarea — widen the track and
+   push the card past its column. See the same guard on .stack-* in ui.css. */
+.gw > *{min-inline-size:0}
 .gw__head{display:flex;align-items:center;gap:var(--sp-3)}
 /* real Zarinpal mark: 168x63 intrinsic (8:3), full frame, never cropped */
 .gw__logo{inline-size:64px;block-size:24px;flex:none;display:grid;place-items:center;overflow:hidden;border-radius:2px}

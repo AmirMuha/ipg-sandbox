@@ -3,7 +3,9 @@ import { test, expect } from "@playwright/test";
 const BASE_URL = process.env.DASHBOARD_URL ?? "http://localhost:3000";
 
 test.describe("Gateways Page Gateway Status (006-admin-ipg-visibility)", () => {
-  test("1. Merchant gateways shows locked withdrawn state and no toggle", async ({ page }) => {
+  test("1. Merchant gateways lists only offered adapters, with no availability toggle", async ({
+    page,
+  }) => {
     await page.goto(`${BASE_URL}/fa/gateways`);
 
     // On /gateways, cards have data-testid="adapter-card-<provider>"
@@ -15,14 +17,12 @@ test.describe("Gateways Page Gateway Status (006-admin-ipg-visibility)", () => {
     const toggles = page.locator('[data-testid^="adapter-toggle-"]');
     await expect(toggles).toHaveCount(0);
 
-    // If an adapter is withdrawn (withdrawn_by_operator), it shows withdrawn badge & notice
-    const withdrawnBadge = page.locator('[data-testid^="adapter-withdrawn-badge-"]');
-    const count = await withdrawnBadge.count();
-    if (count > 0) {
-      await expect(withdrawnBadge.first()).toBeVisible();
-      const notice = page.locator('[data-testid^="adapter-withdrawn-notice-"]').first();
-      await expect(notice).toBeVisible();
-    }
+    // Providers the platform admin withdrew are not offered to the project, so they are
+    // filtered out of this page rather than rendered locked. The previous version of this
+    // test asserted they WERE visible, but guarded that behind `if (count > 0)` — so it
+    // stayed green either way and never actually pinned the behaviour. This asserts it.
+    await expect(page.locator('[data-testid^="adapter-withdrawn-badge-"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid^="adapter-withdrawn-notice-"]')).toHaveCount(0);
 
     // Credentials input and save button remain available (FR-018)
     const credsInput = page.locator('[data-testid^="credentials-input-"]').first();

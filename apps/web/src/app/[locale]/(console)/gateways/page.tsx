@@ -17,6 +17,12 @@ export default async function GatewaysPage({ params: { locale } }: { params: { l
     errorMsg = err instanceof Error ? err.message : "Failed to load gateways";
   }
 
+  // Providers the platform admin has withdrawn are not offered to this project, so they
+  // cannot be routed to and their credentials form configures nothing a payment could
+  // reach. Showing them only pads the grid with locked cards. `AdapterSettings` still
+  // renders the withdrawn state correctly — this page just never hands it one.
+  const offered = adapters.filter((a) => !a.withdrawn_by_operator);
+
   return (
     <>
       <div className="phead">
@@ -36,11 +42,22 @@ export default async function GatewaysPage({ params: { locale } }: { params: { l
         </div>
       )}
 
-      <div className="gws">
-        {adapters.map((adapter) => (
-          <AdapterSettings key={adapter.id} adapter={adapter} />
-        ))}
-      </div>
+      {offered.length === 0 && !errorMsg ? (
+        <div className="empty">
+          <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <path d="M2 10h20" />
+          </svg>
+          <h3>{t("empty")}</h3>
+          <p>{t("empty_hint")}</p>
+        </div>
+      ) : (
+        <div className="gws">
+          {offered.map((adapter) => (
+            <AdapterSettings key={adapter.id} adapter={adapter} />
+          ))}
+        </div>
+      )}
     </>
   );
 }

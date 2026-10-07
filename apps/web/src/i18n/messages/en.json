@@ -275,7 +275,9 @@
   },
   "gateways": {
     "title": "My Payment Gateways",
-    "subtitle": "Credentials, endpoint and docs for each adapter"
+    "subtitle": "Credentials, endpoint and docs for each adapter",
+    "empty": "No gateways are available",
+    "empty_hint": "Every gateway is currently switched off for this project. A platform admin has to enable one before it can be configured here."
   },
   "sdk": {
     "title": "SDK & Integration",

@@ -175,6 +175,14 @@ test("4. Gateways view renders adapter cards", async () => {
     html.includes("data-testid=\"adapter-card-zarinpal\"") || html.includes("zarinpal"),
     "Expected Zarinpal adapter card in HTML"
   );
+
+  // Providers the platform admin withdrew are filtered out entirely, not rendered
+  // locked — see the `offered` filter in (console)/gateways/page.tsx. The default
+  // platform offers only Zarinpal, so a fresh engine must show no withdrawn card.
+  assert.ok(
+    !html.includes("adapter-withdrawn-badge-"),
+    "Withdrawn adapters must not be rendered on /gateways"
+  );
 });
 
 test("5. Force decline affects next payment (SC-006 check 2)", async () => {

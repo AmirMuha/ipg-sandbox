@@ -35,6 +35,12 @@ body{
 .stack-sm{display:grid;gap:var(--sp-3)}
 .stack-md{display:grid;gap:var(--sp-4)}
 .stack-lg{display:grid;gap:var(--sp-6)}
+/* The export carries this in its od-layout layer, which this app does not port.
+ * Grid and flex children default to `min-inline-size:auto`, so ONE wide child —
+ * a long endpoint URL in a `.term pre`, or a JSON line in the credentials
+ * textarea — widens its track and pushes the whole card past its container
+ * instead of scrolling inside it. */
+.stack-sm > *,.stack-md > *,.stack-lg > *{min-inline-size:0}
 .mt2{margin-block-start:var(--sp-2)}
 .mt4{margin-block-start:var(--sp-4)}
 .divider{block-size:1px;background:rgb(var(--border));border:0}
@@ -244,9 +250,20 @@ html[dir="ltr"] .select{background-position:16px center,11px center}
 .term__dots i{inline-size:7px;block-size:7px;border-radius:var(--r-pill);background:rgb(var(--text-3));display:block}
 .term__body{padding:var(--sp-3);overflow-x:auto}
 .term pre{margin:0;font-family:var(--font-mono);font-size:var(--fs-row-dense);line-height:1.7;direction:ltr;text-align:start;white-space:pre;color:rgb(var(--syn-plain))}
+/* The only textarea in the app is the adapter credentials editor, which holds
+ * pretty-printed JSON — lines that run well past the card. The export has no
+ * textarea styling to copy (its .term is read-only), so this wraps rather than
+ * inheriting a textarea's default horizontal scroll: `pre-wrap` + `anywhere`
+ * means a long line reflows instead of being clipped at the box edge, and
+ * `min-inline-size:0` lets it shrink inside the .gw grid track it sits in. */
 .term textarea{
-  inline-size:100%;background:transparent;border:0;color:rgb(var(--syn-plain));
-  font-family:var(--font-mono);font-size:var(--fs-row-dense);line-height:1.7;resize:vertical;outline:none;
+  display:block;box-sizing:border-box;
+  inline-size:100%;min-inline-size:0;max-inline-size:100%;
+  background:transparent;border:0;color:rgb(var(--syn-plain));
+  font-family:var(--font-mono);font-size:var(--fs-row-dense);line-height:1.7;
+  resize:vertical;outline:none;overflow:auto;
+  direction:ltr;unicode-bidi:isolate;text-align:start;
+  white-space:pre-wrap;overflow-wrap:anywhere;
 }
 .t-key{color:rgb(var(--syn-key))}
 .t-str{color:rgb(var(--syn-str))}
@@ -297,6 +314,9 @@ html[dir="ltr"] .select{background-position:16px center,11px center}
 .modal__title,.drawer__title{font-size:var(--fs-h3);font-weight:600;flex:1 1 0;min-width:0}
 .modal__body{padding:var(--sp-4);overflow-y:auto;overscroll-behavior:contain;display:grid;gap:var(--sp-4);align-content:start}
 .drawer__body{padding:var(--sp-4);overflow-y:auto;overscroll-behavior:contain;display:grid;gap:var(--sp-5);align-content:start}
+/* Same guard as .stack-*: these grids hold .term blocks whose long JSON lines
+   would otherwise widen the track instead of scrolling inside .term__body. */
+.modal__body > *,.drawer__body > *{min-inline-size:0}
 .modal__foot{display:flex;gap:var(--sp-2);justify-content:flex-end;padding:var(--sp-4);border-block-start:1px solid rgb(var(--border))}
 @media (max-width:768px){
   .modal{
