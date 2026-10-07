@@ -28,8 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose up -d --build --wait --wait-timeout 300
+      # Zarinpal only: every other gateway is parked disabled on a fresh volume
+      # (seed_configs + migration 0009), so an idpay run would 404 at initiate. The idpay
+      # surface is covered by tests/integration/test_scenario_matrix.py instead.
       - run: ./scripts/ci-scenario-run.sh --adapter zarinpal
-      - run: ./scripts/ci-scenario-run.sh --adapter idpay
       - if: failure()
         run: docker compose logs
       - if: always()
