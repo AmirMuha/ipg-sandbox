@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { loginUser, registerUser, sendOtp, verifyOtp } from "../../../../lib/api";
+import { apiBase, loginUser, registerUser, sendOtp, verifyOtp } from "../../../../lib/api";
 
 type Mode = "login" | "register";
 type RegisterStep = "details" | "otp" | "password";
@@ -227,7 +227,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
             <button
               type="button"
               onClick={() => {
-                window.location.href = "http://localhost:8080/api/v1/auth/oauth/github";
+                window.location.href = `${apiBase}/api/v1/auth/oauth/github`;
               }}
               className="w-full min-h-11 px-4 rounded-md border border-border bg-surface text-text text-sm font-medium hover:bg-surface-subtle hover:border-text/20 transition-all duration-fast flex items-center justify-center gap-3 cursor-pointer"
             >
@@ -240,7 +240,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
             <button
               type="button"
               onClick={() => {
-                window.location.href = "http://localhost:8080/api/v1/auth/oauth/google";
+                window.location.href = `${apiBase}/api/v1/auth/oauth/google`;
               }}
               className="w-full min-h-11 px-4 rounded-md border border-border bg-surface text-text text-sm font-medium hover:bg-surface-subtle hover:border-text/20 transition-all duration-fast flex items-center justify-center gap-3 cursor-pointer"
             >

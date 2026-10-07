@@ -10,6 +10,13 @@ services:
   engine:
     image: ghcr.io/amirmuha/ipg-sandbox-engine:${IMAGE_TAG:-latest}
     ports: !override ["127.0.0.1:8081:8080"]
+    environment:
+      # OAuth's three legs all read these, and every default points at the visitor's own
+      # machine: the authorize request and the token exchange use *_REDIRECT_URI, and the
+      # post-login landing uses WEB_URL. Client id/secret still come from .env (env_file).
+      - GITHUB_REDIRECT_URI=http://ipg.sandboxed.ir/api/v1/auth/oauth/github/callback
+      - GOOGLE_REDIRECT_URI=http://ipg.sandboxed.ir/api/v1/auth/oauth/google/callback
+      - WEB_URL=http://ipg.sandboxed.ir
 
   web:
     image: ghcr.io/amirmuha/ipg-sandbox-web:${IMAGE_TAG:-latest}

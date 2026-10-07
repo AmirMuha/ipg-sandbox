@@ -1,6 +1,14 @@
 services:
   engine:
     restart: unless-stopped
+    # The whole .env reaches the container as env — config.py reads GITHUB_CLIENT_ID,
+    # GOOGLE_CLIENT_ID, ADMIN_EMAILS, SESSION_TTL_DAYS, ZARINPAL_* straight from
+    # os.environ, and none of those are named in `environment:` below, so without this
+    # file they silently stayed at code defaults. `environment:` still wins over
+    # env_file. Optional: CI checks out without a .env.
+    env_file:
+      - path: .env
+        required: false
     build:
       context: ./apps/engine
     ports:
