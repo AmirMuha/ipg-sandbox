@@ -104,3 +104,13 @@ jobs:
             sudo -n grep -nE "server_name|listen |include |ssl_certificate" /etc/nginx/nginx.conf 2>/dev/null || true
             echo "== letsencrypt =="
             sudo -n ls -la /etc/letsencrypt/live/ 2>/dev/null || true
+            echo "== disk =="
+            df -h
+            echo "== mem =="
+            free -m 2>/dev/null || true
+            echo "== docker df =="
+            docker system df
+            echo "== docker daemon log =="
+            sudo -n journalctl -u docker --no-pager -n 40 2>/dev/null || true
+            echo "== recent oom kills =="
+            sudo -n dmesg -T 2>/dev/null | grep -iE "killed process|out of memory" | tail -10 || true
