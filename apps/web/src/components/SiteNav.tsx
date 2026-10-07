@@ -1,18 +1,20 @@
 import Link from "next/link";
-import Image from "next/image";
 import { UserMenu } from "./UserMenu";
 
-interface SiteNavProps {
-  locale: string;
-  active: "home" | "providers" | "pricing" | "console";
-  maxWidthClass?: string;
-}
-
+/**
+ * Marketing header — `.mhead` from the design: a sticky, blurred bar with the
+ * wordmark, the section links, and the account control.
+ *
+ * The export's language toggle and sun/moon theme toggle are not ported: the
+ * locale is fixed and the app ships dark-only, so both would be dead controls.
+ */
 export function SiteNav({
   locale,
   active,
-  maxWidthClass = "max-w-[1480px]",
-}: SiteNavProps) {
+}: {
+  locale: string;
+  active: "home" | "providers" | "pricing" | "console";
+}) {
   const isFa = locale === "fa";
 
   const links = [
@@ -22,65 +24,42 @@ export function SiteNav({
   ] as const;
 
   return (
-    <header className="sticky top-0 z-50 bg-surface/92 backdrop-blur-[12px] border-b border-border">
-      <div className={`w-full ${maxWidthClass} mx-auto px-4 md:px-6 flex items-center justify-between gap-6 h-16`}>
-        <Link
-          href={`/${locale}/home`}
-          className="inline-flex items-center gap-2.5 font-display text-[17px] font-semibold text-text"
-        >
-          <Image
-            src="/logo.webp"
-            alt="IPG Sandbox"
-            width={32}
-            height={32}
-            className="w-8 h-8 rounded-sm object-contain shrink-0"
-            priority
-          />
-          {isFa ? "سندباکس درگاه" : "IPG Sandbox"}
+    <header className="mhead">
+      <div className="mhead__in wrap-m">
+        <Link className="brand" href={`/${locale}/home`}>
+          <span className="brand__mark" aria-hidden="true">
+            IP
+          </span>
+          <span className="brand__text">
+            <span className="brand__name">{isFa ? "سندباکس درگاه" : "IPG Sandbox"}</span>
+            <span className="brand__sub">
+              {isFa ? "شبیه‌ساز درگاه‌های پرداخت" : "Payment gateway simulator"}
+            </span>
+          </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="mhead__links" aria-label={isFa ? "ناوبری اصلی" : "Main"}>
           {links.map((link) => (
             <Link
               key={link.key}
               href={link.href}
-              className={`inline-flex items-center min-h-11 text-sm font-medium border-b-2 transition-colors duration-fast ease-standard ${
-                active === link.key
-                  ? "text-text border-accent font-semibold"
-                  : "text-muted border-transparent hover:text-text"
-              }`}
+              aria-current={active === link.key ? "page" : undefined}
+              className="mhead__link"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          {active === "console" && (
-            <Link
-              href={`/${locale}/home`}
-              className="hidden sm:inline-flex items-center justify-center min-h-9 px-3 rounded-sm border border-border bg-surface text-text text-xs font-medium hover:bg-surface-subtle transition-colors duration-fast ease-standard"
-            >
-              {isFa ? "بازگشت به سایت" : "Back to Site"}
-            </Link>
-          )}
+        <span className="mhead__spacer" />
+
+        <div className="mhead__actions">
+          <Link href={`/${locale}/console`} className="btn btn--secondary btn--sm">
+            {isFa ? "داشبورد تستی" : "Test console"}
+          </Link>
           <UserMenu locale={locale} active={active} />
         </div>
       </div>
-
-      <nav className="md:hidden flex items-center gap-4 overflow-x-auto px-4 pb-2.5 text-sm">
-        {links.map((link) => (
-          <Link
-            key={link.key}
-            href={link.href}
-            className={`shrink-0 font-medium ${
-              active === link.key ? "text-accent-ink border-b-2 border-accent" : "text-muted"
-            }`}
-          >
-            {link.label}
-          </Link>
-        ))}
-      </nav>
     </header>
   );
 }

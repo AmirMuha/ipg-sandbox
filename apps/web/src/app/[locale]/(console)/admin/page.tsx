@@ -34,23 +34,25 @@ export default async function AdminPage({ params: { locale } }: { params: { loca
   const adminSubscriptions = await getAdminSubscriptions().catch(() => []);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted">{t("subtitle")}</p>
+    <>
+      <div className="phead">
+        <div className="phead__text">
+          <h1>{t("title")}</h1>
+          <p>{t("subtitle")}</p>
+        </div>
       </div>
 
-      <section className="space-y-4" data-testid="admin-gateways-panel">
-        <div>
-          <h2 className="font-display text-[17px] font-semibold tracking-display">
-            {tProviders("title")}
-          </h2>
-          <p className="text-xs text-muted mt-1">{tProviders("subtitle")}</p>
+      <section className="card mb-4" data-testid="admin-gateways-panel">
+        <div className="card__head">
+          <h2 className="card__title">{tProviders("title")}</h2>
         </div>
-        <AdminProviderList initialOffered={initialOffered} />
+        <div className="card__body stack-md">
+          <p className="small muted">{tProviders("subtitle")}</p>
+          <AdminProviderList initialOffered={initialOffered} />
+        </div>
       </section>
 
       <AdminSubscriptionList initialSubscriptions={adminSubscriptions} />
-    </div>
+    </>
   );
 }

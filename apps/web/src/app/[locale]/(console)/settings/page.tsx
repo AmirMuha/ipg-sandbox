@@ -44,105 +44,86 @@ export default async function SettingsPage({
   const isTeam = project?.tier === "team" || subscription?.tier === "team";
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted">{t("subtitle")}</p>
+    <div className="stack-lg">
+      <div className="phead">
+        <div className="phead__text">
+          <h1>{t("title")}</h1>
+          <p>{t("subtitle")}</p>
+        </div>
       </div>
 
-      {paymentStatus === "success" && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-console text-sm">
-          {t("pay_success")}
-        </div>
-      )}
+      {/* Payment outcomes and load errors share the banner surface; only the failure case
+          earns the danger tint, the design has no success/warning variant. */}
+      {paymentStatus === "success" && <div className="banner">{t("pay_success")}</div>}
 
-      {paymentStatus === "cancelled" && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-console text-sm">
-          {t("pay_cancelled")}
-        </div>
-      )}
+      {paymentStatus === "cancelled" && <div className="banner">{t("pay_cancelled")}</div>}
 
       {paymentStatus === "failed" && (
-        <div className="p-4 bg-danger-bg border border-danger-border text-danger-ink rounded-console text-sm">
-          {t("pay_failed")}
-        </div>
+        <div className="banner banner--danger">{t("pay_failed")}</div>
       )}
 
-      {errorMsg && (
-        <div className="p-4 bg-danger-bg border border-danger-border text-danger-ink rounded-console text-sm">
-          {errorMsg}
-        </div>
-      )}
+      {errorMsg && <div className="banner banner--danger">{errorMsg}</div>}
 
       {/* Subscription Tier & Quota Status Card */}
-      <div className="p-6 bg-surface border border-border rounded-console space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-display text-[17px] font-semibold tracking-display">
-              {t("plan_title")}
-            </h2>
-            <p className="text-xs text-muted">{t("plan_subtitle")}</p>
-          </div>
-          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-accent/15 text-accent border border-accent/25">
-            {isTeam ? t("tier_team") : t("tier_free")}
-          </span>
+      <div className="card">
+        <div className="card__head">
+          <h2 className="card__title">{t("plan_title")}</h2>
+          <span className="badge badge--accent">{isTeam ? t("tier_team") : t("tier_free")}</span>
         </div>
+        <div className="card__body stack-md">
+          <p className="muted">{t("plan_subtitle")}</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-          <div className="p-3 bg-surface-subtle border border-border rounded-sm">
-            <div className="text-xs text-muted">{t("meter_requests")}</div>
-            <div className="text-lg font-semibold mt-1 font-mono">
-              {meters?.requests_today ?? 0}
-              <span className="text-xs text-muted font-sans mr-1">
-                / {meters?.daily_requests_cap === 0 ? t("meter_unlimited") : (meters?.daily_requests_cap ?? 100)}
+          <div className="kv">
+            <div className="kv__row">
+              <span className="kv__label">{t("meter_requests")}</span>
+              <span className="kv__val mono">
+                {meters?.requests_today ?? 0} /{" "}
+                {meters?.daily_requests_cap === 0
+                  ? t("meter_unlimited")
+                  : (meters?.daily_requests_cap ?? 100)}
+              </span>
+            </div>
+
+            <div className="kv__row">
+              <span className="kv__label">{t("meter_adapters")}</span>
+              <span className="kv__val mono">
+                {meters?.active_adapters_count ?? 0} /{" "}
+                {meters?.max_active_adapters === 0
+                  ? t("meter_all_gateways")
+                  : (meters?.max_active_adapters ?? 2)}
+              </span>
+            </div>
+
+            <div className="kv__row">
+              <span className="kv__label">{t("meter_transactions")}</span>
+              <span className="kv__val mono">{meters?.transactions_total ?? 0}</span>
+            </div>
+
+            <div className="kv__row">
+              <span className="kv__label">{t("meter_history")}</span>
+              <span className="kv__val mono">
+                {meters?.history_retained ?? 0} / {meters?.history_cap ?? 1000}
               </span>
             </div>
           </div>
 
-          <div className="p-3 bg-surface-subtle border border-border rounded-sm">
-            <div className="text-xs text-muted">{t("meter_adapters")}</div>
-            <div className="text-lg font-semibold mt-1 font-mono">
-              {meters?.active_adapters_count ?? 0}
-              <span className="text-xs text-muted font-sans mr-1">
-                / {meters?.max_active_adapters === 0 ? t("meter_all_gateways") : (meters?.max_active_adapters ?? 2)}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-3 bg-surface-subtle border border-border rounded-sm">
-            <div className="text-xs text-muted">{t("meter_transactions")}</div>
-            <div className="text-lg font-semibold mt-1 font-mono">
-              {meters?.transactions_total ?? 0}
-            </div>
-          </div>
-
-          <div className="p-3 bg-surface-subtle border border-border rounded-sm">
-            <div className="text-xs text-muted">{t("meter_history")}</div>
-            <div className="text-lg font-semibold mt-1 font-mono">
-              {meters?.history_retained ?? 0}
-              <span className="text-xs text-muted font-sans mr-1">
-                / {meters?.history_cap ?? 1000}
-              </span>
-            </div>
-          </div>
+          {!isTeam && (
+            <>
+              <div className="divider" />
+              <div className="row-flex justify-between">
+                <span className="small muted">{t("upgrade_hint")}</span>
+                <a href={`/${locale}/pricing`} className="btn btn--secondary btn--sm">
+                  {t("upgrade_cta")} &larr;
+                </a>
+              </div>
+            </>
+          )}
         </div>
-
-        {!isTeam && (
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-xs text-muted">{t("upgrade_hint")}</span>
-            <a
-              href={`/${locale}/pricing`}
-              className="text-xs text-accent hover:underline font-medium"
-            >
-              {t("upgrade_cta")} &larr;
-            </a>
-          </div>
-        )}
       </div>
 
       {project && (
-        <div className="space-y-4">
-          <h2 className="font-display text-[17px] font-semibold tracking-display">{t("project_settings")}</h2>
+        <div className="stack-md">
+          <h2 className="card__title">{t("project_settings")}</h2>
           <ProjectSettingsForm project={project} locale={locale} />
         </div>
       )}

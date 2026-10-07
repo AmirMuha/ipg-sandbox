@@ -7,13 +7,15 @@ export default async function SdkPage({ params: { locale } }: { params: { locale
   const t = await getTranslations("sdk");
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted">{t("subtitle")}</p>
+    <>
+      <div className="phead">
+        <div className="phead__text">
+          <h1>{t("title")}</h1>
+          <p>{t("subtitle")}</p>
+        </div>
       </div>
 
       <ScenarioCiGuide apiBase={apiBase} />
-    </div>
+    </>
   );
 }

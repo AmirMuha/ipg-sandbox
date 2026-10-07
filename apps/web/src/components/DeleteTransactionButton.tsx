@@ -37,7 +37,7 @@ export function DeleteTransactionButton({ transactionId }: { transactionId: stri
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="px-3 py-1.5 rounded-[6px] text-[13px] font-medium bg-danger-bg text-danger-ink border border-danger-border hover:bg-danger/10 transition-colors"
+        className="btn btn--danger"
         data-testid={`delete-tx-${transactionId}`}
       >
         {t("button")}
@@ -46,13 +46,13 @@ export function DeleteTransactionButton({ transactionId }: { transactionId: stri
   }
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-xs text-danger-ink">{t("confirm")}</span>
+    <div className="row-flex">
+      <span className="small">{t("confirm")}</span>
       <button
         type="button"
         onClick={handleDelete}
         disabled={deleting}
-        className="px-3 py-1.5 rounded-[6px] text-[13px] font-semibold bg-danger text-white hover:bg-danger/90 transition-colors disabled:opacity-50"
+        className="btn btn--danger"
         data-testid={`delete-tx-confirm-${transactionId}`}
       >
         {deleting ? t("deleting") : t("button")}
@@ -61,11 +61,11 @@ export function DeleteTransactionButton({ transactionId }: { transactionId: stri
         type="button"
         onClick={() => setConfirming(false)}
         disabled={deleting}
-        className="px-3 py-1.5 rounded-[6px] text-[13px] text-muted hover:text-text transition-colors"
+        className="iconbtn"
       >
         <span data-testid={`delete-tx-cancel-${transactionId}`}>×</span>
       </button>
-      {error && <span className="text-xs text-danger-ink">{error}</span>}
+      {error && <span className="field__err">{error}</span>}
     </div>
   );
 }

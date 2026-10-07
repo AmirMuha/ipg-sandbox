@@ -93,13 +93,18 @@ export function Quickstart() {
 
   return (
     <div
-      className="border border-border rounded-lg overflow-hidden animate-in delay-1"
+      className="term"
       onMouseEnter={() => setLocked(true)}
       onMouseLeave={() => setLocked(false)}
       onFocus={() => setLocked(true)}
       onBlur={() => setLocked(false)}
     >
-      <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-border bg-surface font-mono text-xs text-muted">
+      <div className="term__bar">
+        <span className="term__dots" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
         <div role="tablist" aria-label="انتخاب درگاه" className="flex gap-1">
           {PROVIDERS.map((p, i) => (
             <button
@@ -119,17 +124,13 @@ export function Quickstart() {
                   pick(index - 1);
                 }
               }}
-              className={`min-h-10 px-3 rounded-pill border font-mono text-xs font-medium transition-colors duration-fast ease-standard ${
-                i === index
-                  ? "bg-accent-subtle border-accent-border text-accent-ink font-semibold"
-                  : "border-transparent text-muted hover:bg-surface-subtle hover:text-text"
-              }`}
+              className="tab"
             >
               {p.label}
             </button>
           ))}
         </div>
-        <span dir="ltr" className="hidden sm:inline">
+        <span dir="ltr" className="term__file hidden sm:inline">
           POST localhost:8080
         </span>
       </div>
@@ -140,15 +141,15 @@ export function Quickstart() {
         dir="ltr"
         aria-live="off"
         key={provider.id}
-        className="bg-accent-subtle border-accent-border px-4 py-3 font-mono text-xs leading-[1.9] text-text overflow-x-auto animate-in"
+        className="term__body mono text-xs leading-[1.9] animate-in"
       >
-        <div className="text-muted/80">{provider.comment}</div>
+        <div className="t-comment">{provider.comment}</div>
         {provider.lines.map((line) => (
           // pre-wrap, not pre: the behpardakht URL is wider than the hero
           // column, and `pre` pushed it under the card edge at 1440px.
           <div key={line.pre + line.key} className="whitespace-pre-wrap break-all">
             {line.pre}
-            <span className="text-accent-ink font-semibold">{line.key}</span>
+            <span className="t-str">{line.key}</span>
             {line.post}
           </div>
         ))}
@@ -157,10 +158,10 @@ export function Quickstart() {
       {/* Hairline dwell indicator. Animation restarts from the React key change
           on the panel, so it tracks whichever provider is showing. */}
       {!locked && (
-        <div className="h-0.5 bg-surface-elevated overflow-hidden" aria-hidden="true">
+        <div className="h-px" aria-hidden="true">
           <span
             key={provider.id}
-            className="block h-full w-full bg-accent origin-right"
+            className="grad-rule block origin-right"
             style={{
               animation: `qs-fill ${CYCLE_MS}ms linear forwards`,
             }}

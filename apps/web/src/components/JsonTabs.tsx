@@ -43,36 +43,53 @@ export function JsonTabs({
   }
 
   return (
-    <div className="flex flex-col gap-2" data-testid="json-tabs">
-      <div className="flex items-center gap-1">
+    <div className="stack-sm" data-testid="json-tabs">
+      <div className="tabs" role="tablist">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
+            role="tab"
             onClick={() => setActive(tab.key)}
-            aria-pressed={active === tab.key}
-            className={`px-2.5 py-1 rounded-sm text-xs font-medium transition-colors ${
-              active === tab.key
-                ? "bg-surface-elevated border border-border text-text"
-                : "text-muted border border-transparent hover:text-text"
-            }`}
+            aria-selected={active === tab.key}
+            className="tab"
             data-testid={`json-tab-${tab.key}`}
           >
             {fa ? tab.fa : tab.en}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={copy}
-          className="ms-auto px-2.5 py-1 rounded-sm text-xs font-medium bg-surface-2 border border-border text-text-2 hover:text-text transition-colors"
-          data-testid="json-copy"
-        >
-          {copied ? (fa ? "کپی شد!" : "Copied!") : fa ? "کپی" : "Copy"}
-        </button>
       </div>
-      <pre className="code-block" dir="ltr" data-testid={`json-panel-${active}`}>
-        {text}
-      </pre>
+
+      {/* The payload is a plain JSON.stringify today, so the body stays plain text — no
+          syntax-highlight spans in here until something actually tokenises it. */}
+      <div className="term">
+        <div className="term__bar">
+          <span className="term__dots" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span className="term__file">{active}.json</span>
+          <button
+            type="button"
+            onClick={copy}
+            className="copy"
+            data-copied={copied}
+            data-testid="json-copy"
+          >
+            <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            {copied ? (fa ? "کپی شد!" : "Copied!") : fa ? "کپی" : "Copy"}
+          </button>
+        </div>
+        <div className="term__body">
+          <pre dir="ltr" data-testid={`json-panel-${active}`}>
+            {text}
+          </pre>
+        </div>
+      </div>
     </div>
   );
 }

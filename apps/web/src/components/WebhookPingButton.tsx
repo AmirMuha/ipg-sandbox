@@ -33,28 +33,34 @@ export function WebhookPingButton({ targetUrl }: { targetUrl?: string | null }) 
   }
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="row-flex">
       <button
         type="button"
         onClick={handlePing}
         disabled={pinging}
-        className="btn-secondary inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-surface text-text border border-border text-[13px] font-medium hover:bg-surface-subtle transition-colors disabled:opacity-50"
+        className="btn btn--secondary"
         data-testid="webhook-ping-btn"
       >
-        {pinging ? t("pinging") : t("ping")}
+        <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+        <span>{pinging ? t("pinging") : t("ping")}</span>
       </button>
 
       {result && (
         <span
-          className={`text-xs font-medium ${result.ok ? "text-success-ink" : "text-danger-ink"}`}
+          className={`health ${result.ok ? "health--healthy" : "health--degraded"}`}
           role="status"
           data-testid="webhook-ping-result"
           dir="ltr"
         >
-          {result.ok ? t("ok") : t("failed")}
-          {result.status_code ? ` · ${t("http_status", { code: result.status_code })}` : ""}
-          {` · ${t("latency", { ms: result.latency_ms })}`}
-          {result.error ? ` · ${result.error}` : ""}
+          <i className="health__dot" aria-hidden="true" />
+          <span>
+            {result.ok ? t("ok") : t("failed")}
+            {result.status_code ? ` · ${t("http_status", { code: result.status_code })}` : ""}
+            {` · ${t("latency", { ms: result.latency_ms })}`}
+            {result.error ? ` · ${result.error}` : ""}
+          </span>
         </span>
       )}
     </div>

@@ -39,6 +39,37 @@ const LABEL: Record<string, [string, string]> = {
   verify: ["Verification Stage", "اعتبارسنجی"],
 };
 
+// .step draws its own connector through .step__rail::after on every row but the last.
+const STEP_CLASS: Record<StepState, string> = {
+  done: "step step--done",
+  failed: "step step--fail",
+  in_progress: "step step--live",
+  pending: "step",
+};
+
+function glyph(state: StepState) {
+  if (state === "done") {
+    return (
+      <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 6L9 17l-5-5" />
+      </svg>
+    );
+  }
+  if (state === "failed") {
+    return (
+      <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18 6L6 18M6 6l12 12" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </svg>
+  );
+}
+
 export function LifecycleStepper({
   status,
   effectiveScenario,
@@ -52,53 +83,19 @@ export function LifecycleStepper({
   const states = steps(status, effectiveScenario);
 
   return (
-    <ol className="flex items-start gap-1" data-testid="lifecycle-stepper">
+    <ol className="stepper" data-testid="lifecycle-stepper">
       {Object.keys(LABEL).map((key, i) => {
         const state = states[i];
-        const ring =
-          state === "done"
-            ? "bg-success text-white border-success"
-            : state === "failed"
-              ? "bg-danger text-white border-danger"
-              : state === "in_progress"
-                ? "bg-accent text-accent-on border-accent"
-                : "bg-surface-2 text-muted border-border";
         return (
-          <li key={key} className="flex items-start flex-1 min-w-0" data-testid={`step-${key}`}>
-            <div className="flex flex-col items-center gap-1.5 min-w-0">
-              <span
-                className={`w-7 h-7 rounded-full grid place-items-center border text-xs shrink-0 ${ring} ${
-                  state === "in_progress" ? "animate-pulse" : ""
-                }`}
-                data-testid={`step-${key}-${state}`}
-              >
-                {state === "done" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : state === "failed" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                ) : state === "in_progress" ? (
-                  <span className="w-2 h-2 rounded-full bg-current" />
-                ) : (
-                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                )}
+          <li key={key} className={STEP_CLASS[state]} data-testid={`step-${key}`}>
+            <span className="step__rail">
+              <span className="step__node" data-testid={`step-${key}-${state}`}>
+                {glyph(state)}
               </span>
-              <span className="text-[10px] text-center leading-tight text-text-2">
-                {fa ? LABEL[key][1] : LABEL[key][0]}
-              </span>
-            </div>
-            {i < states.length - 1 && (
-              <span
-                className={`h-px flex-1 mt-3.5 mx-1 ${
-                  states[i] === "done" ? "bg-success/40" : "bg-border"
-                }`}
-                aria-hidden
-              />
-            )}
+            </span>
+            <span className="step__body">
+              <span className="step__title">{fa ? LABEL[key][1] : LABEL[key][0]}</span>
+            </span>
           </li>
         );
       })}

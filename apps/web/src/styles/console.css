@@ -1,0 +1,217 @@
+/* ============================================================
+   Console shell + page furniture — ported from the design export's
+   index.html <style> block.
+
+   This is the layer the shared ui.css does NOT carry: the app frame
+   (.app/.topbar/.console-nav/.main/.wrap), the page head, the scenario
+   ribbon, stat cards, the outcome chart, the filter bar, the scenario
+   matrix, gateway cards and the checkout simulator.
+
+   Dropped on the way in: the language-toggle and sun/moon theme-toggle
+   rules (the app is dark-only and its locale is fixed), and the
+   html[data-theme="light"] .gw__logo filter override.
+   ============================================================ */
+
+/* ---------- app shell: bars take their own space, the middle scrolls ---------- */
+.app{display:grid;grid-template-rows:auto auto minmax(0,1fr);block-size:100vh;block-size:100dvh}
+.topbar{
+  display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-6);
+  background:rgb(var(--surface-1));border-block-end:1px solid rgb(var(--border));
+}
+.brand{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none;color:rgb(var(--text))}
+.brand__mark{
+  inline-size:28px;block-size:28px;flex:none;border-radius:var(--r-control);
+  background:rgb(var(--accent));color:rgb(var(--accent-ink));
+  display:grid;place-items:center;font-weight:700;font-size:0.8125rem;
+}
+.brand__name{font-weight:600;font-size:var(--fs-label);letter-spacing:-0.01em}
+.brand__env{display:block;font-family:var(--font-mono);font-size:var(--fs-micro);color:rgb(var(--text-2))}
+.topbar__spacer{flex:1 1 0;min-width:0}
+.console-nav{
+  display:flex;align-items:center;gap:var(--sp-1);padding:0 var(--sp-6);
+  background:rgb(var(--surface-1));border-block-end:1px solid rgb(var(--border));
+  overflow-x:auto;scrollbar-width:none;
+}
+.console-nav::-webkit-scrollbar{display:none}
+.console-nav__link{
+  display:flex;align-items:center;gap:var(--sp-2);flex:none;
+  padding:var(--sp-3);cursor:pointer;background:none;border:0;
+  border-block-end:2px solid transparent;color:rgb(var(--text-2));
+  font-family:inherit;font-size:var(--fs-label);white-space:nowrap;
+  text-decoration:none;
+  transition:color var(--dur-state) var(--ease),border-color var(--dur-state) var(--ease);
+}
+.console-nav__link:hover{color:rgb(var(--text))}
+.console-nav__link[aria-current="page"]{color:rgb(var(--text));border-block-end-color:rgb(var(--accent));font-weight:500}
+.console-nav__link .ic{inline-size:16px;block-size:16px}
+.console-nav__lock{margin-inline-start:var(--sp-1);color:rgb(var(--warning));inline-size:13px !important;block-size:13px !important}
+.main{overflow-y:auto;overscroll-behavior:contain;min-height:0}
+.wrap{max-width:var(--w-console);margin-inline:auto;padding:var(--sp-6);inline-size:100%}
+
+/* ---------- page head ---------- */
+.phead{display:flex;align-items:flex-start;gap:var(--sp-4);margin-block-end:var(--sp-5)}
+.phead__text{flex:1 1 0;min-width:0}
+.phead h1{font-size:var(--fs-h1);font-weight:700;letter-spacing:-0.02em}
+.phead p{color:rgb(var(--text-2));font-size:var(--fs-label);margin-block-start:var(--sp-1)}
+.phead__actions{display:flex;gap:var(--sp-2);flex:none;flex-wrap:wrap}
+
+/* ---------- scenario ribbon: a physical toggle strip ---------- */
+.ribbon{
+  display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-4);
+  background:rgb(var(--accent) / 0.08);border:1px solid rgb(var(--accent) / 0.35);
+  border-inline-start:3px solid rgb(var(--accent));border-radius:var(--r-control);
+  margin-block-end:var(--sp-4);
+}
+.ribbon__dot{inline-size:8px;block-size:8px;flex:none;border-radius:var(--r-pill);background:rgb(var(--accent));animation:ipg-pulse 1.6s var(--ease) infinite}
+.ribbon__label{font-size:var(--fs-label);font-weight:500;color:rgb(var(--text))}
+.ribbon__value{font-family:var(--font-mono);font-size:var(--fs-label);color:rgb(var(--accent));direction:ltr;unicode-bidi:isolate}
+.ribbon__meta{font-size:var(--fs-label);color:rgb(var(--text-2))}
+
+/* ---------- stat cards ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-3);margin-block-end:var(--sp-4)}
+.stat{background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);padding:var(--sp-4)}
+.stat__num{font-size:1.75rem;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.stat__cap{font-size:var(--fs-label);color:rgb(var(--text-2));margin-block-start:var(--sp-1)}
+.stat__delta{font-size:var(--fs-row);margin-block-start:var(--sp-2);display:flex;align-items:center;gap:var(--sp-1)}
+.stat__delta .ic{inline-size:13px;block-size:13px;stroke-width:2}
+.stat__delta--up{color:rgb(var(--success))}
+.stat__delta--down{color:rgb(var(--danger))}
+
+/* ---------- meter: no design equivalent ----------
+ * The export's stat cards carry a period-over-period delta; this app reports
+ * history-capacity usage instead, which needs a fill track. Styled to match
+ * .stat's own geometry so it reads as part of the same card. */
+.meter{block-size:6px;inline-size:100%;border-radius:var(--r-pill);background:rgb(var(--surface-2));overflow:hidden;margin-block-start:var(--sp-2)}
+.meter > *{block-size:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+
+/* ---------- outcome chart: widths computed from the data ---------- */
+.chart{display:grid;gap:var(--sp-3)}
+.chart__bar{display:flex;block-size:12px;border-radius:var(--r-pill);overflow:hidden;background:rgb(var(--surface-2));gap:2px}
+.chart__seg{block-size:100%;min-inline-size:2px}
+.chart__seg--settled{background:rgb(var(--success))}
+.chart__seg--pending{background:rgb(var(--warning))}
+.chart__seg--declined{background:rgb(var(--danger))}
+.chart__seg--expired{background:rgb(var(--info))}
+.chart__seg--failed{background:rgb(var(--text-3))}
+/* The dashboard's distribution is keyed by SCENARIO outcome, not by transaction
+ * status, so it needs its own segment names rather than the export's
+ * status-keyed ones. Same palette, different vocabulary. */
+.chart__seg--approve{background:rgb(var(--success))}
+.chart__seg--decline{background:rgb(var(--danger))}
+.chart__seg--timeout{background:rgb(var(--warning))}
+.chart__seg--verify-fail{background:rgb(var(--text-3))}
+.chart__seg--pending-settle{background:rgb(var(--info))}
+.chart__seg--refund{background:rgb(var(--accent))}
+.chart__legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:var(--sp-2) var(--sp-4)}
+.chart__key{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-row);color:rgb(var(--text-2))}
+.chart__swatch{inline-size:9px;block-size:9px;border-radius:2px;flex:none}
+.chart__count{font-variant-numeric:tabular-nums;color:rgb(var(--text));font-weight:500;margin-inline-start:auto}
+
+/* ---------- filters ---------- */
+.filters{
+  display:flex;align-items:flex-end;gap:var(--sp-3);flex-wrap:wrap;
+  padding:var(--sp-3) var(--sp-4);margin-block-end:var(--sp-3);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+}
+
+/* ---------- scenario matrix: the product's identity ---------- */
+.matrix{inline-size:100%;border-collapse:separate;border-spacing:0;font-size:var(--fs-row)}
+.matrix th{
+  font-size:var(--fs-micro);font-weight:600;letter-spacing:var(--tr-micro);text-transform:uppercase;
+  color:rgb(var(--text-2));text-align:start;padding:var(--sp-2) var(--sp-3);
+  border-block-end:1px solid rgb(var(--border));
+}
+.matrix th:first-child{border-inline-end:1px solid rgb(var(--border))}
+.matrix td{padding:var(--sp-2);border-block-end:1px solid rgb(var(--border) / 0.7);text-align:center}
+.matrix td:first-child{border-inline-end:1px solid rgb(var(--border))}
+.matrix__label{text-align:start;font-weight:500;white-space:nowrap}
+.matrix__label small{display:block;font-weight:400;color:rgb(var(--text-2));font-family:var(--font-mono);font-size:var(--fs-micro);direction:ltr}
+.cell{
+  inline-size:100%;min-height:38px;cursor:pointer;position:relative;
+  display:flex;align-items:center;justify-content:center;gap:var(--sp-1);
+  background:rgb(var(--surface-2));color:rgb(var(--text-2));
+  border:1px solid rgb(var(--border));border-radius:var(--r-control);
+  font-family:inherit;font-size:var(--fs-row);
+  transition:background var(--dur-state) var(--ease),border-color var(--dur-state) var(--ease),color var(--dur-state) var(--ease);
+}
+.cell .ic{inline-size:14px;block-size:14px;stroke-width:1.8}
+.cell:hover{border-color:rgb(var(--accent) / 0.55);color:rgb(var(--text))}
+.cell[aria-pressed="true"]{background:rgb(var(--accent) / 0.15);border-color:rgb(var(--accent));color:rgb(var(--accent))}
+.cell__hint{
+  position:absolute;inset-block-end:calc(100% + 6px);inset-inline-start:50%;
+  transform:translateX(50%) translateY(4px);
+  background:rgb(var(--surface-3));color:rgb(var(--text));
+  border:1px solid rgb(var(--border-strong));border-radius:var(--r-control);
+  padding:var(--sp-2) var(--sp-3);white-space:nowrap;
+  font-family:var(--font-mono);font-size:var(--fs-micro);direction:ltr;
+  opacity:0;pointer-events:none;z-index:30;box-shadow:var(--overlay-shadow);
+  transition:opacity var(--dur-state) var(--ease),transform var(--dur-state) var(--ease);
+}
+.cell:hover .cell__hint,.cell:focus-visible .cell__hint{opacity:1;transform:translateX(50%) translateY(0)}
+
+/* ---------- gateway cards ---------- */
+.gws{display:grid;gap:var(--sp-4);grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.gw{display:grid;gap:var(--sp-4);align-content:start;background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);padding:var(--sp-4)}
+.gw__head{display:flex;align-items:center;gap:var(--sp-3)}
+/* real Zarinpal mark: 168x63 intrinsic (8:3), full frame, never cropped */
+.gw__logo{inline-size:64px;block-size:24px;flex:none;display:grid;place-items:center;overflow:hidden;border-radius:2px}
+.gw__logo img{inline-size:64px;block-size:auto;aspect-ratio:168/63;object-fit:contain;display:block;filter:grayscale(1) contrast(1.05) brightness(1.6)}
+.gw__name{font-size:var(--fs-h3);font-weight:600;flex:1 1 0;min-width:0}
+.gw__wordmark{font-weight:700;font-size:1rem;letter-spacing:-0.01em;color:rgb(var(--text-2));line-height:1}
+.gw__specs{display:grid;gap:var(--sp-2)}
+.gw__spec{display:flex;align-items:center;gap:var(--sp-3);font-size:var(--fs-row)}
+.gw__speck{flex:1 1 0;min-width:0;color:rgb(var(--text-2))}
+
+/* ---------- checkout simulator: the one payment-aesthetic surface ---------- */
+.checkout{--modal-w:420px}
+.checkout__panel{
+  background:rgb(var(--surface-2));border:1px solid rgb(var(--border));
+  border-radius:var(--r-card);padding:var(--sp-5);display:grid;gap:var(--sp-4);
+}
+.checkout__bank{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
+.checkout__bankname{font-size:var(--fs-label);font-weight:600}
+.checkout__cardno{font-family:var(--font-mono);font-size:1.125rem;font-weight:500;direction:ltr;unicode-bidi:isolate;letter-spacing:0.06em;text-align:start}
+.checkout__meta{display:flex;gap:var(--sp-6);flex-wrap:wrap}
+.checkout__amount{font-family:var(--font-mono);font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;letter-spacing:-0.02em}
+.checkout__unit{font-size:0.875rem;font-weight:500}
+.otp{display:flex;gap:var(--sp-2);justify-content:center;direction:ltr}
+.otp input{
+  inline-size:44px;block-size:52px;text-align:center;font-family:var(--font-mono);font-size:1.25rem;
+  background:rgb(var(--surface-2));color:rgb(var(--text));border:1px solid rgb(var(--border));border-radius:var(--r-control);
+}
+.otp input:focus{border-color:rgb(var(--focus));outline:none;box-shadow:0 0 0 2px rgb(var(--focus) / 0.25)}
+.done{display:grid;justify-items:center;text-align:center;gap:var(--sp-3);padding:var(--sp-4) 0}
+.done__mark{
+  inline-size:52px;block-size:52px;border-radius:var(--r-pill);display:grid;place-items:center;
+  background:rgb(var(--success) / 0.15);color:rgb(var(--success));border:1px solid rgb(var(--success) / 0.4);
+}
+.done__mark .ic{inline-size:26px;block-size:26px;stroke-width:2}
+.done__ref{font-family:var(--font-mono);font-size:var(--fs-label);color:rgb(var(--text-2));direction:ltr;unicode-bidi:isolate}
+.done__grid{display:grid;gap:var(--sp-3);inline-size:100%;margin-block-start:var(--sp-2)}
+
+/* ---------- inline banner ---------- */
+.banner{display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px solid rgb(var(--border));border-radius:var(--r-card);background:rgb(var(--surface-1));font-size:var(--fs-label)}
+.banner--danger{border-color:rgb(var(--danger) / 0.4);background:rgb(var(--danger) / 0.08);color:rgb(var(--danger))}
+.banner .ic{inline-size:16px;block-size:16px;margin-block-start:2px}
+
+/* ---------- responsive: reorganise, never scale ---------- */
+@media (max-width:1024px){
+  .phead{flex-direction:column;align-items:stretch}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:768px){
+  .wrap{padding:var(--sp-4)}
+  .topbar{padding:var(--sp-2) var(--sp-4)}
+  .console-nav{padding:0 var(--sp-4)}
+  .filters{align-items:stretch}
+  .field--grow,.field--w{flex:1 1 100%}
+  .filters .btn{flex:1 1 100%}
+  .tablewrap{max-block-size:none}
+  .ribbon{flex-wrap:wrap}
+}
+@media (max-width:390px){
+  .stats{grid-template-columns:1fr}
+  .card__body{padding:var(--sp-3)}
+  .stat{padding:var(--sp-3)}
+  .checkout__meta{gap:var(--sp-4)}
+}

@@ -12,6 +12,7 @@ import {
 import { formatDate } from "../../../../lib/format";
 import { RetryButton } from "../../../../components/RetryButton";
 import { ScenarioRibbon } from "../../../../components/ScenarioRibbon";
+import { StatusBadge, badgeClass } from "../../../../components/StatusBadge";
 import { WebhookPingButton } from "../../../../components/WebhookPingButton";
 
 // Delivery rows are live engine state; a prerendered page would show an empty log forever.
@@ -80,41 +81,38 @@ export default async function WebhooksPage({
   const retryMax = project?.webhook_retry_max ?? 3;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="min-w-0">
-          <h1 className="font-display text-2xl font-semibold tracking-tight flex items-center gap-3 flex-wrap">
+    <>
+      <div className="phead">
+        <div className="phead__text">
+          <h1 className="row-flex">
             <span>{t("title")}</span>
             {/* The engine POSTs from inside this compose network — every target the
                 dashboard records is a loopback address, never a real merchant URL. */}
-            <span
-              className="version-tag font-mono text-[11px] px-1.5 py-0.5 rounded bg-surface-subtle border border-border text-text whitespace-nowrap"
-              data-testid="webhook-dispatcher-tag"
-            >
+            <span className="badge badge--refunded" data-testid="webhook-dispatcher-tag">
               {t("local_dispatcher")}
             </span>
           </h1>
-          <p className="text-sm text-muted">{t("subtitle")}</p>
+          <p>{t("subtitle")}</p>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-success" aria-hidden="true" />
-              <span className="text-muted">{t("delivered")}</span>
-              <span className="font-mono tabular-nums" data-testid="webhook-delivered-count">
+        <div className="phead__actions">
+          <div className="row-flex small">
+            <span className="health health--healthy">
+              <i className="health__dot" aria-hidden="true" />
+              <span>{t("delivered")}</span>
+              <span className="mono" data-testid="webhook-delivered-count">
                 {delivered}
               </span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-danger" aria-hidden="true" />
-              <span className="text-muted">{t("failed")}</span>
-              <span className="font-mono tabular-nums" data-testid="webhook-failed-count">
+            <span className="health health--degraded">
+              <i className="health__dot" aria-hidden="true" />
+              <span>{t("failed")}</span>
+              <span className="mono" data-testid="webhook-failed-count">
                 {failed}
               </span>
             </span>
-            <span className="text-muted">
-              <span className="font-mono tabular-nums" data-testid="webhook-total-count">
+            <span className="muted">
+              <span className="mono" data-testid="webhook-total-count">
                 {deliveriesData.total}
               </span>{" "}
               {t("total_deliveries")}
@@ -127,24 +125,31 @@ export default async function WebhooksPage({
       </div>
 
       {errorMsg && (
-        <div className="p-4 bg-danger-bg border border-danger-border text-danger-ink rounded-console text-sm">
-          {errorMsg}
+        <div className="banner banner--danger mb-4" role="alert">
+          <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+            <path d="M12 9v4M12 17h.01" />
+          </svg>
+          <span>{errorMsg}</span>
         </div>
       )}
 
       {project && (
-        <div className="space-y-3">
-          <div className="panel bg-surface border border-border rounded-console p-5 space-y-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="min-w-0">
-                <h2 className="font-semibold text-sm">{t("endpoint_title")}</h2>
-                <p
-                  className="text-xs text-muted font-mono truncate"
+        <div className="stack-md mb-4">
+          <div className="card">
+            <div className="card__head">
+              <h2 className="card__title">{t("endpoint_title")}</h2>
+            </div>
+            <div className="card__body">
+              <div className="field">
+                <span className="field__label">{t("target_url")}</span>
+                <code
+                  className="input mono truncate flex items-center"
                   dir="ltr"
                   data-testid="webhook-target-url"
                 >
                   {project.webhook_url || "—"}
-                </p>
+                </code>
               </div>
             </div>
           </div>
@@ -152,127 +157,142 @@ export default async function WebhooksPage({
         </div>
       )}
 
-      <div className="panel bg-surface border border-border rounded-console overflow-hidden">
-        <div className="panel-header px-5 py-4 border-b border-border flex items-center justify-between gap-4 flex-wrap">
-          <div className="panel-title font-display text-[17px] font-semibold tracking-display">{t("title")}</div>
+      <div className="card mb-4">
+        <div className="card__head">
+          <h2 className="card__title">{t("title")}</h2>
         </div>
-        <div className="table-container overflow-x-auto">
-        <table className="data-table w-full border-collapse text-start text-[13px]" data-testid="deliveries-table">
-          <thead>
-            <tr>
-              <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">{t("event")}</th>
-              <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">{t("target_url")}</th>
-              <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">{t("gateway")}</th>
-              <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">{t("status_col")}</th>
-              <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">{t("attempt")}</th>
-              <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">{t("time")}</th>
-              <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {deliveriesData.items.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-muted text-sm">
-                  {t("empty")}
-                </td>
-              </tr>
-            ) : (
-              deliveriesData.items.map((del: any) => (
-                <tr key={del.id} className="hover:bg-surface-subtle transition-colors" data-testid="delivery-row">
-                  <td className="py-3 px-4 font-mono text-xs text-text whitespace-nowrap" dir="ltr">
-                    <span data-testid="delivery-event">{EVENT_STAGE[del.stage] ?? del.stage}</span>
-                    {del.error && (
-                      <span className="block font-sans text-[11px] text-danger-ink">{del.error}</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 font-mono text-xs max-w-[200px] truncate" dir="ltr" data-testid="delivery-target">
-                    {del.target_url}
-                  </td>
-                  <td className="py-3 px-4 text-xs" data-testid="delivery-gateway">
-                    {gatewayByTx.get(del.transaction_id) ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 align-middle" data-testid="delivery-result">
-                    {del.response_status ? (
-                      <span
-                        className={`status-badge inline-block px-2 py-[3px] rounded-sm text-xs font-medium border font-mono ${
-                          del.response_status >= 200 && del.response_status < 300
-                            ? "text-success-ink bg-success-bg border-success-border"
-                            : "text-danger-ink bg-danger-bg border-danger-border"
-                        }`}
-                        dir="ltr"
-                      >
-                        {del.response_status}
-                      </span>
-                    ) : (
-                      <span
-                        className="status-badge inline-block px-2 py-[3px] rounded-sm text-xs font-medium border text-warning-ink bg-warning-bg border-warning-border"
-                        data-testid="delivery-status"
-                      >
-                        {del.result}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-xs font-mono whitespace-nowrap" data-testid="delivery-attempt">
-                    {del.attempt}/{retryMax}
-                  </td>
-                  <td className="py-3 px-4 text-xs text-muted whitespace-nowrap">
-                    {formatDate(del.created_at, locale)}
-                  </td>
-                  <td className="py-3 px-4 text-end">
-                    <div className="flex items-center justify-end gap-2">
-                      <RetryButton deliveryId={del.id} />
-                    </div>
-                  </td>
+        <div className="card__body">
+          <div className="tablewrap">
+            <table className="table" data-testid="deliveries-table">
+              <caption className="sr-only">{t("title")}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t("event")}</th>
+                  <th scope="col">{t("target_url")}</th>
+                  <th scope="col">{t("gateway")}</th>
+                  <th scope="col">{t("status_col")}</th>
+                  <th scope="col">{t("attempt")}</th>
+                  <th scope="col">{t("time")}</th>
+                  <th scope="col">
+                    <span className="sr-only">{t("actions")}</span>
+                  </th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {deliveriesData.items.length === 0 ? (
+                  <tr>
+                    <td colSpan={7}>
+                      <div className="empty">
+                        <p>{t("empty")}</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  deliveriesData.items.map((del: any) => (
+                    <tr key={del.id} data-testid="delivery-row">
+                      <td>
+                        <span className="t-id" dir="ltr" data-testid="delivery-event">
+                          {EVENT_STAGE[del.stage] ?? del.stage}
+                        </span>
+                        {del.error && (
+                          <span className="small block">{del.error}</span>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className="t-ref truncate max-w-[200px]"
+                          dir="ltr"
+                          data-testid="delivery-target"
+                        >
+                          {del.target_url}
+                        </span>
+                      </td>
+                      <td data-testid="delivery-gateway">
+                        {gatewayByTx.get(del.transaction_id) ?? "—"}
+                      </td>
+                      <td data-testid="delivery-result">
+                        {del.response_status ? (
+                          <span
+                            className={`${badgeClass(
+                              del.response_status >= 200 && del.response_status < 300
+                                ? "delivered"
+                                : "failed"
+                            )} mono`}
+                            dir="ltr"
+                          >
+                            {del.response_status}
+                          </span>
+                        ) : (
+                          <StatusBadge status={del.result} data-testid="delivery-status">
+                            {del.result}
+                          </StatusBadge>
+                        )}
+                      </td>
+                      <td className="mono small" data-testid="delivery-attempt">
+                        {del.attempt}/{retryMax}
+                      </td>
+                      <td className="t-time">{formatDate(del.created_at, locale)}</td>
+                      <td className="text-end">
+                        <div className="row-flex justify-end">
+                          <RetryButton deliveryId={del.id} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {deliveriesData.items.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="font-display text-[17px] font-semibold tracking-display">{t("payloads_title")}</h2>
-          <div className="space-y-3">
+        <>
+          <h2 className="card__title mb-3">{t("payloads_title")}</h2>
+          <div className="stack-md">
             {deliveriesData.items.map((del: any) => (
-              <details
-                key={del.id}
-                className="bg-surface border border-border rounded-lg p-3 text-xs font-mono"
-                data-testid="delivery-details"
-              >
-                <summary className="cursor-pointer text-muted hover:text-text font-semibold flex items-center justify-between">
-                  <span dir="ltr" style={{ textAlign: "start" }}>
-                    Attempt #{del.attempt} to {del.target_url} ({del.stage})
-                  </span>
-                  <span
-                    className={
-                      del.result === "delivered" ? "text-success-ink" : "text-danger-ink"
-                    }
-                  >
-                    {del.result}
+              <details className="card" key={del.id} data-testid="delivery-details">
+                <summary className="cursor-pointer">
+                  <span className="card__head">
+                    <span className="mono small flex-1 min-w-0 truncate" dir="ltr">
+                      Attempt #{del.attempt} to {del.target_url} ({del.stage})
+                    </span>
+                    <StatusBadge status={del.result}>{del.result}</StatusBadge>
                   </span>
                 </summary>
-                <div className="mt-3 pt-3 border-t border-border space-y-2">
+                <div className="card__body stack-sm">
                   {del.error && (
-                    <div className="text-danger-ink bg-danger-bg p-2 rounded">
-                      {t("error")}: {del.error}
+                    <div className="banner banner--danger">
+                      <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v4M12 16h.01" />
+                      </svg>
+                      <span>
+                        {t("error")}: {del.error}
+                      </span>
                     </div>
                   )}
-                  <div>
-                    <div className="text-muted mb-1 text-[11px] uppercase tracking-wider">
-                      {t("payload")}
+                  <div className="field">
+                    <span className="field__label">{t("payload")}</span>
+                    <div className="term">
+                      <div className="term__bar">
+                        <span className="term__dots" aria-hidden="true">
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      </div>
+                      <div className="term__body max-h-[250px] overflow-y-auto">
+                        <pre dir="ltr">{JSON.stringify(del.payload, null, 2)}</pre>
+                      </div>
                     </div>
-                    <pre className="bg-surface-2 p-2.5 rounded overflow-auto max-h-[250px]" dir="ltr">
-                      {JSON.stringify(del.payload, null, 2)}
-                    </pre>
                   </div>
                 </div>
               </details>
             ))}
           </div>
-        </div>
+        </>
       )}
-    </div>
+    </>
   );
 }

@@ -1,0 +1,377 @@
+/* ============================================================
+   Shared component layer — ported from the design export's ui.css.
+   Every colour, size and duration routes through tokens.css.
+
+   Trimmed on the way in:
+     - the export's @layer od-layout primitives (.od-stack/.od-row/
+       .od-grid/...). Tailwind already covers flex, grid and gap.
+     - every @font-face. theme.css owns the app's variable Vazirmatn
+       and the JetBrains Mono files; the export's per-weight static
+       Vazirmatn files are not shipped.
+     - .sk / .sk-row (loading skeletons) — no page renders a skeleton.
+     - .drawer's transform/transition/direction rules. See the note
+       on .drawer below.
+   ============================================================ */
+
+/* ---------- BASE ---------- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-fa);font-size:var(--fs-body-console);line-height:var(--lh-console);
+  background:rgb(var(--canvas));color:rgb(var(--text));
+  -webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;
+}
+:lang(fa),[lang="fa"]{line-height:var(--lh-fa);letter-spacing:0}
+:lang(en),[lang="en"]{line-height:var(--lh-latin)}
+:focus-visible{outline:2px solid rgb(var(--focus));outline-offset:2px;border-radius:var(--r-control)}
+::selection{background:rgb(var(--accent) / 0.28)}
+.ltr{direction:ltr;unicode-bidi:isolate;text-align:start}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.muted{color:rgb(var(--text-2))}
+.small{font-size:var(--fs-row)}
+.sr-only{position:absolute;inline-size:1px;block-size:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.row-flex{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap}
+.stack-sm{display:grid;gap:var(--sp-3)}
+.stack-md{display:grid;gap:var(--sp-4)}
+.stack-lg{display:grid;gap:var(--sp-6)}
+.mt2{margin-block-start:var(--sp-2)}
+.mt4{margin-block-start:var(--sp-4)}
+.divider{block-size:1px;background:rgb(var(--border));border:0}
+[hidden]{display:none !important}
+
+/* ---------- ICON: one stroked family, 1.5px, no fills ---------- */
+svg{flex:none}
+.ic{stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- BUTTON ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);
+  min-height:var(--touch);padding:0 var(--sp-4);cursor:pointer;
+  font-family:inherit;font-size:var(--fs-label);font-weight:500;
+  border-radius:var(--r-control);border:1px solid transparent;
+  white-space:nowrap;text-decoration:none;
+  transition:background var(--dur-state) var(--ease),border-color var(--dur-state) var(--ease),color var(--dur-state) var(--ease);
+}
+.btn .ic{inline-size:16px;block-size:16px}
+.btn:disabled{opacity:0.45;cursor:not-allowed}
+.btn--primary{background:rgb(var(--accent));color:rgb(var(--accent-ink))}
+.btn--primary:hover:not(:disabled){background:rgb(var(--accent-hover))}
+.btn--secondary{background:rgb(var(--surface-2));color:rgb(var(--text));border-color:rgb(var(--border))}
+.btn--secondary:hover:not(:disabled){background:rgb(var(--surface-3));border-color:rgb(var(--border-strong))}
+.btn--ghost{background:transparent;color:rgb(var(--text-2));border-color:rgb(var(--border))}
+.btn--ghost:hover:not(:disabled){background:rgb(var(--surface-2));color:rgb(var(--text))}
+.btn--danger{background:transparent;color:rgb(var(--danger));border-color:rgb(var(--danger) / 0.45)}
+.btn--danger:hover:not(:disabled){background:rgb(var(--danger) / 0.12);border-color:rgb(var(--danger))}
+.btn--sm{min-height:32px;padding:0 var(--sp-3);font-size:var(--fs-row)}
+.btn--block{inline-size:100%}
+.iconbtn{
+  inline-size:var(--touch);block-size:var(--touch);flex:none;cursor:pointer;
+  display:grid;place-items:center;background:transparent;border:1px solid transparent;
+  border-radius:var(--r-control);color:rgb(var(--text-2));
+  transition:background var(--dur-state) var(--ease),color var(--dur-state) var(--ease);
+}
+.iconbtn .ic{inline-size:18px;block-size:18px}
+.iconbtn:hover{background:rgb(var(--surface-2));color:rgb(var(--text))}
+.iconbtn[aria-pressed="true"]{color:rgb(var(--accent));border-color:rgb(var(--accent) / 0.4);background:rgb(var(--accent) / 0.1)}
+.copy{
+  display:inline-flex;align-items:center;gap:var(--sp-2);cursor:pointer;
+  min-height:32px;padding:0 var(--sp-3);
+  background:rgb(var(--surface-2));color:rgb(var(--text-2));
+  border:1px solid rgb(var(--border));border-radius:var(--r-control);
+  font-family:inherit;font-size:var(--fs-row);
+  transition:background var(--dur-state) var(--ease),color var(--dur-state) var(--ease),border-color var(--dur-state) var(--ease);
+}
+.copy:hover{background:rgb(var(--surface-3));color:rgb(var(--text))}
+.copy .ic{inline-size:14px;block-size:14px}
+.copy[data-copied="true"]{color:rgb(var(--success));border-color:rgb(var(--success) / 0.5)}
+
+/* ---------- FORM ---------- */
+.field{display:grid;gap:var(--sp-1);min-width:0}
+.field__label{font-size:var(--fs-row);color:rgb(var(--text-2));font-weight:500}
+.field__hint{font-size:var(--fs-row);color:rgb(var(--text-2))}
+.field__req{color:rgb(var(--danger))}
+.input,.select{
+  min-height:var(--touch);padding:0 var(--sp-3);inline-size:100%;
+  background:rgb(var(--surface-2));color:rgb(var(--text));
+  border:1px solid rgb(var(--border));border-radius:var(--r-control);
+  font-family:inherit;font-size:var(--fs-label);
+}
+.input::placeholder{color:rgb(var(--text-3))}
+.input:focus,.select:focus{border-color:rgb(var(--focus));outline:none;box-shadow:0 0 0 2px rgb(var(--focus) / 0.25)}
+.select{
+  cursor:pointer;appearance:none;padding-inline-end:var(--sp-8);
+  background-image:linear-gradient(45deg,transparent 50%,rgb(var(--text-2)) 50%),linear-gradient(135deg,rgb(var(--text-2)) 50%,transparent 50%);
+  background-position:calc(100% - 16px) center,calc(100% - 11px) center;
+  background-size:5px 5px;background-repeat:no-repeat;
+}
+html[dir="ltr"] .select{background-position:16px center,11px center}
+.field--grow{flex:1 1 220px}
+.field--w{flex:0 0 168px}
+.field--err .input,.field--err .select,.field--err .term{border-color:rgb(var(--danger))}
+.field__err{font-size:var(--fs-row);color:rgb(var(--danger));display:flex;align-items:flex-start;gap:var(--sp-1)}
+.field__err .ic{inline-size:13px;block-size:13px;margin-block-start:3px}
+.formrow{display:grid;gap:var(--sp-4)}
+@media (min-width:768px){.formrow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.seg{display:inline-flex;padding:2px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-control);gap:2px}
+.seg button{
+  cursor:pointer;min-height:30px;padding:0 var(--sp-3);
+  background:transparent;border:0;border-radius:4px;
+  color:rgb(var(--text-2));font-family:inherit;font-size:var(--fs-row);
+  transition:background var(--dur-state) var(--ease),color var(--dur-state) var(--ease);
+}
+.seg button[aria-pressed="true"]{background:rgb(var(--surface-3));color:rgb(var(--text));font-weight:500}
+.chips{display:flex;gap:var(--sp-2);overflow-x:auto;scrollbar-width:none;padding-block-end:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;cursor:pointer;min-height:32px;padding:0 var(--sp-3);
+  display:inline-flex;align-items:center;gap:var(--sp-2);
+  background:rgb(var(--surface-2));color:rgb(var(--text-2));
+  border:1px solid rgb(var(--border));border-radius:var(--r-pill);
+  font-family:inherit;font-size:var(--fs-row);white-space:nowrap;
+  transition:background var(--dur-state) var(--ease),color var(--dur-state) var(--ease),border-color var(--dur-state) var(--ease);
+}
+.chip:hover{color:rgb(var(--text));border-color:rgb(var(--border-strong))}
+.chip[aria-pressed="true"]{background:rgb(var(--accent) / 0.14);color:rgb(var(--accent));border-color:rgb(var(--accent) / 0.5)}
+.chip__n{font-variant-numeric:tabular-nums;color:rgb(var(--text-2))}
+.chip[aria-pressed="true"] .chip__n{color:rgb(var(--accent))}
+
+/* ---------- CARD + KV ---------- */
+.card{background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card)}
+.card__head{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-4);border-block-end:1px solid rgb(var(--border))}
+.card__title{font-size:var(--fs-h3);font-weight:600;flex:1 1 0;min-width:0}
+.card__body{padding:var(--sp-4)}
+.kv{display:grid;gap:0}
+.kv__row{display:flex;align-items:flex-start;gap:var(--sp-4);padding-block:var(--sp-3);border-block-end:1px solid rgb(var(--border) / 0.7)}
+.kv__row:last-child{border-block-end:0}
+.kv__label{font-size:var(--fs-label);font-weight:500;flex:1 1 0;min-width:0}
+.kv__label small{display:block;font-weight:400;color:rgb(var(--text-2));font-size:var(--fs-row);margin-block-start:2px}
+.kv__val{font-size:var(--fs-label);flex:none;text-align:end;max-inline-size:50%}
+.kv__val.mono{direction:ltr;unicode-bidi:isolate;color:rgb(var(--text-2))}
+
+/* ---------- TABLE: the hero ---------- */
+.tablewrap{background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);overflow:auto;max-block-size:560px}
+.table{inline-size:100%;border-collapse:separate;border-spacing:0;font-size:var(--fs-row)}
+.table thead th{
+  position:sticky;inset-block-start:0;z-index:2;background:rgb(var(--surface-2));
+  font-size:var(--fs-micro);font-weight:600;letter-spacing:var(--tr-micro);text-transform:uppercase;
+  color:rgb(var(--text-2));text-align:start;white-space:nowrap;
+  padding:var(--sp-2) var(--sp-3);border-block-end:1px solid rgb(var(--border));
+}
+.table tbody td{padding:var(--sp-2) var(--sp-3);block-size:var(--row-h);vertical-align:middle;white-space:nowrap;border-block-end:1px solid rgb(var(--border) / 0.7)}
+.table tbody tr:last-child td{border-block-end:0}
+/* The export makes a whole row clickable to open its drawer, and sets
+ * cursor:pointer to say so. This app opens the drawer from an explicit Inspect
+ * link instead, so the pointer cursor is dropped — it would promise a click
+ * target the row does not have. The hover fill stays; it reads as row focus. */
+.table tbody tr{transition:background var(--dur-state) var(--ease)}
+.table tbody tr:hover{background:rgb(var(--surface-2))}
+.table tbody tr[aria-selected="true"]{background:rgb(var(--accent) / 0.1)}
+.table__sort{cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:var(--sp-1)}
+.table__sort .ic{inline-size:11px;block-size:11px;stroke-width:1.8}
+.table__sort[data-active="true"]{color:rgb(var(--accent))}
+.t-id{font-family:var(--font-mono);font-size:var(--fs-row-dense);color:rgb(var(--text-2));direction:ltr;unicode-bidi:isolate}
+.t-amount{font-family:var(--font-mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;font-weight:500}
+.t-ref{font-family:var(--font-mono);font-size:var(--fs-row-dense);color:rgb(var(--text-2));direction:ltr;unicode-bidi:isolate;max-inline-size:150px}
+.t-time{font-family:var(--font-mono);font-size:var(--fs-row-dense);color:rgb(var(--text-2));direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+
+/* ---------- BADGE: shape differs per state, never colour alone ---------- */
+.badge{
+  display:inline-flex;align-items:center;gap:var(--sp-1);
+  padding:2px var(--sp-2);font-size:var(--fs-micro);font-weight:600;letter-spacing:0.02em;
+  white-space:nowrap;line-height:1.6;border:1px solid transparent;border-radius:var(--r-control);
+}
+.badge .ic{inline-size:11px;block-size:11px;stroke-width:2}
+.badge--settled,.badge--pending{border-radius:var(--r-pill)}
+.badge--settled{background:rgb(var(--success) / 0.14);color:rgb(var(--success));border-color:rgb(var(--success) / 0.35)}
+.badge--pending{background:rgb(var(--warning) / 0.14);color:rgb(var(--warning));border-color:rgb(var(--warning) / 0.35)}
+.badge--declined{background:rgb(var(--danger) / 0.14);color:rgb(var(--danger));border-color:rgb(var(--danger) / 0.35)}
+.badge--expired{background:rgb(var(--info) / 0.14);color:rgb(var(--info));border-color:rgb(var(--info) / 0.35)}
+.badge--failed{background:rgb(var(--surface-2));color:rgb(var(--text-2));border-color:rgb(var(--border));border-style:dashed}
+.badge--refunded{background:transparent;color:rgb(var(--text-2));border-color:rgb(var(--border-strong));border-radius:var(--r-control)}
+.badge--accent{background:rgb(var(--accent) / 0.14);color:rgb(var(--accent));border-color:rgb(var(--accent) / 0.4)}
+/* App extension: the marketing badges carry a dot instead of the export's icon. */
+.badge__dot{inline-size:6px;block-size:6px;border-radius:var(--r-pill);background:currentColor;flex:none}
+
+/* ---------- HEALTH: pulses only while a test is in flight ---------- */
+.health{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-row)}
+.health__dot{inline-size:8px;block-size:8px;border-radius:var(--r-pill);flex:none;background:rgb(var(--text-3))}
+.health--healthy{color:rgb(var(--success))}
+.health--healthy .health__dot{background:rgb(var(--success))}
+.health--degraded{color:rgb(var(--warning))}
+.health--degraded .health__dot{background:rgb(var(--warning))}
+.health--idle{color:rgb(var(--text-2))}
+.health--disabled{color:rgb(var(--text-3))}
+.health--disabled .health__dot{background:rgb(var(--border-strong))}
+.health--testing{color:rgb(var(--accent))}
+.health--testing .health__dot{background:rgb(var(--accent));animation:ipg-pulse 1.2s var(--ease) infinite}
+@keyframes ipg-pulse{
+  0%{box-shadow:0 0 0 0 rgb(var(--accent) / 0.55)}
+  70%{box-shadow:0 0 0 7px rgb(var(--accent) / 0)}
+  100%{box-shadow:0 0 0 0 rgb(var(--accent) / 0)}
+}
+
+/* ---------- STEPPER: failed paths branch visibly ---------- */
+.stepper{display:grid;margin-block:var(--sp-2)}
+.step{display:grid;grid-template-columns:22px minmax(0,1fr);gap:var(--sp-3);padding-block-end:var(--sp-4)}
+.step:last-child{padding-block-end:0}
+.step__rail{position:relative;display:grid;justify-items:center}
+.step__node{
+  inline-size:20px;block-size:20px;border-radius:var(--r-pill);z-index:1;
+  display:grid;place-items:center;background:rgb(var(--surface-2));color:rgb(var(--text-2));
+  border:1px solid rgb(var(--border));
+}
+.step__node .ic{inline-size:11px;block-size:11px;stroke-width:2}
+.step:not(:last-child) .step__rail::after{
+  content:"";position:absolute;inset-block-start:22px;inset-block-end:calc(-1 * var(--sp-4));inline-size:1px;background:rgb(var(--border));
+}
+.step__body{display:grid;gap:var(--sp-1)}
+.step__title{font-size:var(--fs-label);font-weight:500}
+.step__time{font-family:var(--font-mono);font-size:var(--fs-row-dense);color:rgb(var(--text-2));direction:ltr;unicode-bidi:isolate;text-align:start}
+.step__note{font-size:var(--fs-row);color:rgb(var(--text-2))}
+.step--done .step__node{background:rgb(var(--success) / 0.18);color:rgb(var(--success));border-color:rgb(var(--success) / 0.5)}
+.step--done .step__rail::after{background:rgb(var(--success) / 0.4)}
+.step--live .step__node{background:rgb(var(--accent));color:rgb(var(--accent-ink));border-color:rgb(var(--accent))}
+.step--fail .step__node{background:rgb(var(--danger) / 0.18);color:rgb(var(--danger));border-color:rgb(var(--danger) / 0.5)}
+.step--fail .step__rail::after{background:rgb(var(--danger) / 0.4)}
+.step--fail .step__title{color:rgb(var(--danger))}
+
+/* ---------- TERMINAL / JSON: a code surface, dark in every theme ---------- */
+.term{background:rgb(var(--term-bg));border:1px solid rgb(var(--border));border-radius:var(--r-card);overflow:hidden}
+.term__bar{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);background:rgb(var(--term-bar));border-block-end:1px solid rgb(var(--border))}
+.term__file{font-family:var(--font-mono);font-size:var(--fs-micro);color:rgb(var(--text-2));direction:ltr;unicode-bidi:isolate;flex:1 1 0;min-width:0}
+.term__dots{display:flex;gap:4px;flex:none}
+.term__dots i{inline-size:7px;block-size:7px;border-radius:var(--r-pill);background:rgb(var(--text-3));display:block}
+.term__body{padding:var(--sp-3);overflow-x:auto}
+.term pre{margin:0;font-family:var(--font-mono);font-size:var(--fs-row-dense);line-height:1.7;direction:ltr;text-align:start;white-space:pre;color:rgb(var(--syn-plain))}
+.term textarea{
+  inline-size:100%;background:transparent;border:0;color:rgb(var(--syn-plain));
+  font-family:var(--font-mono);font-size:var(--fs-row-dense);line-height:1.7;resize:vertical;outline:none;
+}
+.t-key{color:rgb(var(--syn-key))}
+.t-str{color:rgb(var(--syn-str))}
+.t-num{color:rgb(var(--syn-num))}
+.t-flag{color:rgb(var(--syn-flag));font-weight:500}
+.t-punct{color:rgb(var(--syn-punct))}
+.t-cmd{color:rgb(var(--text));font-weight:700}
+.t-comment{color:rgb(var(--text-3))}
+
+/* ---------- MODAL / DRAWER ---------- */
+.scrim{
+  position:fixed;inset:0;z-index:50;background:rgb(var(--scrim) / 0.66);
+  opacity:0;visibility:hidden;
+  transition:opacity var(--dur-panel) var(--ease),visibility 0s linear var(--dur-panel);
+}
+.scrim[data-open="true"]{opacity:1;visibility:visible;transition:opacity var(--dur-panel) var(--ease)}
+/* The static .scrim and .modal__* slots are in use, but NOT .modal itself:
+ * it centres via `transform: translate(-50%,-50%)`, and a `forwards`-filled
+ * animation outranks a normal declaration — so the app's `.animate-modal`
+ * keyframe (which ends at `translateY(0)`) would clobber the centring and drop
+ * the panel off-centre. SimulateModal therefore renders `.card` + `.card__head`
+ * inside a static `.scrim`. Using `.modal` means giving up the entrance
+ * animation, or moving the centring onto a wrapper. */
+.modal{
+  position:fixed;inset-block-start:50%;inset-inline-start:50%;z-index:70;
+  transform:translate(-50%,-50%);inline-size:min(var(--modal-w,520px),calc(100vw - 32px));
+  max-block-size:calc(100vh - 48px);
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));
+  border-radius:var(--r-modal);box-shadow:var(--overlay-shadow);
+  opacity:0;visibility:hidden;
+  transition:opacity var(--dur-panel) var(--ease),transform var(--dur-panel) var(--ease),visibility 0s linear var(--dur-panel);
+}
+.modal[data-open="true"]{opacity:1;visibility:visible;transform:translate(-50%,-50%);transition:opacity var(--dur-panel) var(--ease),transform var(--dur-panel) var(--ease)}
+/* The export drives .drawer with a data-open transform toggle. This app's
+ * drawer MOUNTS on demand (?tx=<id>) and animates in via the `animate-drawer`
+ * keyframe in theme.css, so a data-open transition would never fire — and the
+ * export's --slide direction is wrong for a drawer anchored on the inline-end
+ * edge under dir="rtl". Transform, transition and the direction override are
+ * therefore dropped here; the entrance animation stays in theme.css. */
+.drawer{
+  position:fixed;inset-block:0;inset-inline-end:0;z-index:60;
+  inline-size:min(620px,100vw);display:grid;grid-template-rows:auto minmax(0,1fr);
+  background:rgb(var(--surface-1));border-inline-start:1px solid rgb(var(--border));
+  box-shadow:var(--drawer-shadow);
+}
+.modal__head,.drawer__head{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-4);border-block-end:1px solid rgb(var(--border))}
+.modal__title,.drawer__title{font-size:var(--fs-h3);font-weight:600;flex:1 1 0;min-width:0}
+.modal__body{padding:var(--sp-4);overflow-y:auto;overscroll-behavior:contain;display:grid;gap:var(--sp-4);align-content:start}
+.drawer__body{padding:var(--sp-4);overflow-y:auto;overscroll-behavior:contain;display:grid;gap:var(--sp-5);align-content:start}
+.modal__foot{display:flex;gap:var(--sp-2);justify-content:flex-end;padding:var(--sp-4);border-block-start:1px solid rgb(var(--border))}
+@media (max-width:768px){
+  .modal{
+    inset-block-start:auto;inset-block-end:0;inset-inline:0;
+    transform:translateY(100%);inline-size:auto;max-block-size:92vh;
+    border-radius:var(--r-modal) var(--r-modal) 0 0;
+  }
+  .modal[data-open="true"]{transform:translateY(0)}
+}
+@media (max-width:390px){.modal__foot{flex-direction:column-reverse}.modal__foot .btn{inline-size:100%}}
+
+/* ---------- TOAST ---------- */
+.toasts{position:fixed;inset-block-end:var(--sp-4);inset-inline-start:var(--sp-4);z-index:90;display:grid;gap:var(--sp-2);justify-items:start;max-inline-size:min(380px,calc(100vw - 32px))}
+.toast{
+  display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);
+  background:rgb(var(--surface-2));border:1px solid rgb(var(--border-strong));
+  border-radius:var(--r-card);box-shadow:var(--overlay-shadow);font-size:var(--fs-label);
+  opacity:0;transform:translateY(8px);
+  transition:opacity var(--dur-state) var(--ease),transform var(--dur-state) var(--ease);
+}
+.toast[data-show="true"]{opacity:1;transform:translateY(0)}
+.toast .ic{inline-size:16px;block-size:16px;margin-block-start:2px}
+.toast--success{color:rgb(var(--success));border-color:rgb(var(--success) / 0.4)}
+.toast--danger{color:rgb(var(--danger));border-color:rgb(var(--danger) / 0.4)}
+.toast--info{color:rgb(var(--accent));border-color:rgb(var(--accent) / 0.4)}
+/* App extension: the export only defines success/danger/info, but the dashboard
+ * raises "warning" toasts too (see Toast.tsx). Same shape, warning hue. */
+.toast--warning{color:rgb(var(--warning));border-color:rgb(var(--warning) / 0.4)}
+.toast__text{color:rgb(var(--text))}
+.toast__text small{display:block;color:rgb(var(--text-2));font-size:var(--fs-row)}
+@media (max-width:768px){.toasts{inset-inline:var(--sp-3);inset-block-end:var(--sp-3);justify-items:stretch;max-inline-size:none}}
+
+/* ---------- TABS ---------- */
+.tabs{display:flex;gap:var(--sp-1);border-block-end:1px solid rgb(var(--border));overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:none;cursor:pointer;min-height:var(--touch);padding:0 var(--sp-3);
+  background:none;border:0;border-block-end:2px solid transparent;
+  color:rgb(var(--text-2));font-family:inherit;font-size:var(--fs-label);white-space:nowrap;
+  transition:color var(--dur-state) var(--ease),border-color var(--dur-state) var(--ease);
+}
+.tab:hover{color:rgb(var(--text))}
+.tab[aria-selected="true"]{color:rgb(var(--text));border-block-end-color:rgb(var(--accent));font-weight:500}
+
+/* ---------- EMPTY / PERMISSION-GATED ---------- */
+.empty{display:grid;justify-items:center;text-align:center;gap:var(--sp-3);padding:var(--sp-12) var(--sp-6)}
+.empty .ic{inline-size:32px;block-size:32px;stroke:rgb(var(--text-3));stroke-width:1.3}
+.empty h3{font-size:var(--fs-h3);font-weight:600}
+.empty p{color:rgb(var(--text-2));font-size:var(--fs-label);max-inline-size:46ch}
+
+/* ---------- TOOLTIP ---------- */
+.tip{position:relative}
+.tip__body{
+  position:absolute;inset-block-start:calc(100% + 6px);inset-inline-start:50%;transform:translateX(50%);
+  z-index:40;background:rgb(var(--surface-3));color:rgb(var(--text));
+  border:1px solid rgb(var(--border-strong));border-radius:var(--r-control);
+  padding:var(--sp-2) var(--sp-3);inline-size:max-content;max-inline-size:280px;
+  font-size:var(--fs-row);text-align:start;white-space:normal;
+  box-shadow:var(--overlay-shadow);opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity var(--dur-state) var(--ease),visibility 0s linear var(--dur-state);
+}
+.tip__body[data-show="true"]{opacity:1;visibility:visible;transition:opacity var(--dur-state) var(--ease)}
+@media (hover:hover){.tip:hover .tip__body{opacity:1;visibility:visible;transition:opacity var(--dur-state) var(--ease)}}
+@media (hover:none){.info[aria-expanded="true"] ~ .tip__body{opacity:1;visibility:visible}}
+.info{
+  inline-size:var(--touch);block-size:var(--touch);flex:none;cursor:pointer;
+  display:grid;place-items:center;background:none;border:0;color:rgb(var(--text-2));
+  border-radius:var(--r-pill);font-family:inherit;font-size:var(--fs-micro);font-weight:700;
+}
+.info:hover{color:rgb(var(--text))}
+
+/* ---------- REDUCED MOTION ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;scroll-behavior:auto !important;
+  }
+}

@@ -68,18 +68,7 @@ const NOTES: ReadonlyArray<readonly [string, string]> = [
 
 function Check() {
   return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-accent shrink-0 mt-[3px]"
-      aria-hidden="true"
-    >
+    <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -99,65 +88,51 @@ export default async function PricingPage({
         می‌ماند؛ پلن تیمی وقتی لازم شد فعال می‌شود.
       </PageHead>
 
-      <section
-        id="plans"
-        className="w-full max-w-[1180px] mx-auto px-4 md:px-6 grid gap-4 sm:grid-cols-2 items-stretch"
-      >
-        {PLANS.map((plan) => (
-          <article
-            key={plan.id}
-            className={`bg-surface border rounded-lg p-6 md:p-8 flex flex-col gap-4 transition-colors duration-base ease-standard hover:shadow-raised ${
-              plan.primary
-                ? "border-accent shadow-[0_0_0_1px_rgb(var(--accent))]"
-                : "border-border hover:border-accent-border"
-            }`}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-lg font-semibold">{plan.name}</h2>
-              <Badge tone={plan.badgeTone}>{plan.badge}</Badge>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <b className="font-display text-[28px] md:text-[42px] font-semibold">
-                {plan.price}
-              </b>
-              <span className="text-sm text-muted">{plan.period}</span>
-            </div>
-            <p className="text-sm text-muted">{plan.summary}</p>
-            <ul className="grid gap-3 pt-4 border-t border-border list-none">
-              {plan.features.map((f) => (
-                <li
-                  key={f}
-                  className="flex items-start gap-3 text-sm text-text"
-                >
-                  <Check />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            {plan.primary ? (
-              <UpgradeButton locale={locale} label={plan.cta} primary={plan.primary} />
-            ) : (
-              <a
-                href={`/${locale}/login`}
-                className="mt-auto inline-flex items-center justify-center min-h-11 px-4 rounded-sm text-sm font-medium transition-colors duration-fast ease-standard border border-border bg-surface text-text hover:bg-surface-subtle"
-              >
-                {plan.cta}
-              </a>
-            )}
-          </article>
-        ))}
+      <section id="plans" className="wrap-m">
+        <div className="tiers">
+          {PLANS.map((plan) => (
+            <article
+              key={plan.id}
+              className={`tier${plan.primary ? " tier--featured" : ""}`}
+            >
+              <div>
+                <Badge tone={plan.badgeTone}>{plan.badge}</Badge>
+                <h2 className="tier__name mt4">{plan.name}</h2>
+                <div className="tier__price">
+                  <span className="tier__amount">{plan.price}</span>
+                  <span className="tier__per">{plan.period}</span>
+                </div>
+              </div>
+              <p>{plan.summary}</p>
+              <ul className="tier__list">
+                {plan.features.map((f) => (
+                  <li key={f}>
+                    <Check />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              {plan.primary ? (
+                <UpgradeButton locale={locale} label={plan.cta} primary={plan.primary} />
+              ) : (
+                <a href={`/${locale}/login`} className="btn btn--secondary btn--block">
+                  {plan.cta}
+                </a>
+              )}
+            </article>
+          ))}
+        </div>
       </section>
 
-      <section className="w-full max-w-[1180px] mx-auto px-4 md:px-6 py-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {NOTES.map(([title, body]) => (
-          <div
-            key={title}
-            className="bg-surface border border-border rounded-lg p-6 transition-colors duration-base ease-standard hover:border-accent-border hover:shadow-raised"
-          >
-            <h3 className="text-sm font-semibold mb-2">{title}</h3>
-            <p className="text-sm text-muted">{body}</p>
-          </div>
-        ))}
+      <section className="section--tight wrap-m">
+        <div className="cards">
+          {NOTES.map(([title, body]) => (
+            <article key={title} className="card">
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
       </section>
     </MarketingShell>
   );

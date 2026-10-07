@@ -1,0 +1,174 @@
+/* ============================================================
+   Design tokens — ported from the design export's tokens.css.
+   Direction: "instrument panel". Dark-first, cool and dense.
+
+   DARK ONLY. The export ships a matching [data-theme="light"] block;
+   it is deliberately NOT ported — this app renders one theme and
+   nothing reads data-theme. If a light theme is ever wanted, take it
+   from the export rather than inventing it here.
+
+   Every colour is stored as a RAW RGB CHANNEL TRIPLET so alpha
+   composes anywhere:
+       color: rgb(var(--text) / 0.6);
+   Never store a hex value here — a hex cannot be alpha-composed
+   and would break the Tailwind opacity contract in tailwind.config.js.
+
+   Contrast is measured, not guessed. Every ink below clears
+   WCAG AA 4.5:1 for body text against every surface it is used on.
+   --text-3 is 110 118 134 and is DECORATIVE / DISABLED ONLY —
+   never body copy.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /* surfaces — the instrument's chassis */
+  --canvas: 10 12 16;        /* #0A0C10 */
+  --surface-1: 17 20 26;     /* #11141A */
+  --surface-2: 23 27 35;     /* #171B23 */
+  --surface-3: 30 35 45;     /* raised / hover, one step past surface-2 */
+  --border: 35 40 51;        /* #232833 */
+  --border-strong: 52 60 75;
+
+  /* ink */
+  --text: 232 234 240;       /* #E8EAF0  16.27:1 on canvas */
+  --text-2: 155 163 178;     /* #9BA3B2   7.71:1 on canvas */
+  --text-3: 110 118 134;     /* decorative / disabled only, never body copy */
+
+  /* the single accent. Fires ONLY on live state: running scenario,
+     healthy adapter, successful verify, active force. */
+  --accent: 77 141 255;      /* #4D8DFF   6.12:1 on canvas */
+  --accent-hover: 112 165 255;
+  --accent-ink: 8 12 20;     /* ink ON an accent fill */
+
+  /* semantic — state encoding only, never brand decoration */
+  --success: 61 214 140;     /* #3DD68C  10.43:1 */
+  --warning: 245 181 68;     /* #F5B544  10.79:1 */
+  --danger: 255 107 107;     /* #FF6B6B   7.05:1 */
+  --info: 167 139 250;       /* #A78BFA   7.19:1 */
+
+  /* accents stay legible as text but must never be the ONLY cue —
+     every state badge pairs one of these with an icon and a label. */
+
+  /* focus — the one non-semantic colour, visible on every interactive element */
+  --focus: 77 141 255;
+
+  /* backdrop behind drawers and modals */
+  --scrim: 4 6 9;
+
+  /* terminal inset panel — darker than canvas even in dark theme */
+  --term-bg: 6 8 11;
+  --term-bar: 14 17 22;
+
+  /* syntax colours for the curl / JSON blocks */
+  --syn-plain: 155 163 178;
+  --syn-key: 167 139 250;
+  --syn-str: 61 214 140;
+  --syn-num: 245 181 68;
+  --syn-flag: 77 141 255;
+  --syn-punct: 110 118 134;
+
+  /* elevation — ONE step, overlays and drawers only */
+  --overlay-shadow: 0 16px 48px rgb(0 0 0 / 0.55);
+  --drawer-shadow: -24px 0 48px rgb(0 0 0 / 0.45);
+  --card-shadow: none;
+
+  /* blueprint grid wash, marketing only */
+  --grid-line: 255 255 255;
+}
+
+/* ============================================================
+   Typography
+   The export declares Vazirmatn as a family of static per-weight
+   files. This app already ships it as a VARIABLE font split by
+   unicode-range ("Vazirmatn PF" for Arabic script, "Vazirmatn
+   Latin" for Latin), which covers 100-900 — so the stacks below
+   name those families instead. Leaving the export's bare
+   "Vazirmatn" here would fall back to system-ui everywhere and
+   no build step would ever notice.
+   ============================================================ */
+
+:root {
+  --font-fa: "Vazirmatn PF", "Vazirmatn Latin", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Vazirmatn PF", "Vazirmatn Latin", ui-monospace,
+    SFMono-Regular, Menlo, monospace;
+
+  /* type scale */
+  --fs-display: clamp(2.4rem, 5vw, 4rem);
+  --fs-h1: 2rem;       /* 32 */
+  --fs-h2: 1.5rem;     /* 24 */
+  --fs-h3: 1.125rem;   /* 18 */
+  --fs-body-console: 0.9375rem;   /* 15 */
+  --fs-body-marketing: 1.0625rem; /* 17 */
+  --fs-label: 0.8125rem;          /* 13 */
+  --fs-micro: 0.6875rem;          /* 11 */
+  --fs-row: 0.8125rem;            /* 13 — table rows */
+  --fs-row-dense: 0.75rem;        /* 12 — nested / webhook rows */
+
+  --lh-fa: 1.75;        /* Persian reads loose */
+  --lh-fa-tight: 1.7;
+  --lh-latin: 1.5;
+  --lh-console: 1.6;
+
+  --tr-latin-display: -0.02em;
+  --tr-fa-display: 0;
+  --tr-micro: 0.06em;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+}
+
+/* ============================================================
+   Geometry — 4px base grid, four radii
+   ============================================================ */
+
+:root {
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  --r-control: 6px;
+  --r-card: 10px;
+  --r-modal: 16px;
+  --r-pill: 999px;
+
+  /* container widths */
+  --w-console: 1400px;
+  --w-marketing: 1160px;
+
+  /* touch target floor */
+  --touch: 44px;
+}
+
+/* ============================================================
+   Motion — 150ms state, 240ms panels, one easing curve.
+   Everything here is gated behind prefers-reduced-motion in the
+   component stylesheets; nothing decorative ever animates.
+   ============================================================ */
+
+:root {
+  --dur-state: 150ms;
+  --dur-panel: 240ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);   /* exits run faster than entrances */
+}
+
+/* ============================================================
+   Density — the console is a dense data surface, so it sits on the
+   compact tier. Mobile widens touch targets without shrinking type.
+   ============================================================ */
+
+:root {
+  --row-h: 40px;
+  --control-h: 34px;
+  --bar-h: 56px;
+}

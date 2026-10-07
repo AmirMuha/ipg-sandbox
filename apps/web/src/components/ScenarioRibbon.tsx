@@ -52,13 +52,11 @@ export function ScenarioRibbon({
   }
 
   return (
-    <div
-      className="panel bg-surface border border-border rounded-console px-4 py-3 flex items-center gap-4 flex-wrap"
-      data-testid="scenario-ribbon"
-    >
-      <span className="text-xs font-medium text-muted whitespace-nowrap">{t("title")}</span>
+    <div className="ribbon" data-testid="scenario-ribbon">
+      <span className="ribbon__dot" aria-hidden="true" />
+      <span className="ribbon__label">{t("title")}</span>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="seg" role="group" aria-label={t("title")}>
         {SCENARIOS.map((s) => (
           <button
             key={s}
@@ -69,12 +67,6 @@ export function ScenarioRibbon({
               setScenario(s);
               void apply({ default_scenario: s }, t("scenario_updated"));
             }}
-            className={
-              "px-2.5 py-1 rounded-[6px] text-xs font-medium transition-colors duration-fast ease-standard disabled:opacity-50 " +
-              (s === scenario
-                ? "bg-accent-subtle border border-accent text-accent-ink"
-                : "bg-surface-subtle border border-border text-text hover:bg-surface")
-            }
             data-testid={`scenario-pill-${s}`}
           >
             {tScenario.has(s) ? tScenario(s) : s}
@@ -82,7 +74,7 @@ export function ScenarioRibbon({
         ))}
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-muted whitespace-nowrap">
+      <label className="ribbon__meta flex items-center gap-2 whitespace-nowrap">
         <span>{t("delay_label")}</span>
         <input
           id="settle-delay-range"
@@ -99,14 +91,14 @@ export function ScenarioRibbon({
           className="w-28 accent-[var(--accent)]"
           data-testid="pending-delay-input"
         />
-        <span className="font-mono text-text tabular-nums" data-testid="pending-delay-value">
+        <span className="mono" data-testid="pending-delay-value">
           {delay} {t("seconds")}
         </span>
       </label>
 
-      <div className="ms-auto">
+      <span className="ms-auto">
         <WebhookPingButton targetUrl={project.webhook_url} />
-      </div>
+      </span>
     </div>
   );
 }

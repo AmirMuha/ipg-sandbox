@@ -9,7 +9,8 @@ import {
   Transaction,
   WebhookDelivery,
 } from "../../../../../lib/api";
-import { formatDate, formatRial, getStatusColor } from "../../../../../lib/format";
+import { formatRial } from "../../../../../lib/format";
+import { StatusBadge } from "../../../../../components/StatusBadge";
 import { ScenarioControls } from "../../../../../components/ScenarioControls";
 import { DeleteTransactionButton } from "../../../../../components/DeleteTransactionButton";
 
@@ -47,55 +48,55 @@ export default async function TransactionDetailPage({
   const providerName = adapter ? adapter.provider : tx.adapter_id;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/${locale}/console`}
-          className="text-xs text-muted hover:text-text border border-border px-3 py-1.5 rounded transition-colors"
-        >
-          &larr; Back
-        </Link>
-        <div>
-          <h1 className="font-display text-xl font-semibold tracking-tight flex items-center gap-3">
+    <div className="stack-lg">
+      <div className="phead">
+        <div className="phead__text">
+          <h1 className="flex items-center gap-3">
             <span>{t("details_title")}</span>
-            <span className="font-mono text-sm text-muted font-normal" dir="ltr">{tx.id}</span>
+            <span className="mono muted small" dir="ltr">
+              {tx.id}
+            </span>
           </h1>
         </div>
+        <div className="phead__actions">
+          <Link href={`/${locale}/console`} className="btn btn--secondary btn--sm">
+            &larr; Back
+          </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface border border-border p-4 rounded-lg shadow-raised">
-          <div className="text-xs text-muted mb-1">{t("status")}</div>
-          <div className="text-sm font-semibold">
-            <span
-              className={`inline-block px-2.5 py-0.5 rounded text-xs border font-medium ${getStatusColor(
-                tx.status
-              )}`}
-            >
+      <div className="stats">
+        <div className="stat">
+          <div className="stat__cap">{t("status")}</div>
+          <div>
+            <StatusBadge status={tx.status}>
               {tStatus.has(tx.status) ? tStatus(tx.status) : tx.status}
-            </span>
+            </StatusBadge>
           </div>
         </div>
 
-        <div className="bg-surface border border-border p-4 rounded-lg shadow-raised">
-          <div className="text-xs text-muted mb-1">{t("amount")}</div>
-          <div className="text-base font-mono font-semibold">
-            {formatRial(tx.amount_rial, locale)} {tx.currency}
+        <div className="stat">
+          <div className="stat__cap">{t("amount")}</div>
+          <div className="stat__num num">
+            {formatRial(tx.amount_rial, locale)}{" "}
+            <span className="small muted">{tx.currency}</span>
           </div>
         </div>
 
-        <div className="bg-surface border border-border p-4 rounded-lg shadow-raised">
-          <div className="text-xs text-muted mb-1">{t("adapter")}</div>
-          <div className="text-sm font-mono font-semibold">{providerName}</div>
+        <div className="stat">
+          <div className="stat__cap">{t("adapter")}</div>
+          <div className="mono">{providerName}</div>
         </div>
 
-        <div className="bg-surface border border-border p-4 rounded-lg shadow-raised">
-          <div className="text-xs text-muted mb-1">{t("authority")}</div>
-          <div className="text-xs font-mono truncate" dir="ltr">{tx.authority}</div>
+        <div className="stat">
+          <div className="stat__cap">{t("authority")}</div>
+          <div className="mono small truncate" dir="ltr">
+            {tx.authority}
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="row-flex">
         {/* Only meaningful while the buyer still has something to pay — a settled link is a
             dead link, and the hosted page rejects it anyway. */}
         {(tx.status === "initiated" || tx.status === "pending") && tx.checkout_url && (
@@ -103,7 +104,7 @@ export default async function TransactionDetailPage({
             href={tx.checkout_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-primary inline-flex items-center gap-2 px-4 py-2 rounded-[6px] bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="btn btn--primary"
             data-testid="checkout-link"
           >
             {tCheckout("open")}
@@ -112,69 +113,83 @@ export default async function TransactionDetailPage({
         <DeleteTransactionButton transactionId={tx.id} />
       </div>
       {(tx.status === "initiated" || tx.status === "pending") && tx.checkout_url && (
-        <p className="text-xs text-muted -mt-3">{tCheckout("hint")}</p>
+        <p className="small muted -mt-3">{tCheckout("hint")}</p>
       )}
 
       <ScenarioControls transaction={tx} />
 
-      <div className="bg-surface border border-border rounded-lg p-5 space-y-4 shadow-raised">
-        <h2 className="text-base font-semibold">Webhook Deliveries ({deliveries.length})</h2>
-        {deliveries.length === 0 ? (
-          <p className="text-sm text-muted">No webhook deliveries recorded for this transaction.</p>
-        ) : (
-          <div className="space-y-3">
-            {deliveries.map((del) => (
-              <div
-                key={del.id}
-                className="bg-surface-2 border border-border p-3 rounded text-xs font-mono flex items-center justify-between"
-                dir="ltr"
-              >
-                <div>
-                  <span className="font-bold uppercase text-[10px] me-2 px-1.5 py-0.5 rounded bg-surface">
-                    {del.stage}
+      <div className="card">
+        <div className="card__head">
+          <h2 className="card__title">Webhook Deliveries ({deliveries.length})</h2>
+        </div>
+        <div className="card__body">
+          {deliveries.length === 0 ? (
+            <p className="muted">No webhook deliveries recorded for this transaction.</p>
+          ) : (
+            <div className="kv">
+              {deliveries.map((del) => (
+                <div key={del.id} className="kv__row" dir="ltr">
+                  <span className="kv__label row-flex">
+                    <span className="badge">{del.stage}</span>
+                    <span className="mono small" dir="ltr">
+                      {del.target_url}
+                    </span>
+                    <span className="small muted" dir="ltr">
+                      Attempt #{del.attempt}
+                    </span>
                   </span>
-                  <span dir="ltr">{del.target_url}</span>
-                  <span className="ms-2 text-muted" dir="ltr">Attempt #{del.attempt}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      del.result === "delivered" ? "text-success-ink" : "text-danger-ink"
-                    }`}
-                  >
-                    {del.result}
+                  <span className="kv__val row-flex justify-end">
+                    <span
+                      className={
+                        del.result === "delivered" ? "badge badge--settled" : "badge badge--declined"
+                      }
+                    >
+                      {del.result}
+                    </span>
+                    {del.response_status && (
+                      <span className="mono small" dir="ltr">
+                        HTTP {del.response_status}
+                      </span>
+                    )}
                   </span>
-                  {del.response_status && (
-                    <span className="text-muted" dir="ltr">HTTP {del.response_status}</span>
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-surface border border-border rounded-lg p-4 space-y-2 shadow-raised">
-          <h3 className="font-semibold text-sm">{t("raw_request")}</h3>
-          <pre
-            className="p-3 bg-surface-2 border border-border rounded text-xs font-mono overflow-auto max-h-[350px]"
-            dir="ltr"
-            data-testid="raw-request"
-          >
-            {JSON.stringify(tx.raw_request ?? {}, null, 2)}
-          </pre>
+        <div className="term">
+          <div className="term__bar">
+            <span className="term__dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="term__file">{t("raw_request")}</span>
+          </div>
+          <div className="term__body max-h-[350px] overflow-auto">
+            <pre dir="ltr" data-testid="raw-request">
+              {JSON.stringify(tx.raw_request ?? {}, null, 2)}
+            </pre>
+          </div>
         </div>
 
-        <div className="bg-surface border border-border rounded-lg p-4 space-y-2 shadow-raised">
-          <h3 className="font-semibold text-sm">{t("raw_response")}</h3>
-          <pre
-            className="p-3 bg-surface-2 border border-border rounded text-xs font-mono overflow-auto max-h-[350px]"
-            dir="ltr"
-            data-testid="raw-response"
-          >
-            {JSON.stringify(tx.raw_response ?? {}, null, 2)}
-          </pre>
+        <div className="term">
+          <div className="term__bar">
+            <span className="term__dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="term__file">{t("raw_response")}</span>
+          </div>
+          <div className="term__body max-h-[350px] overflow-auto">
+            <pre dir="ltr" data-testid="raw-response">
+              {JSON.stringify(tx.raw_response ?? {}, null, 2)}
+            </pre>
+          </div>
         </div>
       </div>
     </div>

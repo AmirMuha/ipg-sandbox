@@ -61,79 +61,64 @@ export function AdminProviderList({
   }
 
   return (
-    <div className="space-y-4" data-testid="admin-provider-list">
+    <div className="stack-md" data-testid="admin-provider-list">
       {feedback && (
         <div
           role="status"
-          className={`p-3.5 rounded-md border text-xs font-medium ${
-            feedback.ok
-              ? "bg-success-bg border-success-border text-success-ink"
-              : "bg-danger-bg border-danger-border text-danger-ink"
-          }`}
+          className={feedback.ok ? "banner" : "banner banner--danger"}
           data-testid="admin-feedback-banner"
         >
-          {feedback.message}
+          <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+            {feedback.ok ? (
+              <path d="M20 6L9 17l-5-5" />
+            ) : (
+              <>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v4M12 16h.01" />
+              </>
+            )}
+          </svg>
+          <span>{feedback.message}</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3">
+      <div className="kv">
         {ALL_GATEWAYS.map((g) => {
           const isOffered = offered.includes(g.id);
           const isLoading = loadingProvider === g.id;
 
           return (
-            <div
-              key={g.id}
-              className="panel bg-surface border border-border rounded-console p-4 flex items-center justify-between gap-4 flex-wrap"
-              data-testid={`admin-gateway-card-${g.id}`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span
-                  className="w-9 h-9 grid place-items-center rounded-md border border-accent-border bg-accent-subtle text-accent-ink font-mono text-xs font-semibold shrink-0"
-                  aria-hidden="true"
-                >
-                  {g.monogram}
-                </span>
-                <div>
-                  <h3 className="text-sm font-semibold text-text">
-                    {g.name}
-                    <span className="block font-mono text-[11px] text-muted font-normal" dir="ltr">
-                      {g.latin}
-                    </span>
-                  </h3>
-                </div>
-              </div>
+            <div className="kv__row" key={g.id} data-testid={`admin-gateway-card-${g.id}`}>
+              <span className="kv__label">
+                {g.name}
+                <small className="mono ltr" dir="ltr">
+                  {g.latin}
+                </small>
+              </span>
 
-              <div className="flex items-center gap-3">
+              <span className="kv__val row-flex">
                 <span
-                  className="flex items-center gap-1.5 text-xs"
+                  className={`health ${isOffered ? "health--healthy" : "health--disabled"}`}
                   data-testid={`admin-status-${g.id}`}
                 >
-                  <span
-                    className={`inline-block w-2 h-2 rounded-full ${
-                      isOffered ? "bg-success" : "bg-border"
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <span className={isOffered ? "text-success-ink" : "text-muted"}>
-                    {isOffered ? t("offered") : t("withdrawn")}
-                  </span>
+                  <i className="health__dot" aria-hidden="true" />
+                  <span>{isOffered ? t("offered") : t("withdrawn")}</span>
                 </span>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs shrink-0 select-none">
+                <label className="row-flex cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={isOffered}
                     disabled={isLoading}
                     onChange={(e) => handleToggle(g.id, e.target.checked)}
-                    className="accent-accent"
+                    className="w-4 h-4"
                     data-testid={`admin-toggle-${g.id}`}
                   />
-                  <span className="text-text-2 font-mono text-xs">
+                  <span className="small mono">
                     {isOffered ? t("offered") : t("withdrawn")}
                   </span>
                 </label>
-              </div>
+              </span>
             </div>
           );
         })}

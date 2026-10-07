@@ -10,9 +10,10 @@ import {
   Transaction,
   WebhookDelivery,
 } from "@/lib/api";
-import { formatDate, formatRial, formatToman, getStatusColor } from "@/lib/format";
+import { formatDate, formatRial, formatToman } from "@/lib/format";
 import { LifecycleStepper } from "./LifecycleStepper";
 import { JsonTabs } from "./JsonTabs";
+import { StatusBadge } from "./StatusBadge";
 import { useToast } from "./Toast";
 
 const STATUS_LABEL: Record<string, [string, string]> = {
@@ -114,43 +115,42 @@ export function TransactionDrawer({ locale = "fa" }: { locale?: string }) {
   const callback = deliveries.find((d) => d.stage === "callback") ?? deliveries[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" data-testid="tx-drawer">
+    <div data-testid="tx-drawer">
       <button
         type="button"
         aria-label={fa ? "بستن" : "Close"}
         onClick={close}
-        className="absolute inset-0 bg-overlay/20 backdrop-blur-sm transition-opacity"
+        className="scrim"
+        data-open="true"
         data-testid="tx-drawer-backdrop"
       />
-      <aside
-        className="relative bg-surface border-s border-border shadow-raised animate-drawer w-full max-w-[560px] h-full flex flex-col"
-        role="dialog"
-        aria-modal="true"
-      >
-        <header className="flex items-start gap-3 p-5 border-b border-border">
+      {/* .drawer anchors itself to the inline-end edge, which is the LEFT in this
+          RTL-first app — matching `[dir="rtl"] .animate-drawer`, which slides in
+          from -100%. The entrance animation lives in theme.css rather than in
+          .drawer, because this panel mounts on demand (?tx=<id>) and a
+          data-open transition would never fire. */}
+      <aside className="drawer animate-drawer" role="dialog" aria-modal="true">
+        <header className="drawer__head">
           <div className="min-w-0 flex-1">
-            <div className="font-mono text-sm text-text truncate" dir="ltr" data-testid="drawer-authority">
+            <div className="mono truncate" dir="ltr" data-testid="drawer-authority">
               {tx?.authority ?? id}
             </div>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="gateway-badge inline-flex items-center px-2 py-[3px] rounded-sm text-xs font-medium bg-bg border border-border text-text" dir="ltr" data-testid="drawer-gateway">
+            <div className="row-flex mt-2">
+              <span className="badge badge--failed" dir="ltr" data-testid="drawer-gateway">
                 {tx?.adapter_id ?? "…"}
               </span>
-              <span className="font-mono text-sm font-semibold text-text tabular-nums" data-testid="drawer-amount">
+              <span className="mono" data-testid="drawer-amount">
                 {tx ? `${formatRial(tx.amount_rial, locale)} ریال` : "…"}
                 {tx && (
-                  <span className="ms-2 text-xs font-normal text-muted">
+                  <span className="small muted ms-2">
                     {fa ? "تومان" : "Toman"}: {formatToman(tx.amount_rial, locale)}
                   </span>
                 )}
               </span>
               {tx && (
-                <span
-                  className={`status-badge inline-flex items-center px-2 py-[3px] rounded-sm text-xs font-medium border ${getStatusColor(tx.status)}`}
-                  data-testid="drawer-status"
-                >
+                <StatusBadge status={tx.status} data-testid="drawer-status">
                   {STATUS_LABEL[tx.status]?.[fa ? 1 : 0] ?? tx.status}
-                </span>
+                </StatusBadge>
               )}
             </div>
           </div>
@@ -158,16 +158,16 @@ export function TransactionDrawer({ locale = "fa" }: { locale?: string }) {
             type="button"
             onClick={close}
             aria-label={fa ? "بستن" : "Close"}
-            className="text-muted hover:text-text text-lg leading-none px-1"
+            className="iconbtn"
             data-testid="tx-drawer-close"
           >
             ✕
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
+        <div className="drawer__body">
           {error && (
-            <p className="p-3 bg-danger-bg border border-danger-border text-danger-ink rounded-md text-xs">
+            <p className="banner banner--danger" role="alert">
               {error}
             </p>
           )}
@@ -180,17 +180,21 @@ export function TransactionDrawer({ locale = "fa" }: { locale?: string }) {
                 locale={locale}
               />
 
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-xs">
-                <dt className="text-muted">{fa ? "زمان ایجاد" : "Created at"}</dt>
-                <dd className="text-text font-mono" data-testid="drawer-created-at">
-                  {formatDate(tx.created_at, locale)}
-                </dd>
-                <dt className="text-muted">{fa ? "شناسه اپلیکیشن" : "App reference"}</dt>
-                <dd className="text-text font-mono truncate" dir="ltr">
-                  {tx.app_reference || "—"}
-                </dd>
-                <dt className="text-muted">{fa ? "توضیحات" : "Description"}</dt>
-                <dd className="text-text">{tx.description || "—"}</dd>
+              <dl className="kv">
+                <div className="kv__row">
+                  <dt className="kv__label">{fa ? "زمان ایجاد" : "Created at"}</dt>
+                  <dd className="kv__val mono" data-testid="drawer-created-at">
+                    {formatDate(tx.created_at, locale)}
+                  </dd>
+                </div>
+                <div className="kv__row">
+                  <dt className="kv__label">{fa ? "شناسه اپلیکیشن" : "App reference"}</dt>
+                  <dd className="kv__val mono truncate">{tx.app_reference || "—"}</dd>
+                </div>
+                <div className="kv__row">
+                  <dt className="kv__label">{fa ? "توضیحات" : "Description"}</dt>
+                  <dd className="kv__val">{tx.description || "—"}</dd>
+                </div>
               </dl>
 
               <JsonTabs
@@ -203,12 +207,12 @@ export function TransactionDrawer({ locale = "fa" }: { locale?: string }) {
           )}
         </div>
 
-        <footer className="flex items-center gap-2 p-5 border-t border-border">
+        <footer className="modal__foot">
           <button
             type="button"
             onClick={replay}
             disabled={busy}
-            className="px-3 py-1.5 rounded-[6px] text-xs font-medium bg-surface-2 border border-border text-text hover:bg-surface-elevated transition-colors disabled:opacity-50"
+            className="btn btn--secondary btn--sm"
             data-testid="replay-callback"
           >
             {fa ? "ارسال مجدد کال‌بک" : "Replay Callback"}
@@ -217,7 +221,7 @@ export function TransactionDrawer({ locale = "fa" }: { locale?: string }) {
             type="button"
             onClick={refund}
             disabled={busy || !tx}
-            className="px-3 py-1.5 rounded-[6px] text-xs font-medium bg-accent text-accent-on hover:bg-accent/92 transition-colors disabled:opacity-50"
+            className="btn btn--primary btn--sm"
             data-testid="simulate-refund"
           >
             {fa ? "شبیه‌سازی مرجوعی" : "Simulate Refund"}

@@ -41,41 +41,63 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div
-        className="fixed bottom-6 end-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4"
-        aria-live="polite"
-      >
-        {toasts.map((toast) => {
-          let colorClasses = "bg-surface border-border text-text";
-          if (toast.type === "success") {
-            colorClasses = "bg-success-bg border-success-border text-success-ink";
-          } else if (toast.type === "danger") {
-            colorClasses = "bg-danger-bg border-danger-border text-danger-ink";
-          } else if (toast.type === "warning") {
-            colorClasses = "bg-warning-bg border-warning-border text-warning-ink";
-          }
-
-          return (
-            <div
-              key={toast.id}
-              onClick={() => removeToast(toast.id)}
-              className={`pointer-events-auto p-3.5 rounded-md border shadow-raised text-xs font-medium flex items-center justify-between gap-3 animate-toast cursor-pointer transition-opacity ${colorClasses}`}
+      <div className="toasts pointer-events-none" aria-live="polite">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            // The design reveals a toast with a [data-show] transition. This
+            // container mounts the toast already-visible and animates it in via
+            // the `animate-toast` keyframe instead, so data-show is set on mount
+            // rather than toggled — without it the toast would stay opacity:0.
+            data-show="true"
+            onClick={() => removeToast(toast.id)}
+            className={`toast toast--${toast.type} animate-toast pointer-events-auto cursor-pointer`}
+          >
+            <ToastIcon type={toast.type} />
+            <span className="toast__text">{toast.message}</span>
+            <button
+              type="button"
+              className="muted"
+              aria-label="Dismiss"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeToast(toast.id);
+              }}
             >
-              <span>{toast.message}</span>
-              <button
-                type="button"
-                className="opacity-60 hover:opacity-100 text-xs px-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeToast(toast.id);
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          );
-        })}
+              ✕
+            </button>
+          </div>
+        ))}
       </div>
     </ToastContext.Provider>
+  );
+}
+
+function ToastIcon({ type }: { type: ToastType }) {
+  const common = { className: "ic", viewBox: "0 0 24 24", "aria-hidden": true } as const;
+  if (type === "success")
+    return (
+      <svg {...common}>
+        <path d="M20 6L9 17l-5-5" />
+      </svg>
+    );
+  if (type === "danger")
+    return (
+      <svg {...common}>
+        <path d="M18 6L6 18M6 6l12 12" />
+      </svg>
+    );
+  if (type === "warning")
+    return (
+      <svg {...common}>
+        <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+        <path d="M12 9v4M12 17h.01" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" />
+    </svg>
   );
 }

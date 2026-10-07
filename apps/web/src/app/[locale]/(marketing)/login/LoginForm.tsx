@@ -148,8 +148,8 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
   return (
     <>
       {/* Header title depending on mode and step */}
-      <div className="text-center mb-6">
-        <h1 className="font-display text-xl font-semibold">
+      <div>
+        <h1>
           {mode === "login"
             ? "ورود به حساب"
             : step === "details"
@@ -158,7 +158,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
                 ? "تأیید ایمیل"
                 : "تعیین رمز عبور"}
         </h1>
-        <p className="text-sm text-muted mt-2">
+        <p className="mt2">
           {mode === "login"
             ? "برای مدیریت پروژه‌ها و آداپتورها وارد شوید."
             : step === "details"
@@ -170,10 +170,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
       </div>
 
       {serverError && (
-        <div
-          role="alert"
-          className="p-3 mb-4 rounded-md bg-danger-bg border border-danger-border text-danger-ink text-sm"
-        >
+        <div role="alert" className="field__err">
           {serverError}
         </div>
       )}
@@ -211,16 +208,16 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center justify-center min-h-12 px-6 rounded-md bg-accent text-accent-on text-[16px] font-medium hover:bg-accent/92 active:bg-accent/86 transition-colors duration-fast ease-standard disabled:opacity-50 cursor-pointer"
+              className="btn btn--primary btn--block"
             >
               {loading ? "در حال بررسی..." : "ورود به حساب"}
             </button>
           </form>
 
-          <div className="flex items-center gap-3 my-4 text-xs text-muted">
-            <span className="flex-1 h-px bg-border" />
+          <div className="flex items-center gap-3 my-4 small muted">
+            <span className="divider flex-1" />
             <span>یا ورود با</span>
-            <span className="flex-1 h-px bg-border" />
+            <span className="divider flex-1" />
           </div>
 
           <div className="grid gap-2.5">
@@ -229,7 +226,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
               onClick={() => {
                 window.location.href = `${apiBase}/api/v1/auth/oauth/github`;
               }}
-              className="w-full min-h-11 px-4 rounded-md border border-border bg-surface text-text text-sm font-medium hover:bg-surface-subtle hover:border-text/20 transition-all duration-fast flex items-center justify-center gap-3 cursor-pointer"
+              className="btn btn--secondary btn--block"
             >
               <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="shrink-0">
                 <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
@@ -242,7 +239,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
               onClick={() => {
                 window.location.href = `${apiBase}/api/v1/auth/oauth/google`;
               }}
-              className="w-full min-h-11 px-4 rounded-md border border-border bg-surface text-text text-sm font-medium hover:bg-surface-subtle hover:border-text/20 transition-all duration-fast flex items-center justify-center gap-3 cursor-pointer"
+              className="btn btn--secondary btn--block"
             >
               <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -254,7 +251,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
             </button>
           </div>
 
-          <p className="mt-6 text-center text-sm text-muted">
+          <p className="mt-6 small muted">
             حساب کاربری ندارید؟{" "}
             <button
               type="button"
@@ -263,7 +260,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
                 setStep("details");
                 clearErrors();
               }}
-              className="text-accent font-semibold hover:underline cursor-pointer"
+              className="btn btn--ghost btn--sm"
             >
               ثبت‌نام کنید
             </button>
@@ -306,7 +303,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center justify-center min-h-12 px-6 rounded-md bg-accent text-accent-on text-[16px] font-medium hover:bg-accent/92 active:bg-accent/86 transition-colors duration-fast ease-standard disabled:opacity-50 cursor-pointer"
+                className="btn btn--primary btn--block"
               >
                 {loading ? "در حال ارسال کد..." : "دریافت کد تأیید ایمیل"}
               </button>
@@ -316,8 +313,8 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
           {/* Step 2: OTP */}
           {step === "otp" && (
             <form onSubmit={handleVerifyOtp} noValidate className="grid gap-4">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="otpCode" className="text-sm font-medium">
+              <div className="field">
+                <label htmlFor="otpCode" className="field__label">
                   کد تأیید ۶ رقمی
                 </label>
                 <input
@@ -330,11 +327,11 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
                   dir="ltr"
                   maxLength={6}
                   placeholder="------"
-                  className="w-full min-h-12 px-3 bg-surface border border-border rounded-sm text-center text-xl tracking-[0.4em] font-mono text-text placeholder:text-muted focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--accent)/0.1)]"
+                  className="input mono text-center text-xl tracking-[0.4em]"
                   autoFocus
                 />
                 {fieldErrors.otp && (
-                  <p role="alert" className="text-xs text-danger-ink">
+                  <p role="alert" className="field__err">
                     {fieldErrors.otp}
                   </p>
                 )}
@@ -343,7 +340,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center justify-center min-h-12 px-6 rounded-md bg-accent text-accent-on text-[16px] font-medium hover:bg-accent/92 active:bg-accent/86 transition-colors duration-fast ease-standard disabled:opacity-50 cursor-pointer"
+                className="btn btn--primary btn--block"
               >
                 {loading ? "در حال تأیید..." : "تأیید ایمیل و ادامه"}
               </button>
@@ -354,7 +351,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
                   setStep("details");
                   clearErrors();
                 }}
-                className="text-xs text-muted hover:text-text transition-colors text-center"
+                className="btn btn--ghost btn--block"
               >
                 ویرایش نام یا ایمیل
               </button>
@@ -394,14 +391,14 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center justify-center min-h-12 px-6 rounded-md bg-accent text-accent-on text-[16px] font-medium hover:bg-accent/92 active:bg-accent/86 transition-colors duration-fast ease-standard disabled:opacity-50 cursor-pointer"
+                className="btn btn--primary btn--block"
               >
                 {loading ? "در حال ثبت‌نام..." : "تکمیل ثبت‌نام و ورود"}
               </button>
             </form>
           )}
 
-          <p className="mt-6 text-center text-sm text-muted">
+          <p className="mt-6 small muted">
             قبلاً ثبت‌نام کرده‌اید؟{" "}
             <button
               type="button"
@@ -409,7 +406,7 @@ export function LoginForm({ consoleHref }: { consoleHref: string }) {
                 setMode("login");
                 clearErrors();
               }}
-              className="text-accent font-semibold hover:underline cursor-pointer"
+              className="btn btn--ghost btn--sm"
             >
               وارد شوید
             </button>
@@ -436,8 +433,8 @@ function Fieldset({
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "id">) {
   const errorId = `${id}-error`;
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-sm font-medium">
+    <div className="field">
+      <label htmlFor={id} className="field__label">
         {label}
       </label>
       <input
@@ -447,11 +444,11 @@ function Fieldset({
         dir={rest.type === "email" || rest.type === "password" ? "ltr" : "rtl"}
         aria-invalid={error ? true : undefined}
         aria-describedby={errorId}
-        className="w-full min-h-11 px-3 bg-surface border border-border rounded-sm text-sm text-text placeholder:text-muted transition-colors duration-fast ease-standard focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--accent)/0.1)]"
+        className="input"
         {...rest}
       />
       {error && (
-        <p id={errorId} role="alert" className="text-xs text-danger-ink">
+        <p id={errorId} role="alert" className="field__err">
           {error}
         </p>
       )}

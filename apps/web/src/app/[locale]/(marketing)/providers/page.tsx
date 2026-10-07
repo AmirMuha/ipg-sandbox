@@ -238,17 +238,7 @@ const GATEWAYS: ReadonlyArray<{
 
 function DownloadIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
+    <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />
@@ -297,107 +287,93 @@ export default async function ProvidersPage({
         {locale === "fa" ? (
           <>
             هر آداپتور مسیر، امضای پاسخ و کدهای خطای درگاه اصلی را بازتولید می‌کند.
-            کافی است دامنه را به <code className="font-mono">localhost:8080</code> تغییر دهید.
+            کافی است دامنه را به <code className="mono">localhost:8080</code> تغییر دهید.
           </>
         ) : (
           <>
             Each adapter replicates the routes, response signatures, and error codes of the real gateway.
-            Simply point your domain to <code className="font-mono">localhost:8080</code>.
+            Simply point your domain to <code className="mono">localhost:8080</code>.
           </>
         )}
       </PageHead>
 
-      <section className="w-full max-w-[1180px] mx-auto px-4 md:px-6 grid gap-4">
+      <section className="wrap-m">
         {visibleGateways.length === 0 ? (
-          <div
-            className="p-8 text-center bg-surface border border-border rounded-lg text-sm text-muted"
-            data-testid="no-providers-message"
-          >
-            {locale === "fa"
-              ? "در حال حاضر هیچ درگاه پرداختی در دسترس نیست."
-              : "No payment gateways are currently offered."}
+          <div className="empty" data-testid="no-providers-message">
+            <p>
+              {locale === "fa"
+                ? "در حال حاضر هیچ درگاه پرداختی در دسترس نیست."
+                : "No payment gateways are currently offered."}
+            </p>
           </div>
         ) : (
-          visibleGateways.map((g) => (
-            <article
-              key={g.id}
-              data-gateway-id={g.id}
-            className="bg-surface border border-border rounded-lg p-6 grid gap-4 transition-colors duration-base ease-standard hover:border-accent-border hover:shadow-raised"
-          >
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <span
-                  className="w-10 h-10 grid place-items-center rounded-md border border-accent-border bg-accent-subtle text-accent-ink font-mono text-sm font-semibold shrink-0"
-                  aria-hidden="true"
-                >
-                  {g.monogram}
-                </span>
-                <h2 className="text-[17px] font-semibold">
-                  {g.name}
-                  <span
-                    className="block font-mono text-xs text-muted font-normal"
-                    dir="ltr"
-                  >
-                    {g.latin}
+          <div className="providers">
+            {visibleGateways.map((g) => (
+              <article className="provider" key={g.id} data-gateway-id={g.id}>
+                <div className="provider__id">
+                  <span className="provider__logo" aria-hidden="true">
+                    <span className="provider__word">{g.monogram}</span>
                   </span>
-                </h2>
-              </div>
-              <Badge tone={g.status} dot>
-                {g.statusLabel}
-              </Badge>
-            </div>
+                  <h2 className="provider__name">
+                    {g.name}
+                    <span className="mono small muted block" dir="ltr">
+                      {g.latin}
+                    </span>
+                  </h2>
+                  <Badge tone={g.status} dot>
+                    {g.statusLabel}
+                  </Badge>
+                </div>
 
-            <p className="text-sm text-muted">{g.summary}</p>
+                <div className="provider__spec">
+                  <p className="muted">{g.summary}</p>
 
-            <table className="w-full border-collapse text-sm">
-              <tbody>
-                {g.spec.map(([label, value, mono]) => (
-                  <tr key={label}>
-                    <th
-                      scope="row"
-                      className="text-start font-medium text-text-2 py-3 border-t border-border align-top w-[168px] max-md:block max-md:w-auto max-md:border-t-0 max-md:pb-0"
+                  <dl className="kv">
+                    {g.spec.map(([label, value, mono]) => (
+                      <div className="kv__row" key={label}>
+                        <dt className="kv__label">{label}</dt>
+                        <dd
+                          className={`kv__val${mono ? " mono" : ""}`}
+                          dir={mono ? "ltr" : undefined}
+                        >
+                          {value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  <div className="row-flex justify-between">
+                    <a
+                      href={g.doc.href}
+                      download
+                      className="btn btn--secondary btn--sm"
                     >
-                      {label}
-                    </th>
-                    <td
-                      className={`py-3 border-t border-border align-top max-md:pt-1 ${mono ? "font-mono text-xs" : ""}`}
-                      dir={mono ? "ltr" : undefined}
-                    >
-                      {value}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="flex items-center justify-between gap-4 flex-wrap border-t border-border pt-4">
-              <a
-                href={g.doc.href}
-                download
-                className="inline-flex items-center gap-2 min-h-11 px-4 rounded-sm border border-border bg-surface text-text text-sm font-medium hover:bg-surface-elevated transition-colors duration-fast ease-standard"
-              >
-                <DownloadIcon />
-                دانلود مرجع API
-              </a>
-              <span className="text-xs text-text-2 font-mono">
-                Markdown · {g.doc.size}
-                <span className="block text-muted" dir="ltr">
-                  {g.doc.href.replace("/docs/", "")}
-                </span>
-                {g.live && (
-                  <a
-                    href={`/${locale}/gateways`}
-                    className="block mt-1 text-accent-ink hover:text-accent"
-                  >
-                    باز کردن آداپتور در داشبورد
-                  </a>
-                )}
-              </span>
-            </div>
-          </article>
-        ))) }
+                      <DownloadIcon />
+                      دانلود مرجع API
+                    </a>
+                    <div className="row-flex">
+                      <span className="mono small muted">
+                        Markdown · {g.doc.size}
+                        <span className="block" dir="ltr">
+                          {g.doc.href.replace("/docs/", "")}
+                        </span>
+                      </span>
+                      {g.live && (
+                        <a
+                          href={`/${locale}/gateways`}
+                          className="btn btn--ghost btn--sm"
+                        >
+                          باز کردن آداپتور در داشبورد
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
-
     </MarketingShell>
   );
 }

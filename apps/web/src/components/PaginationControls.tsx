@@ -28,25 +28,20 @@ export function PaginationControls({
   // Nothing to page through; rendering dead controls is worse than rendering nothing.
   if (totalPages <= 1) return null;
 
-  const btn =
-    "px-3 py-1.5 rounded-[6px] text-[13px] font-medium border transition-colors " +
-    "disabled:opacity-40 disabled:cursor-not-allowed";
-  const enabledBtn = `${btn} bg-surface text-text border-border hover:bg-surface-subtle`;
-
   return (
     <div
-      className="flex items-center justify-between gap-3 px-5 py-3 border-t border-border"
+      className="row-flex justify-between mt-3"
       data-testid="pagination-controls"
     >
-      <span className="text-xs text-muted">
+      <span className="small muted num">
         {t("summary", { page, total: totalPages })} · {total}
       </span>
-      <div className="flex items-center gap-2">
+      <div className="row-flex">
         <button
           type="button"
           onClick={() => goTo(page - 1)}
           disabled={page <= 1}
-          className={enabledBtn}
+          className="btn btn--secondary btn--sm"
           data-testid="pagination-prev"
         >
           {t("prev")}
@@ -55,7 +50,7 @@ export function PaginationControls({
           type="button"
           onClick={() => goTo(page + 1)}
           disabled={page >= totalPages}
-          className={enabledBtn}
+          className="btn btn--secondary btn--sm"
           data-testid="pagination-next"
         >
           {t("next")}

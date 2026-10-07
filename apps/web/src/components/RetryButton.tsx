@@ -27,7 +27,7 @@ export function RetryButton({ deliveryId }: { deliveryId: string }) {
     <button
       onClick={handleRetry}
       disabled={loading}
-      className="text-xs bg-surface-2 border border-border hover:border-accent px-2.5 py-1 rounded transition-colors disabled:opacity-50"
+      className="btn btn--secondary btn--sm"
       data-testid={`retry-btn-${deliveryId}`}
     >
       {loading ? "..." : tCommon("retry")}

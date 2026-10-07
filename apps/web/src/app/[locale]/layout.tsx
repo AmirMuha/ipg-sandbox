@@ -1,4 +1,11 @@
+/* Load order matters: theme.css carries the @tailwind directives and the
+ * @font-face declarations, then the design layer lands on top. tokens.css
+ * precedes ui.css because ui.css reads its variables; console.css last so its
+ * page furniture (.wrap/.phead/.filters) can override shared defaults. */
 import "../../styles/theme.css";
+import "../../styles/tokens.css";
+import "../../styles/ui.css";
+import "../../styles/console.css";
 import { notFound } from "next/navigation";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";

@@ -66,6 +66,13 @@ test("1. Root redirect and Persian RTL layout", async () => {
     faHtml.includes('data-testid="transactions-table"'),
     "Expected transactions-table in HTML"
   );
+  // The redesign's styling layer is plain CSS, not Tailwind utilities. Tailwind
+  // does not fail on an unknown class name, so a page that silently failed to
+  // migrate would still build and still pass every data-testid assertion above.
+  // These three probe that the design layer actually reached the markup.
+  assert.ok(faHtml.includes('class="table"'), "Expected the design .table class");
+  assert.ok(faHtml.includes("badge badge--"), "Expected design badge classes");
+  assert.ok(faHtml.includes("console-nav__link"), "Expected the design console nav");
   // Language is fixed to Persian for now — the switcher must not render.
   assert.ok(
     !faHtml.includes('data-testid="locale-switch"'),

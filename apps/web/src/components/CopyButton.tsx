@@ -36,20 +36,11 @@ export function CopyButton({
       onClick={copy}
       title={copied ? "Copied" : label}
       aria-label={copied ? "Copied" : label}
-      className="shrink-0 p-1 rounded-sm text-muted hover:text-text hover:bg-surface-subtle transition-colors duration-fast ease-standard"
+      className="copy shrink-0"
+      data-copied={copied}
       data-testid={testId}
     >
-      <svg
-        width="13"
-        height="13"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
+      <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
         <rect x="9" y="9" width="13" height="13" rx="2" />
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
       </svg>

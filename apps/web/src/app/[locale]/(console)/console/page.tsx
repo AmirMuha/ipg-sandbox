@@ -17,7 +17,8 @@ import {
   ProjectAnalyticsOverview,
   Transaction,
 } from "../../../../lib/api";
-import { formatDate, formatRial, formatToman, getStatusColor } from "../../../../lib/format";
+import { formatDate, formatRial, formatToman } from "../../../../lib/format";
+import { StatusBadge } from "../../../../components/StatusBadge";
 import { ScenarioRibbon } from "../../../../components/ScenarioRibbon";
 import { OutcomeDistribution } from "../../../../components/OutcomeDistribution";
 import { StatCards } from "../../../../components/StatCards";
@@ -85,11 +86,29 @@ export default async function TransactionsPage({
 
   return (
     <>
-      <StatCards
-        overview={overview}
-        historyCap={project?.history_cap}
-        locale={locale}
-      />
+      {/* The export's .phead carries Refresh and "new transaction" buttons. Both are
+          skipped: the topbar already owns the simulate CTA, and a manual refresh control
+          would be a new affordance on a page that refetches on every filter change. */}
+      <div className="phead">
+        <div className="phead__text">
+          <h1>{t("title")}</h1>
+          <p>{t("subtitle")}</p>
+        </div>
+      </div>
+
+      {loadError && (
+        <div className="banner banner--danger mb-4" role="alert">
+          <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+            <path d="M12 9v4M12 17h.01" />
+          </svg>
+          <span>{loadError}</span>
+        </div>
+      )}
+
+      {project && <ScenarioRibbon project={project} locale={locale} />}
+
+      <StatCards overview={overview} historyCap={project?.history_cap} locale={locale} />
 
       <OutcomeDistribution
         distribution={overview?.scenario_distribution ?? {}}
@@ -97,150 +116,96 @@ export default async function TransactionsPage({
         locale={locale}
       />
 
-      {loadError && (
-        <div className="p-4 bg-danger-bg border border-danger-border text-danger-ink rounded-console text-sm">
-          {loadError}
-        </div>
-      )}
+      <TransactionFilters adapters={adapters.map((a) => a.provider)} />
 
-      {project && <ScenarioRibbon project={project} locale={locale} />}
-
-      <div className="panel bg-surface border border-border rounded-console overflow-hidden">
-        <div className="panel-header px-5 py-4 border-b border-border flex items-center justify-between gap-4 flex-wrap">
-          <div className="panel-title font-display text-[17px] font-semibold tracking-display flex items-center gap-2">
-            <span>{t("title")}</span>
-            <span className="version-tag font-mono text-[11px] px-1.5 py-0.5 rounded bg-surface-subtle border border-border text-text">
-              {txData.total} {locale === "fa" ? "رکورد" : "Records"}
-            </span>
-          </div>
-          <TransactionFilters adapters={adapters.map((a) => a.provider)} />
-        </div>
-
-        <div className="table-container overflow-x-auto">
-          <table
-            className="data-table w-full border-collapse text-start text-[13px]"
-            data-testid="transactions-table"
-          >
-            <thead>
+      <div className="tablewrap">
+        <table className="table" data-testid="transactions-table">
+          <caption className="sr-only">{t("title")}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t("authority")}</th>
+              <th scope="col">{t("gateway")}</th>
+              <th scope="col">{t("order_id")}</th>
+              <th scope="col">{t("amount")}</th>
+              <th scope="col">{t("scenario")}</th>
+              <th scope="col">{t("status")}</th>
+              <th scope="col">{t("date")}</th>
+              <th scope="col">
+                <span className="sr-only">{t("inspect")}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {txData.items.length === 0 ? (
               <tr>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("authority")}
-                </th>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("gateway")}
-                </th>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("order_id")}
-                </th>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("amount")}
-                </th>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("scenario")}
-                </th>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("status")}
-                </th>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start">
-                  {t("date")}
-                </th>
-                <th className="bg-surface-subtle text-text-2 font-medium px-4 py-2.5 border-b border-border whitespace-nowrap text-xs uppercase tracking-[0.03em] text-start"></th>
+                <td colSpan={8}>
+                  <div className="empty">
+                    <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <path d="M3 9h18M9 21V9" />
+                    </svg>
+                    <h3>{t("empty")}</h3>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {txData.items.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-muted text-sm">
-                    {t("empty")}
-                  </td>
-                </tr>
-              ) : (
-                txData.items.map((tx: any) => {
-                  const providerName = adapterMap.get(tx.adapter_id) || tx.adapter_id;
-                  return (
-                    <tr
-                      key={tx.id}
-                      className="hover:bg-surface-subtle transition-colors"
-                      data-testid="tx-row"
-                    >
-                      <td className="px-4 py-3 border-b border-border-soft align-middle" dir="ltr">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-text truncate max-w-[220px]">
-                            {tx.authority}
-                          </span>
-                          <CopyButton value={tx.authority} label={tCommon("copy")} />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 border-b border-border-soft align-middle">
-                        <span
-                          className="gateway-badge inline-flex items-center gap-1.5 px-2 py-[3px] rounded-sm text-xs font-medium bg-bg border border-border text-text whitespace-nowrap"
-                          dir="ltr"
-                          data-testid="tx-adapter"
-                        >
-                          .{providerName}
-                        </span>
-                      </td>
-                      <td
-                        className="px-4 py-3 border-b border-border-soft align-middle font-mono text-xs text-text-2 truncate max-w-[160px]"
-                        dir="ltr"
+            ) : (
+              txData.items.map((tx: any) => {
+                const providerName = adapterMap.get(tx.adapter_id) || tx.adapter_id;
+                return (
+                  <tr key={tx.id} data-testid="tx-row">
+                    <td>
+                      <div className="row-flex">
+                        <span className="t-id truncate max-w-[220px]">{tx.authority}</span>
+                        <CopyButton value={tx.authority} label={tCommon("copy")} />
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge badge--failed" dir="ltr" data-testid="tx-adapter">
+                        .{providerName}
+                      </span>
+                    </td>
+                    <td className="t-ref">{tx.app_reference || "—"}</td>
+                    <td data-testid="tx-amount">
+                      <span className="t-amount">{formatRial(tx.amount_rial, locale)}</span>
+                      <span className="small muted block">
+                        {formatToman(tx.amount_rial, locale)} {tSettings("toman")}
+                      </span>
+                    </td>
+                    <td data-testid="tx-scenario">
+                      <span className="t-ref">{tx.effective_scenario}</span>
+                      {tx.forced_scenario && (
+                        <span className="badge badge--accent ms-1.5">{t("forced")}</span>
+                      )}
+                    </td>
+                    <td data-testid="tx-status">
+                      <StatusBadge status={tx.status}>
+                        {tStatus.has(tx.status) ? tStatus(tx.status) : tx.status}
+                      </StatusBadge>
+                    </td>
+                    <td className="t-time">{formatDate(tx.created_at, locale)}</td>
+                    <td className="text-end">
+                      <Link
+                        href={`/${locale}/console?tx=${tx.id}`}
+                        scroll={false}
+                        className="btn btn--secondary btn--sm"
+                        data-testid={`tx-detail-link-${tx.id}`}
                       >
-                        {tx.app_reference || "—"}
-                      </td>
-                      <td
-                        className="currency-cell px-4 py-3 border-b border-border-soft align-middle font-mono font-semibold text-text tabular-nums"
-                        data-testid="tx-amount"
-                      >
-                        {formatRial(tx.amount_rial, locale)}
-                        <span className="block font-sans font-normal text-[11px] text-muted">
-                          {formatToman(tx.amount_rial, locale)} {tSettings("toman")}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 border-b border-border-soft align-middle" data-testid="tx-scenario">
-                        <span className="version-tag font-mono text-[11px] px-1.5 py-0.5 rounded bg-surface-subtle border border-border text-text">
-                          {tx.effective_scenario}
-                        </span>
-                        {tx.forced_scenario && (
-                          <span className="ms-1.5 text-[10px] text-accent-ink font-sans">
-                            {t("forced")}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 border-b border-border-soft align-middle" data-testid="tx-status">
-                        <span
-                          className={`status-badge inline-flex items-center gap-1.5 px-2 py-[3px] rounded-sm text-xs font-medium whitespace-nowrap border ${getStatusColor(
-                            tx.status
-                          )}`}
-                        >
-                          {tStatus.has(tx.status) ? tStatus(tx.status) : tx.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 border-b border-border-soft align-middle text-xs text-muted whitespace-nowrap">
-                        {formatDate(tx.created_at, locale)}
-                      </td>
-                      <td className="px-4 py-3 border-b border-border-soft align-middle text-end">
-                        <Link
-                          href={`/${locale}/console?tx=${tx.id}`}
-                          scroll={false}
-                          className="btn-secondary inline-flex items-center px-2.5 py-1 rounded-[6px] text-xs font-medium bg-surface text-text border border-border hover:bg-surface-subtle transition-colors duration-fast ease-standard"
-                          data-testid={`tx-detail-link-${tx.id}`}
-                        >
-                          {t("inspect")}
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <PaginationControls
-          page={txData.page}
-          totalPages={txData.total_pages}
-          total={txData.total}
-        />
+                        {t("inspect")}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
+
+      <PaginationControls
+        page={txData.page}
+        totalPages={txData.total_pages}
+        total={txData.total}
+      />
     </>
   );
 }

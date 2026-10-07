@@ -30,14 +30,10 @@ export function TransactionFilters({ adapters }: { adapters: string[] }) {
     router.push(qs ? `?${qs}` : window.location.pathname);
   }
 
-  const input =
-    "px-3 py-1.5 rounded-[6px] bg-surface border border-border text-sm text-text " +
-    "focus:border-accent focus:outline-none";
-
   return (
-    <div className="flex items-end gap-3 flex-wrap" data-testid="transaction-filters">
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-text-2 font-medium">{t("search")}</span>
+    <div className="filters" data-testid="transaction-filters">
+      <label className="field field--grow">
+        <span className="field__label">{t("search")}</span>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -45,17 +41,17 @@ export function TransactionFilters({ adapters }: { adapters: string[] }) {
             if (e.key === "Enter") apply({ q: e.currentTarget.value });
           }}
           placeholder={t("search_placeholder")}
-          className={`${input} w-64`}
+          className="input"
           data-testid="filter-search"
         />
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-text-2 font-medium">{t("status")}</span>
+      <label className="field field--w">
+        <span className="field__label">{t("status")}</span>
         <select
           value={params.get("status") ?? ""}
           onChange={(e) => apply({ status: e.target.value })}
-          className={input}
+          className="select"
           data-testid="filter-status"
         >
           <option value="">{t("all")}</option>
@@ -69,12 +65,12 @@ export function TransactionFilters({ adapters }: { adapters: string[] }) {
         </select>
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-text-2 font-medium">{t("adapter")}</span>
+      <label className="field field--w">
+        <span className="field__label">{t("adapter")}</span>
         <select
           value={params.get("adapter") ?? ""}
           onChange={(e) => apply({ adapter: e.target.value })}
-          className={input}
+          className="select"
           data-testid="filter-adapter"
         >
           <option value="">{t("all")}</option>
@@ -86,34 +82,34 @@ export function TransactionFilters({ adapters }: { adapters: string[] }) {
         </select>
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-text-2 font-medium">{t("from_date")}</span>
+      <label className="field field--w">
+        <span className="field__label">{t("from_date")}</span>
         {/* Native date input: no picker dependency for a date range that is optional. */}
         <input
           type="date"
           value={params.get("from_date") ?? ""}
           onChange={(e) => apply({ from_date: e.target.value })}
-          className={input}
+          className="input"
           data-testid="filter-from-date"
         />
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-text-2 font-medium">{t("to_date")}</span>
+      <label className="field field--w">
+        <span className="field__label">{t("to_date")}</span>
         <input
           type="date"
           value={params.get("to_date") ?? ""}
           onChange={(e) => apply({ to_date: e.target.value })}
-          className={input}
+          className="input"
           data-testid="filter-to-date"
         />
       </label>
 
-      <div className="flex items-center gap-2">
+      <div className="row-flex">
         <button
           type="button"
           onClick={() => apply({ q })}
-          className="btn-secondary px-3 py-1.5 rounded-[6px] bg-surface text-text border border-border text-[13px] font-medium hover:bg-surface-subtle transition-colors"
+          className="btn btn--secondary"
           data-testid="filter-apply"
         >
           {t("search")}
@@ -124,7 +120,7 @@ export function TransactionFilters({ adapters }: { adapters: string[] }) {
             setQ("");
             router.push("?");
           }}
-          className="px-3 py-1.5 rounded-[6px] text-[13px] text-muted hover:text-text transition-colors"
+          className="btn btn--ghost"
           data-testid="filter-clear"
         >
           {t("clear")}

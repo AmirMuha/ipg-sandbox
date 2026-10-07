@@ -3,12 +3,21 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { AdminSubscription, deactivateAdminSubscription } from "../lib/api";
+import { StatusBadge } from "./StatusBadge";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "status_active",
   pending: "status_pending",
   expired: "status_expired",
   cancelled: "status_cancelled",
+};
+
+/** Subscription status shares the badge vocabulary but not its names. */
+const STATUS_BADGE: Record<string, string> = {
+  active: "settled",
+  pending: "pending",
+  expired: "expired",
+  cancelled: "failed",
 };
 
 export function AdminSubscriptionList({
@@ -43,86 +52,88 @@ export function AdminSubscriptionList({
   }
 
   return (
-    <div className="space-y-4" data-testid="admin-subscription-list">
-      <div>
-        <h3 className="text-sm font-semibold text-text">{t("title")}</h3>
-        <p className="text-xs text-muted mt-1">{t("subtitle")}</p>
+    <div className="card" data-testid="admin-subscription-list">
+      <div className="card__head">
+        <h2 className="card__title">{t("title")}</h2>
       </div>
+      <div className="card__body stack-md">
+        <p className="small muted">{t("subtitle")}</p>
 
-      {feedback && (
-        <div
-          role="status"
-          className={`p-3.5 rounded-md border text-xs font-medium ${
-            feedback.ok
-              ? "bg-success-bg border-success-border text-success-ink"
-              : "bg-danger-bg border-danger-border text-danger-ink"
-          }`}
-          data-testid="admin-subscriptions-feedback"
-        >
-          {feedback.message}
-        </div>
-      )}
+        {feedback && (
+          <div
+            role="status"
+            className={feedback.ok ? "banner" : "banner banner--danger"}
+            data-testid="admin-subscriptions-feedback"
+          >
+            <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+              {feedback.ok ? (
+                <path d="M20 6L9 17l-5-5" />
+              ) : (
+                <>
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4M12 16h.01" />
+                </>
+              )}
+            </svg>
+            <span>{feedback.message}</span>
+          </div>
+        )}
 
-      {rows.length === 0 ? (
-        <p className="text-xs text-muted" data-testid="admin-subscriptions-empty">
-          {t("empty")}
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 gap-3">
-          {rows.map((sub) => {
-            const isLoading = loadingId === sub.subscription_id;
-            return (
-              <div
-                key={sub.subscription_id}
-                className="panel bg-surface border border-border rounded-console p-4 flex items-center justify-between gap-4 flex-wrap"
-                data-testid={`admin-subscription-card-${sub.subscription_id}`}
-              >
-                <div className="min-w-0">
-                  <h4 className="text-sm font-semibold text-text">
+        {rows.length === 0 ? (
+          <div className="empty" data-testid="admin-subscriptions-empty">
+            <p>{t("empty")}</p>
+          </div>
+        ) : (
+          <div className="kv">
+            {rows.map((sub) => {
+              const isLoading = loadingId === sub.subscription_id;
+              return (
+                <div
+                  className="kv__row"
+                  key={sub.subscription_id}
+                  data-testid={`admin-subscription-card-${sub.subscription_id}`}
+                >
+                  <span className="kv__label">
                     {sub.project_name ?? sub.project_id}
-                  </h4>
-                  <p className="text-[11px] text-muted font-mono" dir="ltr">
-                    {sub.buyer_email ?? "—"}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3 flex-wrap text-xs">
-                  <span
-                    className={`px-2 py-0.5 rounded-full border font-semibold ${
-                      sub.status === "active"
-                        ? "bg-success/15 text-success-ink border-success-border"
-                        : "bg-surface-subtle text-muted border-border"
-                    }`}
-                    data-testid={`admin-subscription-status-${sub.subscription_id}`}
-                  >
-                    {t(STATUS_LABEL[sub.status] ?? "status_pending")}
+                    <small className="mono ltr" dir="ltr">
+                      {sub.buyer_email ?? "—"}
+                    </small>
                   </span>
-                  <span className="text-muted font-mono" dir="ltr">
-                    {sub.amount_toman.toLocaleString("fa-IR")} {t("amount_unit")}
-                  </span>
-                  {sub.expires_at && (
-                    <span className="text-muted font-mono" dir="ltr">
-                      {t("expires")} {sub.expires_at.slice(0, 10)}
-                    </span>
-                  )}
 
-                  {sub.status === "active" && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeactivate(sub)}
-                      disabled={isLoading}
-                      className="min-h-9 px-3 rounded-md border border-danger-border bg-danger-bg text-danger-ink text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                      data-testid={`admin-deactivate-btn-${sub.subscription_id}`}
+                  <span className="kv__val row-flex justify-end">
+                    <StatusBadge
+                      status={STATUS_BADGE[sub.status] ?? "failed"}
+                      data-testid={`admin-subscription-status-${sub.subscription_id}`}
                     >
-                      {isLoading ? t("deactivating") : t("deactivate")}
-                    </button>
-                  )}
+                      {t(STATUS_LABEL[sub.status] ?? "status_pending")}
+                    </StatusBadge>
+                    <span className="small muted mono" dir="ltr">
+                      {sub.amount_toman.toLocaleString("fa-IR")} {t("amount_unit")}
+                    </span>
+                    {sub.expires_at && (
+                      <span className="small muted mono" dir="ltr">
+                        {t("expires")} {sub.expires_at.slice(0, 10)}
+                      </span>
+                    )}
+
+                    {sub.status === "active" && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeactivate(sub)}
+                        disabled={isLoading}
+                        className="btn btn--danger btn--sm"
+                        data-testid={`admin-deactivate-btn-${sub.subscription_id}`}
+                      >
+                        {isLoading ? t("deactivating") : t("deactivate")}
+                      </button>
+                    )}
+                  </span>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

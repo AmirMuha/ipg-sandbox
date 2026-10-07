@@ -37,9 +37,6 @@ export function ProjectSettingsForm({ project }: { project: Project; locale?: st
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const input =
-    "w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent";
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -70,33 +67,30 @@ export function ProjectSettingsForm({ project }: { project: Project; locale?: st
   return (
     <form
       onSubmit={handleSubmit}
-      className="panel bg-surface border border-border rounded-console p-5 space-y-4"
+      className="card card__body stack-md"
       data-testid="project-settings-form"
     >
       {error && (
-        <div
-          className="p-3 text-sm text-danger-ink bg-danger-bg border border-danger-border rounded"
-          role="alert"
-        >
+        <div className="banner banner--danger" role="alert">
           {error}
         </div>
       )}
       {success && (
-        <div
-          className="p-3 text-sm text-success-ink bg-success-bg border border-success-border rounded"
-          role="status"
-        >
+        <div className="banner" role="status">
           {success}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-xs text-muted mb-1">{t("default_scenario")}</label>
+        <div className="field">
+          <label className="field__label" htmlFor="project-default-scenario">
+            {t("default_scenario")}
+          </label>
           <select
+            id="project-default-scenario"
             value={defaultScenario}
             onChange={(e) => setDefaultScenario(e.target.value as ScenarioOutcome)}
-            className={input}
+            className="select"
             data-testid="project-default-select"
           >
             {SCENARIOS.map((s) => (
@@ -106,78 +100,91 @@ export function ProjectSettingsForm({ project }: { project: Project; locale?: st
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-xs text-muted mb-1">{t("pending_settle_delay")}</label>
+        <div className="field">
+          <label className="field__label" htmlFor="project-pending-delay">
+            {t("pending_settle_delay")}
+          </label>
           <input
+            id="project-pending-delay"
             type="number"
             min="0"
             max="299"
             value={pendingSettleDelay}
             onChange={(e) => setPendingSettleDelay(Number(e.target.value))}
-            className={input}
+            className="input mono"
             data-testid="pending-delay-input"
           />
         </div>
-        <div>
-          <label className="block text-xs text-muted mb-1">{t("timeout_delay")}</label>
+        <div className="field">
+          <label className="field__label" htmlFor="project-timeout-delay">
+            {t("timeout_delay")}
+          </label>
           <input
+            id="project-timeout-delay"
             type="number"
             min="0"
             max="299"
             value={timeoutDelay}
             onChange={(e) => setTimeoutDelay(Number(e.target.value))}
-            className={input}
+            className="input mono"
             data-testid="timeout-delay-input"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-3">
-          <label className="block text-xs text-muted mb-1">
+        <div className="field md:col-span-3">
+          <label className="field__label" htmlFor="project-webhook-url">
             {tScenario("webhook_url_label")}
           </label>
           <input
+            id="project-webhook-url"
             type="url"
             dir="ltr"
             placeholder="https://example.com/webhooks/payment"
             value={webhookUrl}
             onChange={(e) => setWebhookUrl(e.target.value)}
-            className={input}
+            className="input mono"
             data-testid="project-webhook-url-input"
           />
         </div>
-        <div>
-          <label className="block text-xs text-muted mb-1">{t("history_cap")}</label>
+        <div className="field">
+          <label className="field__label" htmlFor="project-history-cap">
+            {t("history_cap")}
+          </label>
           <input
+            id="project-history-cap"
             type="number"
             min="1"
             value={historyCap}
             onChange={(e) => setHistoryCap(Number(e.target.value))}
-            className={input}
+            className="input mono"
             data-testid="project-history-cap-input"
           />
         </div>
-        <div>
-          <label className="block text-xs text-muted mb-1">{t("webhook_retry_max")}</label>
+        <div className="field">
+          <label className="field__label" htmlFor="project-webhook-retry-max">
+            {t("webhook_retry_max")}
+          </label>
           <input
+            id="project-webhook-retry-max"
             type="number"
             min="0"
             max="10"
             value={webhookRetryMax}
             onChange={(e) => setWebhookRetryMax(Number(e.target.value))}
-            className={input}
+            className="input mono"
             data-testid="project-webhook-retry-max-input"
           />
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 flex-wrap pt-1">
+      <div className="row-flex justify-between">
         <WebhookPingButton targetUrl={webhookUrl || null} />
         <button
           type="submit"
           disabled={loading}
-          className="btn-primary bg-accent text-accent-on px-3.5 py-1.5 rounded-[6px] text-[13px] font-medium hover:bg-accent/92 transition-colors duration-fast ease-standard disabled:opacity-50"
+          className="btn btn--primary"
           data-testid="save-project-btn"
         >
           {loading ? t("saving") : tScenario("save_project")}

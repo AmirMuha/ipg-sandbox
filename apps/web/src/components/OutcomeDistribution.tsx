@@ -1,16 +1,25 @@
 /**
- * Stacked outcome ratio track (the design's `.outcome-track`), plus its legend.
+ * Stacked outcome ratio track (the design's `.chart`), plus its legend.
  * Server component: it reads no client state, and the segments are sized by
  * flex-grow ratios rather than measured DOM, so no measurement pass is needed.
+ *
+ * The export keys its track on transaction STATUS (settled/pending/declined/
+ * expired/failed). This one is keyed on scenario OUTCOME, which is what
+ * /analytics/overview actually returns — hence the scenario-named segment
+ * classes in console.css. Same palette, different vocabulary.
  */
 const SEGMENTS = [
-  { key: "approve", className: "bg-accent", fa: "قبول", en: "Approve" },
-  { key: "decline", className: "bg-danger", fa: "رد", en: "Decline" },
-  { key: "timeout", className: "bg-warning", fa: "اتمام مهلت", en: "Timeout" },
-  { key: "verify_fail", className: "bg-text-2", fa: "خطای تأیید", en: "Verify Fail" },
-  { key: "pending_settle", className: "bg-border", fa: "در انتظار تسویه", en: "Pending Settle" },
-  { key: "refund", className: "bg-accent-ink", fa: "بازگشت وجه", en: "Refund" },
+  { key: "approve", fa: "قبول", en: "Approve" },
+  { key: "decline", fa: "رد", en: "Decline" },
+  { key: "timeout", fa: "اتمام مهلت", en: "Timeout" },
+  { key: "verify_fail", fa: "خطای تأیید", en: "Verify Fail" },
+  { key: "pending_settle", fa: "در انتظار تسویه", en: "Pending Settle" },
+  { key: "refund", fa: "بازگشت وجه", en: "Refund" },
 ] as const;
+
+/** `verify_fail` → `verify-fail`, so the key is a legal CSS class fragment.
+ *  The `--x` suffix carries colour; `.chart__seg` adds the track geometry. */
+const segColor = (key: string) => `chart__seg--${key.replace(/_/g, "-")}`;
 
 export function OutcomeDistribution({
   distribution,
@@ -21,46 +30,53 @@ export function OutcomeDistribution({
   total: number;
   locale?: string;
 }) {
+  const isFa = locale === "fa";
   const rows = SEGMENTS.map((seg) => ({
     ...seg,
     label: locale === "fa" ? seg.fa : seg.en,
     count: distribution[seg.key] ?? 0,
   })).filter((row) => row.count > 0);
 
-  if (rows.length === 0) {
-    return (
-      <div
-        className="outcome-track flex h-2.5 w-full overflow-hidden rounded-pill bg-surface-subtle"
-        data-testid="outcome-distribution"
-      />
-    );
-  }
-
   const pct = (n: number) => (total > 0 ? `${Math.round((n / total) * 100)}%` : "—");
 
   return (
-    <div data-testid="outcome-distribution">
-      <div className="outcome-track flex h-2.5 w-full overflow-hidden rounded-pill bg-surface-subtle">
-        {rows.map((row) => (
-          <span
-            key={row.key}
-            className={row.className}
-            style={{ flex: `${row.count} 0 0%` }}
-            title={`${row.label}: ${row.count}`}
-          />
-        ))}
+    <div className="card" data-testid="outcome-distribution">
+      <div className="card__head">
+        <h2 className="card__title">{isFa ? "توزیع نتایج" : "Outcome Distribution"}</h2>
+        <span className="badge badge--failed">
+          {total} {isFa ? "تراکنش" : "transactions"}
+        </span>
       </div>
+      <div className="card__body">
+        <div className="chart">
+          <div
+            className="chart__bar"
+            role="img"
+            aria-label={rows.map((r) => `${r.label} ${r.count}`).join(", ")}
+          >
+            {rows.map((row) => (
+              <span
+                key={row.key}
+                className={`chart__seg ${segColor(row.key)}`}
+                style={{ flex: `${row.count} 0 0%` }}
+                title={`${row.label}: ${row.count}`}
+              />
+            ))}
+          </div>
 
-      <ul className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        {rows.map((row) => (
-          <li key={row.key} className="flex items-center gap-1.5 text-xs text-muted">
-            <span className={`w-2 h-2 rounded-full shrink-0 ${row.className}`} aria-hidden="true" />
-            <span>{row.label}</span>
-            <span className="text-text-2 font-medium tabular-nums">{row.count}</span>
-            <span className="tabular-nums opacity-70">{pct(row.count)}</span>
-          </li>
-        ))}
-      </ul>
+          <div className="chart__legend">
+            {rows.map((row) => (
+              <span key={row.key} className="chart__key">
+                <span className={`chart__swatch ${segColor(row.key)}`} aria-hidden="true" />
+                <span>{row.label}</span>
+                <span className="chart__count">
+                  {row.count} · {pct(row.count)}
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -99,30 +99,23 @@ export function ScenarioControls({
   }
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="p-3 text-sm text-danger-ink bg-danger-bg border border-danger-border rounded">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="p-3 text-sm text-success-ink bg-success-bg border border-success-border rounded">
-          {success}
-        </div>
-      )}
+    <div className="stack-lg">
+      {error && <div className="banner banner--danger">{error}</div>}
+      {success && <div className="banner">{success}</div>}
 
       {transaction && (
         <form
           onSubmit={handleTxSubmit}
-          className="panel bg-surface border border-border rounded-console p-5 space-y-4"
+          className="card card__body stack-md"
           data-testid="per-tx-scenario-form"
         >
-          <h3 className="font-semibold text-sm">{tScenario("per_tx_title")}</h3>
-          <div className="flex items-center gap-3">
+          <h3 className="card__title">{tScenario("per_tx_title")}</h3>
+          <div className="row-flex">
             <select
               value={forcedScenario}
               onChange={(e) => setForcedScenario(e.target.value)}
-              className="bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+              className="select mono"
+              aria-label={tScenario("force_scenario")}
               data-testid="per-tx-scenario-select"
             >
               <option value="">{tScenario("clear_force")}</option>
@@ -132,11 +125,7 @@ export function ScenarioControls({
                 </option>
               ))}
             </select>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary bg-accent text-accent-on px-3.5 py-1.5 rounded-[6px] text-[13px] font-medium hover:bg-accent/92 transition-colors duration-fast ease-standard disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="btn btn--primary">
               {tScenario("apply")}
             </button>
           </div>
@@ -146,17 +135,20 @@ export function ScenarioControls({
       {project && (
         <form
           onSubmit={handleProjectSubmit}
-          className="panel bg-surface border border-border rounded-console p-5 space-y-4"
+          className="card card__body stack-md"
           data-testid="project-scenario-form"
         >
-          <h3 className="font-semibold text-sm">{tScenario("title_compact")}</h3>
+          <h3 className="card__title">{tScenario("title_compact")}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs text-muted mb-1">{tScenario("default_scenario_label")}</label>
+            <div className="field">
+              <label className="field__label" htmlFor="scenario-project-default">
+                {tScenario("default_scenario_label")}
+              </label>
               <select
+                id="scenario-project-default"
                 value={defaultScenario}
                 onChange={(e) => setDefaultScenario(e.target.value as ScenarioOutcome)}
-                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                className="select mono"
                 data-testid="project-default-select"
               >
                 {SCENARIOS.map((s) => (
@@ -166,70 +158,79 @@ export function ScenarioControls({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs text-muted mb-1">{tScenario("pending_delay_label")}</label>
+            <div className="field">
+              <label className="field__label" htmlFor="scenario-pending-delay">
+                {tScenario("pending_delay_label")}
+              </label>
               <input
+                id="scenario-pending-delay"
                 type="number"
                 min="0"
                 max="299"
                 value={pendingSettleDelay}
                 onChange={(e) => setPendingSettleDelay(Number(e.target.value))}
-                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                className="input mono"
                 data-testid="pending-delay-input"
               />
             </div>
-            <div>
-              <label className="block text-xs text-muted mb-1">{tScenario("timeout_delay_label")}</label>
+            <div className="field">
+              <label className="field__label" htmlFor="scenario-timeout-delay">
+                {tScenario("timeout_delay_label")}
+              </label>
               <input
+                id="scenario-timeout-delay"
                 type="number"
                 min="0"
                 max="299"
                 value={timeoutDelay}
                 onChange={(e) => setTimeoutDelay(Number(e.target.value))}
-                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                className="input mono"
                 data-testid="timeout-delay-input"
               />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-3">
-              <label className="block text-xs text-muted mb-1">
+            <div className="field md:col-span-3">
+              <label className="field__label" htmlFor="scenario-webhook-url">
                 {tScenario("webhook_url_label")}
               </label>
               <input
+                id="scenario-webhook-url"
                 type="url"
                 dir="ltr"
                 placeholder="https://example.com/webhooks/payment"
                 value={webhookUrl}
                 onChange={(e) => setWebhookUrl(e.target.value)}
-                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                className="input mono"
                 data-testid="project-webhook-url-input"
               />
             </div>
-            <div>
-              <label className="block text-xs text-muted mb-1">
+            <div className="field">
+              <label className="field__label" htmlFor="scenario-history-cap">
                 {tScenario("history_cap_label")}
               </label>
               <input
+                id="scenario-history-cap"
                 type="number"
                 min="1"
                 value={historyCap}
                 onChange={(e) => setHistoryCap(Number(e.target.value))}
-                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                className="input mono"
                 data-testid="project-history-cap-input"
               />
             </div>
-            <div>
-              <label className="block text-xs text-muted mb-1">
+            <div className="field">
+              <label className="field__label" htmlFor="scenario-webhook-retry-max">
                 {tScenario("webhook_retry_max_label")}
               </label>
               <input
+                id="scenario-webhook-retry-max"
                 type="number"
                 min="0"
                 max="10"
                 value={webhookRetryMax}
                 onChange={(e) => setWebhookRetryMax(Number(e.target.value))}
-                className="w-full bg-surface-subtle border border-border rounded-[6px] px-3 py-1.5 text-[13px] font-mono text-text focus:outline-none focus:border-accent"
+                className="input mono"
                 data-testid="project-webhook-retry-max-input"
               />
             </div>
@@ -237,7 +238,7 @@ export function ScenarioControls({
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary bg-accent text-accent-on px-3.5 py-1.5 rounded-[6px] text-[13px] font-medium hover:bg-accent/92 transition-colors duration-fast ease-standard disabled:opacity-50"
+            className="btn btn--primary"
             data-testid="save-project-btn"
           >
             {tScenario("save_project")}

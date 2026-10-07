@@ -1,38 +1,488 @@
-/* Marketing-only motion, from the design export's home.html <style> block.
- * Console motion lives in the components themselves; these two keys are the
- * only animations the marketing pages need beyond the global token set. */
+/* ============================================================
+   Marketing — ported from the design export's marketing.html <style>.
+   Loaded by the (marketing) route group only, after ui.css.
 
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+   The export re-skins this page by REDECLARING the whole palette on
+   `body.mkt` (indigo grounds, violet action, lime highlight). That
+   override is deliberately NOT ported: this app runs one palette, so
+   every --surface-* / --text* / --border* / --accent falls through to
+   tokens.css and marketing differs from the console only in GEOMETRY
+   and COMPOSITION — larger radii, wider section rhythm, a hero.
+
+   The class prefix came with the override: `body.mkt .btn` cannot be
+   reached from a page component, so it is renamed to `.mkt .btn` and
+   the shell root carries `className="mkt"`.
+
+   Also dropped on the way in: the export's `html{background:rgb(8 0 35)}`
+   literal, its sun/moon theme-toggle rules, its [data-theme="light"]
+   variants, and `.mkt-screen[hidden]` (these are routes, not screens).
+   ============================================================ */
+
+.mkt{
+  background:rgb(var(--canvas));
+  color:rgb(var(--text));
+  position:relative;
+  overflow-x:hidden;
+
+  /* Marketing rounds harder than the console — palette-independent, so it
+     survives the palette unification. */
+  --r-card:24px;
+  --r-control:14px;
+  --r-modal:24px;
+
+  --mkt-head-h:76px;
+  --mkt-sec-1:clamp(56px, 7vw, 88px);
+  --mkt-sec-2:clamp(64px, 8.5vw, 120px);
+  --mkt-sec-3:clamp(72px, 10vw, 144px);
+  --mkt-display:clamp(2.5rem, 5.6vw, 4.5rem);
+  --mkt-title:clamp(1.75rem, 3.2vw, 2.75rem);
+  --mkt-lead:clamp(1.0625rem, 1.15vw, 1.25rem);
+  --mkt-wide:1160px;
+  /* the page's ONE elevation, on the hero product panel */
+  --mkt-elev:0 40px 120px rgb(0 0 0 / 0.6);
+  --mkt-glow-1:radial-gradient(closest-side, rgb(var(--accent) / 0.38), rgb(var(--accent) / 0) 72%);
+  --mkt-glow-2:radial-gradient(closest-side, rgb(var(--info) / 0.22), rgb(var(--info) / 0) 70%);
+  /* the section transition + hairline rule decoration */
+  --mkt-rule:linear-gradient(90deg, rgb(var(--accent) / 0) 0%, rgb(var(--accent) / 0.6) 30%, rgb(var(--info) / 0.45) 62%, rgb(var(--accent) / 0) 100%);
+  --mkt-head-bg:rgb(var(--canvas) / 0.72);
 }
 
-.animate-in {
-  animation: rise var(--motion-base, 240ms) var(--ease-standard, ease) both;
+.wrap-m{max-inline-size:var(--mkt-wide);margin-inline:auto;padding-inline:clamp(20px,4vw,40px);position:relative;z-index:1}
+/* the header height must also live on :root — html's scroll-padding reads it,
+   and a .mkt-scoped value alone would leave anchored jumps landing under the
+   sticky header. The narrow-screen override later in this sheet wins by order. */
+:root{--mkt-head-h:76px}
+html{scroll-padding-block-start:calc(var(--mkt-head-h) + 24px)}
+
+/* ---------- shared furniture ---------- */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:var(--sp-2);
+  padding:6px var(--sp-3);border-radius:var(--r-pill);
+  background:rgb(var(--accent) / 0.1);border:1px solid rgb(var(--accent) / 0.28);
+  color:rgb(var(--accent));font-size:var(--fs-micro);font-weight:500;letter-spacing:0.02em;
+}
+.eyebrow::before{content:"";inline-size:6px;block-size:6px;border-radius:var(--r-pill);background:currentColor;flex:none}
+
+.section{padding-block:var(--mkt-sec-2);position:relative}
+.section--tight{padding-block:var(--mkt-sec-1)}
+.section--tall{padding-block:var(--mkt-sec-3)}
+.section__head{margin-block-end:clamp(32px,4vw,56px)}
+.section__head--center{text-align:center;display:grid;justify-items:center;max-inline-size:66ch;margin-inline:auto}
+.section__head h2{
+  font-size:var(--mkt-title);font-weight:400;line-height:1.32;
+  letter-spacing:var(--tr-fa-display);margin-block:var(--sp-4) var(--sp-4);text-wrap:balance;
+}
+.section__head p{color:rgb(var(--text-2));font-size:var(--mkt-lead);line-height:var(--lh-fa);max-inline-size:62ch}
+.section__head--center p{max-inline-size:58ch}
+/* the gradient hairline that marks a major section transition */
+.grad-rule{block-size:1px;background:var(--mkt-rule);border:0;margin:0}
+
+/* ---------- header ---------- */
+.mhead{
+  position:sticky;inset-block-start:0;z-index:30;
+  background:var(--mkt-head-bg);
+  backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);
+  border-block-end:1px solid rgb(var(--border));
+}
+.mhead__in{display:flex;align-items:center;gap:clamp(12px,2.5vw,32px);min-block-size:var(--mkt-head-h)}
+.brand{display:flex;align-items:center;gap:var(--sp-3);text-decoration:none;color:rgb(var(--text));flex:none}
+.brand__mark{
+  inline-size:34px;block-size:34px;flex:none;border-radius:11px;
+  background:rgb(var(--accent));color:rgb(var(--accent-ink));
+  display:grid;place-items:center;font-weight:700;font-size:0.8125rem;letter-spacing:0.02em;
+}
+.brand__text{display:grid;gap:1px;line-height:1.15}
+.brand__name{font-weight:600;font-size:var(--fs-label)}
+.brand__sub{font-size:var(--fs-micro);color:rgb(var(--text-2))}
+.mhead__links{display:flex;gap:2px;align-items:center;flex-wrap:wrap}
+.mhead__link{
+  padding:var(--sp-2) var(--sp-4);border-radius:var(--r-pill);
+  background:none;border:0;color:rgb(var(--text-2));
+  font-family:inherit;font-size:var(--fs-label);text-decoration:none;white-space:nowrap;
+  transition:color var(--dur-state) var(--ease),background var(--dur-state) var(--ease);
+}
+.mhead__link:hover{color:rgb(var(--text));background:rgb(var(--text) / 0.07)}
+.mhead__link[aria-current="page"]{color:rgb(var(--text));background:rgb(var(--text) / 0.1);font-weight:500}
+.mhead__spacer{flex:1 1 0;min-width:0}
+.mhead__actions{display:flex;gap:var(--sp-2);flex:none;align-items:center}
+
+/* ---------- buttons: pills, per the reference's button shape ---------- */
+.mkt .btn{border-radius:var(--r-pill);padding-inline:var(--sp-5);font-size:var(--fs-label)}
+.mkt .btn--secondary{background:rgb(var(--text) / 0.08);color:rgb(var(--text));border-color:rgb(var(--border-strong))}
+.mkt .btn--secondary:hover:not(:disabled){background:rgb(var(--text) / 0.14);border-color:rgb(var(--accent) / 0.6)}
+.mkt .btn--ghost{background:transparent;color:rgb(var(--text));border-color:rgb(var(--border-strong))}
+.mkt .btn--ghost:hover:not(:disabled){background:rgb(var(--text) / 0.08);border-color:rgb(var(--accent) / 0.6);color:rgb(var(--text))}
+.mkt .iconbtn{border-radius:var(--r-pill)}
+.mkt .copy{border-radius:var(--r-pill)}
+.mkt .badge{border-radius:var(--r-pill)}
+.mkt .input{border-radius:var(--r-control)}
+
+/* ---------- ambient glow — budgeted to one, static ---------- */
+.glow{position:absolute;pointer-events:none;z-index:0;filter:blur(6px)}
+.glow--hero{inset-block-start:-140px;inset-inline-start:50%;translate:-50% 0;inline-size:min(1100px,120vw);aspect-ratio:1.6;background:var(--mkt-glow-1)}
+
+/* ---------- hero: centred, product surface beneath ---------- */
+.hero{padding-block:var(--mkt-sec-3) var(--mkt-sec-2);position:relative;text-align:center}
+.hero__copy{display:grid;justify-items:center;max-inline-size:74ch;margin-inline:auto}
+.hero h1{
+  font-size:var(--mkt-display);font-weight:400;line-height:1.24;
+  letter-spacing:var(--tr-fa-display);margin-block:var(--sp-5) var(--sp-5);text-wrap:balance;
+}
+.hero h1 .highlight{color:rgb(var(--accent))}
+.hero__lead{
+  font-size:var(--mkt-lead);color:rgb(var(--text-2));
+  max-inline-size:60ch;line-height:var(--lh-fa);margin-block-end:var(--sp-8);
+}
+.hero__cta{display:flex;gap:var(--sp-3);flex-wrap:wrap;justify-content:center}
+
+/* the product surface: terminal + receipt, one framed panel */
+.hero__panel{
+  position:relative;margin-block-start:clamp(40px,5vw,72px);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));
+  border-radius:var(--r-card);box-shadow:var(--mkt-elev);overflow:hidden;
+}
+.hero__panel::before{content:"";position:absolute;inset-block-start:0;inset-inline:0;block-size:1px;background:var(--mkt-rule);opacity:0.7}
+.hero__panel-in{
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+  gap:clamp(20px,2.6vw,32px);padding:clamp(20px,2.6vw,32px);text-align:start;
+}
+/* The export panels a terminal AGAINST a receipt. This app has only the
+   terminal, so a single child would otherwise sit in the left column with an
+   empty one beside it. */
+.hero__panel-in--single{grid-template-columns:minmax(0,1fr)}
+.hero__panel .term{border-radius:var(--r-control)}
+.hero__panel .receipt{background:transparent;border:0;border-radius:0;padding:0;align-content:start}
+.hero__panel .receipt__hook{border-radius:var(--r-control)}
+
+/* ---------- receipt ---------- */
+.receipt{display:grid;gap:var(--sp-4)}
+.receipt__head{display:flex;align-items:center;gap:var(--sp-3);padding-block-end:var(--sp-4);border-block-end:1px solid rgb(var(--border))}
+.receipt__id{
+  flex:1 1 0;min-width:0;text-align:end;
+  font-family:var(--font-mono);font-size:var(--fs-micro);
+  color:rgb(var(--text-2));direction:ltr;unicode-bidi:isolate;
+}
+.receipt__amt{
+  display:block;margin-block-start:var(--sp-1);
+  font-family:var(--font-mono);font-size:clamp(1.5rem,2.4vw,1.875rem);font-weight:700;
+  line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;
+  direction:ltr;unicode-bidi:isolate;white-space:nowrap;
+}
+.receipt__unit{font-size:0.875rem;font-weight:500;color:rgb(var(--text-2))}
+.receipt__hook{
+  display:grid;gap:var(--sp-3);padding:var(--sp-4);border-radius:var(--r-control);
+  background:rgb(var(--danger) / 0.08);border:1px solid rgb(var(--danger) / 0.32);
+}
+.receipt__hooklabel{
+  display:flex;align-items:center;gap:var(--sp-2);
+  font-size:var(--fs-micro);font-weight:600;letter-spacing:var(--tr-micro);color:rgb(var(--danger));
+}
+.receipt__hooklabel .ic{inline-size:12px;block-size:12px}
+.hookcode{
+  margin:0;font-family:var(--font-mono);font-size:var(--fs-row-dense);line-height:1.7;
+  direction:ltr;text-align:start;white-space:pre-wrap;overflow-wrap:anywhere;
 }
 
-.delay-1 {
-  animation-delay: 60ms;
+/* ---------- trust band ---------- */
+.band{
+  position:relative;padding-block:var(--sp-8);
+  border-block:1px solid rgb(var(--border));
+  background:rgb(var(--surface-1));
+}
+.band__cap{
+  display:flex;align-items:baseline;justify-content:center;gap:var(--sp-4);
+  margin-block-end:var(--sp-6);text-align:center;
+  font-size:var(--fs-micro);letter-spacing:var(--tr-micro);color:rgb(var(--text-2));
+}
+.band__cap .mono{font-family:var(--font-mono);letter-spacing:0;color:rgb(var(--text-3))}
+.marquee{overflow:hidden;
+  mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.marquee__track{display:flex;gap:clamp(40px,6vw,88px);align-items:center;inline-size:max-content}
+.marquee__item{display:flex;align-items:center;gap:var(--sp-3)}
+.marquee__logo{inline-size:112px;block-size:42px;display:grid;place-items:center;flex:none;overflow:hidden}
+.marquee__logo img{inline-size:112px;block-size:auto;aspect-ratio:168/63;object-fit:contain;display:block;filter:grayscale(1) contrast(1.05) brightness(1.9)}
+.marquee__word{font-weight:700;font-size:1.25rem;letter-spacing:-0.01em;color:rgb(var(--text-2));line-height:1;white-space:nowrap}
+.marquee__meta{font-family:var(--font-mono);font-size:var(--fs-micro);color:rgb(var(--text-2));white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){
+  .marquee__track{animation:mkt-marquee 56s linear infinite}
+  .marquee:hover .marquee__track{animation-play-state:paused}
+  @keyframes mkt-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 }
 
-/* Hero quickstart dwell bar. scaleX(0 -> 1) from the right, matching RTL. */
-@keyframes qs-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+/* ---------- cards: one language for mechanism, steps, providers ---------- */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2vw,24px);list-style:none;padding:0;margin:0;counter-reset:card}
+/* NB: this deliberately reshapes ui.css's .card, the way the export does. It is
+   scoped to the marketing route group, which is the only place it loads. */
+.mkt .card{
+  display:grid;gap:var(--sp-3);align-content:start;
+  padding:clamp(22px,2.4vw,32px);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+  transition:border-color var(--dur-state) var(--ease),background var(--dur-state) var(--ease);
+}
+.mkt .card:hover{border-color:rgb(var(--accent) / 0.45);background:rgb(var(--surface-2))}
+.card__tag{
+  display:inline-flex;align-items:center;gap:6px;inline-size:fit-content;
+  padding:4px 10px;border-radius:var(--r-pill);
+  background:rgb(var(--accent) / 0.12);color:rgb(var(--accent));
+  font-family:var(--font-mono);font-size:var(--fs-micro);
+}
+.mkt .card h3{font-size:var(--fs-h3);font-weight:600;line-height:1.5}
+.mkt .card p{color:rgb(var(--text-2));font-size:var(--fs-label);line-height:var(--lh-fa)}
+.mkt .card code{font-family:var(--font-mono);unicode-bidi:isolate;color:rgb(var(--text))}
+
+/* ---------- bento stats ---------- */
+.bento{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2vw,24px)}
+.bento__cell{
+  display:grid;gap:var(--sp-2);align-content:start;
+  padding:clamp(22px,2.4vw,32px);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+}
+.bento__fig{
+  font-family:var(--font-mono);font-weight:400;
+  font-size:clamp(2.5rem,5vw,3.5rem);line-height:1;
+  font-variant-numeric:tabular-nums;color:rgb(var(--text));
+}
+.bento__cap{font-size:var(--fs-label);color:rgb(var(--text-2))}
+.bento__cell--wide{
+  grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;
+  gap:clamp(20px,3vw,48px);flex-wrap:wrap;
+  background:linear-gradient(120deg, rgb(var(--accent) / 0.18) 0%, rgb(var(--surface-2)) 55%, rgb(var(--surface-1)) 100%);
+  border-color:rgb(var(--accent) / 0.5);
+}
+.bento__cell--wide .bento__fig{color:rgb(var(--text));font-size:clamp(2rem,3.6vw,2.75rem)}
+.bento__cell--wide .bento__fig em{font-style:normal;color:rgb(var(--accent))}
+.bento__cell--wide .bento__cap{color:rgb(var(--text-2));max-inline-size:46ch}
+.bento__figures{display:flex;align-items:baseline;gap:clamp(20px,3vw,40px);flex-wrap:wrap}
+
+/* ---------- scenario matrix ---------- */
+.mx-wrap{
+  border:1px solid rgb(var(--border));border-radius:var(--r-card);
+  overflow:auto;overscroll-behavior-x:contain;background:rgb(var(--surface-1));
+}
+.mx{inline-size:100%;border-collapse:collapse;font-size:var(--fs-label)}
+.mx th,.mx td{border-inline-start:1px solid rgb(var(--border));border-block-end:1px solid rgb(var(--border));padding:0;vertical-align:middle}
+.mx tr > :first-child{border-inline-start:0}
+.mx tbody tr:last-child > *{border-block-end:0}
+.mx thead th{
+  background:rgb(var(--surface-2));padding:var(--sp-3);
+  font-size:var(--fs-micro);font-weight:600;letter-spacing:var(--tr-micro);
+  color:rgb(var(--text-2));text-align:center;line-height:1.5;
+}
+.mx thead th:first-child{text-align:start}
+.mx__col-ver{display:block;font-family:var(--font-mono);font-size:var(--fs-micro);font-weight:400;letter-spacing:0}
+.mx tbody th{background:rgb(var(--surface-1));padding:var(--sp-3);text-align:start;font-weight:500}
+.mx__row-en{
+  display:block;margin-block-start:2px;unicode-bidi:isolate;
+  font-family:var(--font-mono);font-size:var(--fs-micro);font-weight:400;color:rgb(var(--text-2));
+}
+.mx__cell{
+  display:grid;place-items:center;gap:var(--sp-1);inline-size:100%;
+  padding:var(--sp-3) var(--sp-2);background:transparent;border:0;cursor:pointer;
+  color:rgb(var(--text));font:inherit;
+  transition:background var(--dur-state) var(--ease);
+}
+.mx__cell:hover{background:rgb(var(--text) / 0.06)}
+.mx__cell[data-copied="ok"]{background:rgb(var(--success) / 0.14)}
+.mx__cell[data-copied="fail"]{background:rgb(var(--danger) / 0.14)}
+.mx__mark{inline-size:26px;block-size:26px;border-radius:var(--r-pill);display:grid;place-items:center}
+.mx__mark .ic{inline-size:13px;block-size:13px;stroke-width:2.2}
+.mx__mark--settled{background:rgb(var(--success) / 0.16);color:rgb(var(--success))}
+.mx__mark--pending{background:rgb(var(--warning) / 0.16);color:rgb(var(--warning))}
+.mx__mark--fail{background:rgb(var(--danger) / 0.16);color:rgb(var(--danger))}
+.mx__val{font-family:var(--font-mono);font-size:var(--fs-row);color:rgb(var(--text-2));direction:ltr;unicode-bidi:isolate}
+.mx__cell:hover .mx__val{color:rgb(var(--text))}
+.mx__cell[data-copied="ok"] .mx__val{color:rgb(var(--success))}
+.mx__cell[data-copied="fail"] .mx__val{color:rgb(var(--danger))}
+.mx__cap{
+  display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-3);
+  margin-block-start:var(--sp-5);font-size:var(--fs-label);color:rgb(var(--text-2));
+}
+.mx__cap b{font-family:var(--font-mono);font-weight:600;color:rgb(var(--text))}
+.mx__cap i{font-style:normal;color:rgb(var(--text-3))}
+@media (max-width:640px){
+  .mx{min-inline-size:520px}
+  .mx thead th,.mx tbody th,.mx__cell{padding:var(--sp-2)}
+  .mx__val{font-size:var(--fs-row-dense)}
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .animate-in {
-    animation: none;
-  }
+/* ---------- providers ---------- */
+.providers{display:grid;gap:clamp(16px,2vw,24px)}
+.provider{
+  position:relative;display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);
+  gap:clamp(24px,3vw,56px);padding:clamp(24px,3vw,40px);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+  overflow:hidden;
+}
+.provider::before{content:"";position:absolute;inset-block-start:0;inset-inline:0;block-size:2px;background:var(--mkt-rule);opacity:0.55}
+.provider__id{display:grid;gap:var(--sp-4);align-content:start;justify-items:start}
+.provider__logo{
+  display:grid;place-items:center;inline-size:120px;block-size:46px;overflow:hidden;
+  background:rgb(var(--text) / 0.05);border:1px solid rgb(var(--border));border-radius:var(--r-control);
+}
+.provider__logo img{inline-size:100px;block-size:auto;aspect-ratio:168/63;object-fit:contain;display:block;filter:grayscale(1) contrast(1.05) brightness(1.9)}
+.provider__word{font-weight:700;font-size:1.375rem;letter-spacing:-0.01em;color:rgb(var(--text));line-height:1}
+.provider__name{font-size:var(--fs-h2);font-weight:400;line-height:1.35}
+.provider__spec{display:grid;gap:var(--sp-6);align-content:start;min-width:0}
+.gap{
+  display:grid;gap:var(--sp-2);padding:var(--sp-4);border-radius:var(--r-control);
+  background:rgb(var(--warning) / 0.08);border:1px solid rgb(var(--warning) / 0.32);
+}
+.gap__label{
+  display:flex;align-items:center;gap:var(--sp-2);
+  font-size:var(--fs-micro);font-weight:600;letter-spacing:var(--tr-micro);color:rgb(var(--warning));
+}
+.gap__label .ic{inline-size:12px;block-size:12px}
+.gap p{font-size:var(--fs-row);color:rgb(var(--text-2));line-height:var(--lh-fa)}
+.gap code{font-family:var(--font-mono);color:rgb(var(--text));unicode-bidi:isolate}
+.oplist{display:grid;gap:var(--sp-2);list-style:none;padding:0;margin:0}
+.oplist li{display:flex;align-items:flex-start;gap:var(--sp-2);font-size:var(--fs-label);line-height:var(--lh-fa)}
+.oplist .ic{inline-size:14px;block-size:14px;stroke-width:2.2;margin-block-start:6px;stroke:rgb(var(--success))}
+.oplist code{font-family:var(--font-mono);unicode-bidi:isolate}
+.license{font-size:var(--fs-row);color:rgb(var(--text-2));max-inline-size:64ch;line-height:var(--lh-fa);margin-block-start:var(--sp-8)}
+.license a{color:rgb(var(--accent))}
+
+/* ---------- pricing ---------- */
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(16px,2vw,24px);align-items:start;max-inline-size:900px}
+.tier{
+  position:relative;display:grid;gap:var(--sp-6);align-content:start;
+  padding:clamp(26px,3vw,40px);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+}
+.tier--featured{border-color:rgb(var(--accent));background:linear-gradient(180deg, rgb(var(--accent) / 0.12) 0%, rgb(var(--surface-1)) 55%)}
+.tier--featured::before{content:"";position:absolute;inset-block-start:0;inset-inline:0;block-size:2px;background:var(--mkt-rule)}
+.tier__name{font-size:var(--fs-h3);font-weight:600}
+.tier__price{display:flex;align-items:baseline;gap:var(--sp-2);flex-wrap:wrap;margin-block-start:var(--sp-3)}
+.tier__amount{
+  font-family:var(--font-mono);font-size:clamp(2rem,3.4vw,2.75rem);font-weight:400;
+  line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:rgb(var(--text));
+}
+.tier__per{font-size:var(--fs-label);color:rgb(var(--text-2))}
+.tier__list{display:grid;gap:var(--sp-3);list-style:none;padding:0;margin:0}
+.tier__list li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:var(--sp-3);font-size:var(--fs-label);align-items:start;line-height:var(--lh-fa)}
+.tier__list .ic{inline-size:15px;block-size:15px;margin-block-start:5px;stroke:rgb(var(--success));stroke-width:2.2}
+.tier__list li.is-off{color:rgb(var(--text-2))}
+.tier__list li.is-off .ic{stroke:rgb(var(--text-3))}
+
+/* ---------- closing CTA ---------- */
+.cta-band{
+  position:relative;overflow:hidden;text-align:center;
+  padding:clamp(48px,6vw,88px) clamp(24px,4vw,48px);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+}
+.cta-band h2{font-size:var(--mkt-title);font-weight:400;line-height:1.3;margin-block-end:var(--sp-4);text-wrap:balance}
+.cta-band p{color:rgb(var(--text-2));font-size:var(--mkt-lead);line-height:var(--lh-fa);max-inline-size:56ch;margin-inline:auto;margin-block-end:var(--sp-8)}
+.cta-band .hero__cta{position:relative;z-index:1}
+.cta-band > *{position:relative;z-index:1}
+
+/* ---------- arrow link list (reference's split link cards) ---------- */
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:clamp(12px,1.6vw,20px);list-style:none;padding:0;margin:0}
+.link-card{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);
+  padding:var(--sp-5) var(--sp-5);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+  color:rgb(var(--text));text-decoration:none;font-size:var(--fs-label);font-weight:500;
+  transition:border-color var(--dur-state) var(--ease),background var(--dur-state) var(--ease);
+}
+.link-card:hover{border-color:rgb(var(--accent) / 0.5);background:rgb(var(--surface-2))}
+.link-card .ic{inline-size:18px;block-size:18px;color:rgb(var(--accent));flex:none}
+
+/* ---------- login ---------- */
+.login-wrap{max-inline-size:460px;margin-inline:auto;padding-block:var(--mkt-sec-3) var(--mkt-sec-2)}
+.login-card{
+  padding:clamp(26px,4vw,40px);display:grid;gap:var(--sp-5);
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+}
+.login-card h1{font-size:var(--mkt-title);font-weight:400;line-height:1.3}
+.login-card > div > p{color:rgb(var(--text-2));font-size:var(--fs-label);line-height:var(--lh-fa)}
+.login-note{
+  display:flex;gap:var(--sp-3);align-items:flex-start;
+  padding:var(--sp-4);border-radius:var(--r-control);
+  background:rgb(var(--text) / 0.05);border:1px solid rgb(var(--border));
+  font-size:var(--fs-row);color:rgb(var(--text-2));line-height:var(--lh-fa);
+}
+.login-note .ic{inline-size:14px;block-size:14px;margin-block-start:4px;flex:none}
+
+/* ---------- FAQ ---------- */
+.faq{display:grid;gap:var(--sp-3);max-inline-size:82ch;margin-inline:auto}
+.faq details{
+  background:rgb(var(--surface-1));border:1px solid rgb(var(--border));border-radius:var(--r-card);
+  transition:border-color var(--dur-state) var(--ease);
+}
+.faq details[open]{border-color:rgb(var(--accent) / 0.45)}
+.faq summary{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);
+  padding:clamp(18px,2vw,24px);cursor:pointer;list-style:none;
+  font-weight:500;font-size:var(--mkt-lead);line-height:var(--lh-fa);
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .ic{inline-size:18px;block-size:18px;flex:none;margin-block-start:5px;color:rgb(var(--accent));transition:transform var(--dur-state) var(--ease)}
+.faq details[open] summary .ic{transform:rotate(45deg)}
+.faq details > p{padding:0 clamp(18px,2vw,24px) clamp(18px,2vw,24px);color:rgb(var(--text-2));font-size:var(--fs-label);line-height:var(--lh-fa);max-inline-size:70ch}
+.faq code{font-family:var(--font-mono);unicode-bidi:isolate;color:rgb(var(--text))}
+
+/* ---------- footer ---------- */
+.mfoot{position:relative;border-block-start:1px solid rgb(var(--border));padding-block:var(--mkt-sec-1) var(--sp-6);margin-block-start:var(--mkt-sec-1);background:rgb(var(--surface-1))}
+.mfoot__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:clamp(24px,3vw,48px);margin-block-end:var(--sp-10)}
+.mfoot h4{font-size:var(--fs-micro);font-weight:600;letter-spacing:var(--tr-micro);color:rgb(var(--text-2));margin-block-end:var(--sp-4)}
+.mfoot ul{list-style:none;padding:0;margin:0;display:grid;gap:var(--sp-3)}
+.mfoot a{color:rgb(var(--text));text-decoration:none;font-size:var(--fs-label);transition:color var(--dur-state) var(--ease)}
+.mfoot a:hover{color:rgb(var(--accent))}
+.mfoot__facts{display:flex;flex-wrap:wrap;gap:var(--sp-2);list-style:none;padding:0;margin:0}
+.mfoot__facts li{
+  padding:4px 12px;border-radius:var(--r-pill);
+  background:rgb(var(--text) / 0.05);border:1px solid rgb(var(--border));
+  font-size:var(--fs-micro);color:rgb(var(--text-2));white-space:nowrap;
+}
+.mfoot__bottom{
+  display:flex;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap;
+  padding-block-start:var(--sp-6);border-block-start:1px solid rgb(var(--border));
+  font-size:var(--fs-row);color:rgb(var(--text-2));
+}
+.mfoot__bottom .mono{font-family:var(--font-mono);unicode-bidi:isolate}
+
+/* ---------- entrance: one, on the hero copy only ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .hero__copy > *{animation:mkt-rise 400ms var(--ease) both}
+  .hero__copy > :nth-child(2){animation-delay:40ms}
+  .hero__copy > :nth-child(3){animation-delay:80ms}
+  .hero__copy > :nth-child(4){animation-delay:120ms}
+  @keyframes mkt-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:1024px){
+  .hero__panel-in{grid-template-columns:minmax(0,1fr)}
+  .provider{grid-template-columns:minmax(0,1fr);gap:var(--sp-6)}
+}
+@media (max-width:860px){
+  :root,.mkt{--mkt-head-h:112px}
+  .mhead__in{flex-wrap:wrap;gap:var(--sp-2);padding-block:var(--sp-2)}
+  .mhead__links{order:3;inline-size:100%;overflow-x:auto;scrollbar-width:none;padding-block-end:2px;flex-wrap:nowrap}
+  .mhead__links::-webkit-scrollbar{display:none}
+  .cards,.bento{grid-template-columns:minmax(0,1fr)}
+  .hero__cta .btn{flex:1 1 100%}
+  .gap,.bento__figures{width:100%}
+}
+@media (max-width:560px){
+  .bento__cell--wide{padding:var(--sp-5)}
+  .mfoot__bottom{justify-content:flex-start}
+}
+
+/* ---------- app-only additions ---------- */
+/* Marketing path dwell bar, kept from the previous sheet. */
+@keyframes qs-fill{
+  from{transform:scaleX(0)}
+  to{transform:scaleX(1)}
+}
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.animate-in{animation:rise var(--dur-panel) var(--ease) both}
+.delay-1{animation-delay:60ms}
+
+@media (prefers-reduced-motion:reduce){
+  .animate-in{animation:none}
 }
