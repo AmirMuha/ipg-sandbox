@@ -71,7 +71,7 @@ jobs:
             git remote set-url origin "${remote}"
             git fetch origin
             git reset --hard origin/main
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --wait --wait-timeout 300
             docker image prune -f
       # A bind failure on 80/443 means something else already owns them on the box; this
       # prints who, so the next failure is diagnosable from the run log alone.
