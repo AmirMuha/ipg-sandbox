@@ -113,7 +113,7 @@ export function UserMenu({
         aria-expanded={open}
         aria-haspopup="true"
       >
-        <span className="brand__mark">{initial}</span>
+        <span className="avatar">{initial}</span>
         <span className="hidden sm:inline-block truncate max-w-[120px] font-medium">
           {displayName}
         </span>
@@ -129,13 +129,13 @@ export function UserMenu({
       {open && (
         <div
           dir={isFa ? "rtl" : "ltr"}
-          className={`card absolute ${isFa ? "left-0" : "right-0"} mt-2 w-56 py-2 z-50`}
+          className={`menu absolute ${isFa ? "left-0" : "right-0"} mt-2 z-50`}
           role="menu"
         >
-          <div className="px-4 py-2">
+          <div className="menu__header">
             <div className="small truncate font-semibold">{displayName}</div>
             <div className="small muted truncate">{user.email}</div>
-            <div className="mt-1.5">
+            <div className="mt-1">
               <span className="badge badge--accent">{tierName}</span>
             </div>
           </div>
@@ -145,7 +145,7 @@ export function UserMenu({
           <Link
             href={`/${locale}/console`}
             onClick={() => setOpen(false)}
-            className="console-nav__link"
+            className="menu__item"
             role="menuitem"
           >
             <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
@@ -153,34 +153,34 @@ export function UserMenu({
               <line x1="8" y1="21" x2="16" y2="21" />
               <line x1="12" y1="17" x2="12" y2="21" />
             </svg>
-            {isFa ? "کنسول تراکنش‌ها" : "Transactions Console"}
+            <span>{isFa ? "کنسول تراکنش‌ها" : "Transactions Console"}</span>
           </Link>
 
           <Link
             href={`/${locale}/settings`}
             onClick={() => setOpen(false)}
-            className="console-nav__link"
+            className="menu__item"
             role="menuitem"
           >
             <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.63.68 1.09 1.32 1.09H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
-            {isFa ? "تنظیمات و پلن" : "Settings & Plan"}
+            <span>{isFa ? "تنظیمات و پلن" : "Settings & Plan"}</span>
           </Link>
 
           {user.is_admin && (
             <Link
               href={`/${locale}/admin`}
               onClick={() => setOpen(false)}
-              className="console-nav__link"
+              className="menu__item"
               role="menuitem"
               data-testid="admin-providers-nav"
             >
               <svg className="ic console-nav__lock" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              {isFa ? "مدیریت سامانه (مدیر)" : "Platform Admin"}
+              <span>{isFa ? "مدیریت سامانه (مدیر)" : "Platform Admin"}</span>
             </Link>
           )}
 
@@ -189,7 +189,7 @@ export function UserMenu({
           <button
             type="button"
             onClick={handleLogout}
-            className="btn btn--danger btn--sm btn--block"
+            className="menu__item menu__item--danger"
             role="menuitem"
           >
             <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
@@ -197,7 +197,7 @@ export function UserMenu({
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-            {isFa ? "خروج از حساب" : "Sign Out"}
+            <span>{isFa ? "خروج از حساب" : "Sign Out"}</span>
           </button>
         </div>
       )}
