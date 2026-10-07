@@ -53,7 +53,10 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd ${{ secrets.DEPLOY_DIR }}
+            mkdir -p "${{ secrets.DEPLOY_DIR }}"
+            cd "${{ secrets.DEPLOY_DIR }}"
+            # First deploy: no checkout yet (reset alone needs one).
+            [ -d .git ] || git clone https://github.com/AmirMuha/ipg-sandbox.git .
             git fetch origin
             git reset --hard origin/main
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
