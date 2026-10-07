@@ -71,11 +71,19 @@ jobs:
             git remote set-url origin "${remote}"
             git fetch origin
             git reset --hard origin/main
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --wait --wait-timeout 300
+            # nginx owns 80/443 on this box: put our vhost in place and prove the config is
+            # good before touching the stack. Reload happens after `up` so a caddy container
+            # from an earlier deploy has already released the port.
+            sudo -n install -m 0644 ./deploy/nginx/ipg.sandboxed.ir.conf /etc/nginx/sites-available/ipg.sandboxed.ir
+            sudo -n ln -sfn /etc/nginx/sites-available/ipg.sandboxed.ir /etc/nginx/sites-enabled/ipg.sandboxed.ir
+            sudo -n nginx -t
+            # --remove-orphans drops the caddy container left by earlier deploys.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --wait --wait-timeout 300 --remove-orphans
+            sudo -n systemctl reload-or-restart nginx
             docker image prune -f
       # A bind failure on 80/443 means something else already owns them on the box; this
       # prints who, so the next failure is diagnosable from the run log alone.
-      - if: always()
+      - if: failure()
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_SSH_HOST }}
