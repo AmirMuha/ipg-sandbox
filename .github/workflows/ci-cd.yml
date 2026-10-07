@@ -88,3 +88,11 @@ jobs:
             docker ps -a
             echo "== http services =="
             systemctl list-units --type=service --state=running 2>/dev/null | grep -Ei 'nginx|caddy|apache|httpd|traefik|lighttpd' || true
+            echo "== nginx files =="
+            sudo -n ls -la /etc/nginx/sites-enabled/ /etc/nginx/sites-available/ /etc/nginx/conf.d/ 2>/dev/null || true
+            echo "== enabled vhosts =="
+            sudo -n bash -c 'for f in /etc/nginx/sites-enabled/*; do [ -e "$f" ] && { echo "--- $f"; cat "$f"; }; done' 2>/dev/null || true
+            echo "== nginx.conf directives =="
+            sudo -n grep -nE "server_name|listen |include |ssl_certificate" /etc/nginx/nginx.conf 2>/dev/null || true
+            echo "== letsencrypt =="
+            sudo -n ls -la /etc/letsencrypt/live/ 2>/dev/null || true
