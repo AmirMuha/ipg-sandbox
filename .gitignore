@@ -35,4 +35,8 @@ Thumbs.db
 .idea/
 apps/dashboard/tsconfig.tsbuildinfo
 apps/web/tsconfig.tsbuildinfo
+
+# Playwright output
+apps/web/test-results/
+apps/web/playwright-report/
 *.tsbuildinfo

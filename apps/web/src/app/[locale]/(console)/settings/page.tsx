@@ -121,6 +121,20 @@ export default async function SettingsPage({
         </div>
       </div>
 
+            <div className="card">
+        <div className="card__head">
+          <h2 className="card__title">API Keys</h2>
+        </div>
+        <div className="card__body stack-md">
+          <p className="muted">Manage API keys for programmatic access to your sandbox.</p>
+          <div className="row-flex">
+            <a href={`/${locale}/settings/api-keys`} className="btn btn--secondary btn--sm">
+              Manage API Keys &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+
       {project && (
         <div className="stack-md">
           <h2 className="card__title">{t("project_settings")}</h2>

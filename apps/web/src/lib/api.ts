@@ -295,6 +295,9 @@ async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> 
     );
   }
 
+  // 204 No Content has no body; res.json() would throw on the empty stream.
+  if (res.status === 204) return undefined as T;
+
   return res.json() as Promise<T>;
 }
 
@@ -527,3 +530,33 @@ export async function getMe(): Promise<{ user: User; project: Project }> {
   return fetchApi<{ user: User; project: Project }>("/auth/me");
 }
 
+
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  last_four: string;
+  created_at: string;
+  last_used_at: string | null;
+}
+
+export interface ApiKeyCreated extends ApiKey {
+  token: string;
+}
+
+export async function listApiKeys(): Promise<ApiKey[]> {
+  const json = await fetchApi<{ data: ApiKey[] }>("/auth/api-keys");
+  return json.data;
+}
+
+export async function createApiKey(name: string): Promise<ApiKeyCreated> {
+  const json = await fetchApi<{ data: ApiKeyCreated }>("/auth/api-keys", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  return json.data;
+}
+
+export async function revokeApiKey(id: string): Promise<void> {
+  await fetchApi<unknown>(`/auth/api-keys/${id}`, { method: "DELETE" });
+}

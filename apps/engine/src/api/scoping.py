@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode
 from src.config import Settings
+from src.core.security import hash_api_key
 from src.models import Project, User, UserSession, utcnow
+from src.models.api_key import ApiKey
 from src.models.visitor import VisitorSession
 from src.services.auth import hash_session_token
 
@@ -16,7 +18,7 @@ from src.services.auth import hash_session_token
 async def get_current_user(
     request: Request, db: Annotated[AsyncSession, Depends(get_session)]
 ) -> User | None:
-    """Resolve authenticated user from ipg_session cookie or Bearer header."""
+    """Resolve authenticated user from ipg_session cookie or Bearer header, or API key."""
     token = request.cookies.get("ipg_session")
     if not token:
         auth_header = request.headers.get("Authorization", "")
@@ -25,6 +27,20 @@ async def get_current_user(
 
     if not token:
         return None
+
+    if token.startswith("ipg_key_"):
+        key_hash = hash_api_key(token)
+        stmt = select(ApiKey).where(
+            ApiKey.key_hash == key_hash,
+            ApiKey.revoked_at.is_(None)
+        )
+        api_key = await db.scalar(stmt)
+        if not api_key:
+            return None
+            
+        api_key.last_used_at = utcnow()
+        await db.commit()
+        return await db.get(User, api_key.user_id)
 
     token_hash = hash_session_token(token)
     stmt = select(UserSession).where(

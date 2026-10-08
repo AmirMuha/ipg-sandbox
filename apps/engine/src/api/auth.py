@@ -1,22 +1,24 @@
 """Authentication API routes: registration, login, session inspection, and OAuth (004-launch-readiness-flows)."""
 
 import logging
-import os
 import re
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Annotated, Any
 from urllib.parse import urlencode
+from uuid import UUID
 
-from fastapi import APIRouter, Cookie, Depends, Header, Request, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Request, Response
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.adapters.registry import seed_configs
 from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode
+from src.api.scoping import get_current_user
 from src.config import Settings, dashboard_base_url
+from src.core.security import generate_api_key, hash_api_key
 from src.models import (
     AdapterConfig,
     EmailVerification,
@@ -26,6 +28,7 @@ from src.models import (
     UserSession,
     utcnow,
 )
+from src.models.api_key import ApiKey
 from src.services.auth import (
     generate_session_token,
     hash_password,
@@ -315,7 +318,10 @@ async def login(
     _set_session_cookie(response, token, settings.session_ttl_days)
 
     project = await db.scalar(
-        select(Project).where(Project.user_id == user.id).order_by(Project.created_at.asc()).limit(1)
+        select(Project)
+        .where(Project.user_id == user.id)
+        .order_by(Project.created_at.asc())
+        .limit(1)
     )
 
     return {
@@ -337,12 +343,16 @@ async def login(
 
 @router.get("/me")
 async def me(
-    user_and_session: Annotated[tuple[User, UserSession], Depends(get_current_user_and_session)],
+    user: Annotated[User | None, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> dict[str, Any]:
-    user, _ = user_and_session
+    if not user:
+        raise ApiError(ErrorCode.session_required, "Authentication required", status=401)
     project = await db.scalar(
-        select(Project).where(Project.user_id == user.id).order_by(Project.created_at.asc()).limit(1)
+        select(Project)
+        .where(Project.user_id == user.id)
+        .order_by(Project.created_at.asc())
+        .limit(1)
     )
 
     return {
@@ -490,3 +500,88 @@ async def oauth_callback(
     _set_session_cookie(resp, token, settings.session_ttl_days)
     resp.delete_cookie("oauth_state", path="/")
     return resp
+
+
+@router.post("/api-keys", status_code=201)
+async def create_api_key(
+    request: Request,
+    user_and_session: Annotated[tuple[User, UserSession], Depends(get_current_user_and_session)],
+    db: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    user, _ = user_and_session
+    try:
+        body = await request.json()
+    except Exception:
+        raise ApiError(ErrorCode.validation_error, "Invalid JSON body", status=422)
+
+    name = body.get("name")
+    if not isinstance(name, str) or not name.strip():
+        raise ApiError(ErrorCode.validation_error, "Name is required", status=422)
+
+    # Check limit (max 10)
+    count_stmt = select(ApiKey).where(ApiKey.user_id == user.id, ApiKey.revoked_at.is_(None))
+    active_keys = await db.scalars(count_stmt)
+    if len(active_keys.all()) >= 10:
+        raise ApiError(ErrorCode.validation_error, "API key limit reached (10)", status=400)
+
+    token = generate_api_key()
+    api_key = ApiKey(
+        user_id=user.id,
+        name=name.strip(),
+        key_hash=hash_api_key(token),
+        last_four=token[-4:]
+    )
+    db.add(api_key)
+    await db.commit()
+    await db.refresh(api_key)
+
+    return {
+        "data": {
+            "id": str(api_key.id),
+            "name": api_key.name,
+            "token": token,
+            "last_four": api_key.last_four,
+            "created_at": api_key.created_at.isoformat(),
+        }
+    }
+
+@router.get("/api-keys")
+async def list_api_keys(
+    user_and_session: Annotated[tuple[User, UserSession], Depends(get_current_user_and_session)],
+    db: Annotated[AsyncSession, Depends(get_session)],
+) -> dict[str, Any]:
+    user, _ = user_and_session
+    stmt = select(ApiKey).where(
+        ApiKey.user_id == user.id,
+        ApiKey.revoked_at.is_(None)
+    ).order_by(ApiKey.created_at.desc())
+    keys = await db.scalars(stmt)
+
+    return {
+        "data": [
+            {
+                "id": str(k.id),
+                "name": k.name,
+                "last_four": k.last_four,
+                "created_at": k.created_at.isoformat(),
+                "last_used_at": k.last_used_at.isoformat() if k.last_used_at else None,
+            }
+            for k in keys
+        ]
+    }
+
+@router.delete("/api-keys/{key_id}", status_code=204)
+async def revoke_api_key(
+    key_id: UUID,
+    user_and_session: Annotated[tuple[User, UserSession], Depends(get_current_user_and_session)],
+    db: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    user, _ = user_and_session
+    stmt = select(ApiKey).where(ApiKey.id == key_id, ApiKey.user_id == user.id)
+    api_key = await db.scalar(stmt)
+    
+    if not api_key or api_key.revoked_at is not None:
+        raise ApiError(ErrorCode.not_found, "API key not found", status=404)
+        
+    api_key.revoked_at = utcnow()
+    await db.commit()

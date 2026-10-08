@@ -4,6 +4,7 @@ Importing this package registers every table on `Base.metadata`, which is what A
 `target_metadata` and autogenerate rely on.
 """
 
+from .api_key import ApiKey
 from .auth import EmailVerification, User, UserSession
 from .base import Base
 from .billing import Subscription, SubscriptionStatus, SubscriptionTier
@@ -29,6 +30,7 @@ from .webhook import DeliveryResult, WebhookDelivery
 __all__ = [
     "ALLOWED_TRANSITIONS",
     "AdapterConfig",
+    "ApiKey",
     "ApiUnit",
     "Base",
     "DeliveryResult",
