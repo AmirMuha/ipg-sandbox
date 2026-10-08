@@ -21,6 +21,7 @@ export default async function SettingsPage({
 }) {
   setRequestLocale(locale);
   const t = await getTranslations("settings");
+  const tk = await getTranslations("api_keys");
 
   let project: Project | null = null;
   let subscription: Subscription | null = null;
@@ -121,15 +122,15 @@ export default async function SettingsPage({
         </div>
       </div>
 
-            <div className="card">
+      <div className="card">
         <div className="card__head">
-          <h2 className="card__title">API Keys</h2>
+          <h2 className="card__title">{tk("title")}</h2>
         </div>
         <div className="card__body stack-md">
-          <p className="muted">Manage API keys for programmatic access to your sandbox.</p>
+          <p className="muted">{tk("subtitle")}</p>
           <div className="row-flex">
             <a href={`/${locale}/settings/api-keys`} className="btn btn--secondary btn--sm">
-              Manage API Keys &rarr;
+              {tk("manage")} &larr;
             </a>
           </div>
         </div>

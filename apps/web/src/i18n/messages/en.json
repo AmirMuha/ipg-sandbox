@@ -286,5 +286,33 @@
   "admin": {
     "title": "Platform Administration",
     "subtitle": "Platform-wide gateways and paid subscriptions (Admin only)"
+  },
+  "api_keys": {
+    "title": "API Keys",
+    "subtitle": "Keys for programmatic access to your sandbox",
+    "create": "Create new key",
+    "creating": "Creating...",
+    "created_title": "Key created",
+    "name_label": "Key name",
+    "name_placeholder": "e.g. Production app",
+    "token_label": "Key",
+    "once_warning": "Copy this key now — it is shown once and cannot be retrieved again.",
+    "done": "Done",
+    "col_name": "Name",
+    "col_token": "Key",
+    "col_created": "Created",
+    "col_last_used": "Last used",
+    "col_actions": "Actions",
+    "never": "Never",
+    "revoke": "Revoke",
+    "revoking": "Revoking...",
+    "revoke_confirm": "Revoke this key? This cannot be undone.",
+    "empty": "You have no API keys yet.",
+    "loading": "Loading...",
+    "limit_reached": "You have reached the limit of {max} active keys.",
+    "load_failed": "Could not load API keys",
+    "create_failed": "Could not create the key",
+    "revoke_failed": "Could not revoke the key",
+    "manage": "Manage keys"
   }
 }

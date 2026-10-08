@@ -1,93 +1,131 @@
 "use client";
 
 import { useState } from "react";
-import { createApiKey } from "../../lib/api";
+import { useTranslations } from "next-intl";
+import { ApiError, createApiKey } from "../../lib/api";
 import { CopyButton } from "../CopyButton";
 
-interface CreateKeyModalProps {
+/**
+ * Two steps in one panel: name the key, then read the secret. The engine returns the
+ * plaintext token exactly once and stores only its hash, so closing this modal loses
+ * it for good — that is why the reveal step cannot be dismissed by accident and why
+ * the warning is a banner rather than a line of muted text.
+ */
+export function CreateKeyModal({
+  onClose,
+  onCreated,
+}: {
   onClose: () => void;
   onCreated: () => void;
-}
-
-export function CreateKeyModal({ onClose, onCreated }: CreateKeyModalProps) {
+}) {
+  const t = useTranslations("api_keys");
+  const tc = useTranslations("common");
   const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdKey, setCreatedKey] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
 
-    setLoading(true);
+    setSubmitting(true);
     setError(null);
     try {
-      const result = await createApiKey(name.trim());
-      setCreatedKey(result.token);
+      const created = await createApiKey(name.trim());
+      setToken(created.token);
       onCreated();
-    } catch (err: any) {
-      setError(err.message || "Failed to create API key");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("create_failed"));
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="card card__body stack-md w-full max-w-md bg-white dark:bg-slate-900 shadow-xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">
-            {createdKey ? "API Key Created" : "Create New API Key"}
-          </h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-            ✕
-          </button>
+    <div
+      className="scrim grid place-items-center p-4 overflow-y-auto"
+      data-open="true"
+      role="dialog"
+      aria-modal="true"
+      aria-label={token ? t("created_title") : t("create")}
+      data-testid="create-key-modal"
+    >
+      <div className="card animate-modal w-full max-w-lg my-auto">
+        <div className="card__head">
+          <h2 className="card__title">{token ? t("created_title") : t("create")}</h2>
         </div>
 
-        {createdKey ? (
-          <div className="stack-md">
-            <div className="banner banner--warning" role="alert">
-              Please copy this key now. You will not be able to see it again!
+        {token ? (
+          <div className="card__body stack-md">
+            <div className="banner banner--danger" role="alert" data-testid="key-once-warning">
+              {t("once_warning")}
             </div>
-            <div className="flex items-center gap-2 p-3 bg-slate-100 dark:bg-slate-800 rounded-md break-all font-mono text-sm">
-              <span className="flex-1">{createdKey}</span>
-              <CopyButton value={createdKey} label="Copy" />
-            </div>
-            <div className="flex justify-end mt-4">
-              <button onClick={onClose} className="btn btn--primary">
-                Done
+
+            <label className="field">
+              <span className="field__label">{t("token_label")}</span>
+              <div className="row-flex">
+                <input
+                  className="input mono flex-1 min-w-0"
+                  dir="ltr"
+                  readOnly
+                  value={token}
+                  data-testid="api-key-token"
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <CopyButton value={token} label={tc("copy")} testId="copy-api-key" />
+              </div>
+            </label>
+
+            <div className="modal__foot">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn--primary"
+                data-testid="api-key-done"
+              >
+                {t("done")}
               </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="stack-md">
+          <form onSubmit={handleSubmit} className="card__body stack-md">
             {error && (
-              <div className="banner banner--danger" role="alert">
+              <div className="banner banner--danger" role="alert" data-testid="create-key-error">
                 {error}
               </div>
             )}
-            <div className="field">
-              <label htmlFor="key-name" className="field__label">
-                Key Name
-              </label>
+
+            <label className="field">
+              <span className="field__label">{t("name_label")}</span>
               <input
-                id="key-name"
+                className="input"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Production App"
-                className="input"
+                placeholder={t("name_placeholder")}
                 required
                 autoFocus
                 data-testid="api-key-name-input"
               />
-            </div>
-            <div className="flex justify-end gap-3 mt-4">
-              <button type="button" onClick={onClose} className="btn btn--secondary" disabled={loading}>
-                Cancel
+            </label>
+
+            <div className="row-flex justify-between">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn--secondary"
+                disabled={submitting}
+              >
+                {tc("cancel")}
               </button>
-              <button type="submit" className="btn btn--primary" disabled={loading || !name.trim()} data-testid="create-api-key-btn">
-                {loading ? "Creating..." : "Create Key"}
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={submitting || !name.trim()}
+                data-testid="create-api-key-btn"
+              >
+                {submitting ? t("creating") : t("create")}
               </button>
             </div>
           </form>
