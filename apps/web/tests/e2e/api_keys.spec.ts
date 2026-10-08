@@ -41,6 +41,24 @@ test.describe("API keys", () => {
     await expect(page.getByTestId("create-key-modal")).toBeVisible();
   });
 
+  test("offers a way back to settings, per locale", async ({ page }) => {
+    await withSession(page);
+    await page.route("**/api/v1/auth/api-keys", (route) =>
+      route.fulfill({ status: 200, json: { data: [] } })
+    );
+
+    await page.goto(PAGE_URL);
+    // testid, not the label: the console header also has a "Back to Site" link.
+    await expect(page.getByTestId("back-to-settings")).toHaveAttribute("href", "/en/settings");
+    await expect(page.getByTestId("back-to-settings")).toContainText("Back");
+
+    // Persian is the default locale and the page must translate, not just flip dir.
+    await page.goto(`${BASE_URL}/fa/settings/api-keys`);
+    await expect(page.getByTestId("back-to-settings")).toHaveAttribute("href", "/fa/settings");
+    await expect(page.getByTestId("back-to-settings")).toContainText("بازگشت");
+    await expect(page.getByText("کلیدهای API").first()).toBeVisible();
+  });
+
   test("creating a key reveals the token exactly once", async ({ page }) => {
     await withSession(page);
 
