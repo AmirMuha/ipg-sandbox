@@ -8,12 +8,12 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.adapters.base import STAGE_NOTIFY, STAGE_REFUND, STAGE_SETTLE
+from src.adapters.base import STAGE_NOTIFY, STAGE_SETTLE
 from src.adapters.checkout_flow import apply_checkout_action
 from src.adapters.crypto import verify_rsa
 from src.adapters.pasargad.adapter import PasargadAdapter
 from src.api.db import get_session
-from src.api.errors import ApiError, not_found
+from src.api.errors import not_found
 from src.api.routes import current_project
 from src.checkout.page import render_auto_submit_post_form
 from src.models import AdapterConfig, Project, Provider, Transaction, TransactionStatus

@@ -1,6 +1,7 @@
 """Visual branding styles, logos, and localized metadata for all 13 gateways (T038)."""
 
 from typing import TypedDict
+
 from src.models import Provider
 
 

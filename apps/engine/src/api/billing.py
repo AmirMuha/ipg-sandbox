@@ -2,13 +2,13 @@
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.db import get_session
-from src.api.errors import ApiError, ErrorCode
+from src.api.errors import ApiError
 from src.api.scoping import get_current_project, get_current_user
 from src.config import Settings, dashboard_base_url, public_base_url
 from src.models import (

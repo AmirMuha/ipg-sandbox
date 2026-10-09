@@ -4,9 +4,9 @@ import uuid
 from typing import Any
 
 from src.adapters.base import (
+    TRANSPORT_FORM_POST,
     CallbackStage,
     PaymentAdapter,
-    TRANSPORT_FORM_POST,
 )
 from src.adapters.metadata import card_metadata
 from src.api.errors import ApiError, ErrorCode

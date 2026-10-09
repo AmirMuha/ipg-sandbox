@@ -2,6 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
+
 from src.models import Provider
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")

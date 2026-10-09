@@ -1,6 +1,7 @@
 """Tests for checkout branding, localization, and auto-submit form (T040)."""
 
 import uuid
+
 from src.checkout.page import render_auto_submit_post_form, render_checkout_page
 from src.checkout.styles import BRANDING, get_branding
 from src.models import Provider, Transaction

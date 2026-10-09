@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.adapters.base import STAGE_NOTIFY, STAGE_REFUND, STAGE_SETTLE
+from src.adapters.base import STAGE_NOTIFY, STAGE_SETTLE
 from src.adapters.checkout_flow import apply_checkout_action
 from src.adapters.sizpay.adapter import SizpayAdapter
 from src.api.db import get_session

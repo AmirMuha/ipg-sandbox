@@ -91,7 +91,7 @@ export function AdminProviderList({
             <div className="kv__row" key={g.id} data-testid={`admin-gateway-card-${g.id}`}>
               <span className="kv__label">
                 {g.name}
-                <small className="mono ltr" dir="ltr">
+                <small className="mono ltr text-end" dir="ltr">
                   {g.latin}
                 </small>
               </span>

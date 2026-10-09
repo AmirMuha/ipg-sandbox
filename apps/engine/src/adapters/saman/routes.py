@@ -1,7 +1,7 @@
 """Saman SEP emulated routes (T009) — contracts/adapter-surfaces.md §1.1."""
 
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated
 from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Depends, Request, Response
@@ -16,16 +16,15 @@ from src.adapters.soap import (
     SOAP_CONTENT_TYPE,
     MalformedEnvelope,
     envelope,
-    fault,
     malformed_fault,
     parse_body,
     wsdl_file_response,
 )
 from src.api.db import get_session
-from src.api.errors import ApiError, not_found
+from src.api.errors import not_found
 from src.api.routes import current_project
 from src.checkout.page import render_auto_submit_post_form
-from src.models import AdapterConfig, Project, Provider, Transaction, TransactionStatus
+from src.models import AdapterConfig, Project, Provider, TransactionStatus
 from src.services import transactions
 from src.webhooks.worker import schedule_delivery
 

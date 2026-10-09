@@ -1,6 +1,7 @@
 """Integration tests covering all 13 gateways × 6 scenarios (T037) — SC-004."""
 
 import pytest
+
 from src.models import Provider, ScenarioOutcome
 from src.scenarios.adapter_mappings import SCENARIO_MAPPINGS, get_scenario_response
 

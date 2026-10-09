@@ -9,6 +9,7 @@ Cap semantics (FR-006): `transactions_total` is lifetime and never shrinks; `his
 """
 
 from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 

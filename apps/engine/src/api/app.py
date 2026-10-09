@@ -35,7 +35,7 @@ from src.api.billing import router as billing_router
 from src.api.errors import install_error_handlers
 from src.api.routes import router
 from src.config import Settings
-from src.models import AdapterConfig, Project, Provider
+from src.models import AdapterConfig, Project
 from src.scenarios.scheduler import run as run_scheduler
 from src.services.billing import run_subscription_expiry
 

@@ -4,6 +4,7 @@ Uses httpx (already an engine dependency). Allowlisted in test_simulation_guard.
 """
 
 from typing import Any
+
 import httpx
 
 from src.config import Settings
