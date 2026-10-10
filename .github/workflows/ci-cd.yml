@@ -55,8 +55,9 @@ jobs:
     env:
       # The one place the prod client bundle gets its API origin: NEXT_PUBLIC_* is inlined
       # at build time (apps/web/Dockerfile), and the browser calls this origin, where nginx
-      # routes /api/* to engine. Must be the same host the vhost serves.
-      NEXT_PUBLIC_API_URL: http://ipg.sandboxed.ir
+      # routes /api/* to engine. Must match the scheme and host the vhost serves — on an
+      # https page an http:// origin here is mixed content and the browser blocks it.
+      NEXT_PUBLIC_API_URL: https://ipg.sandboxed.ir
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
