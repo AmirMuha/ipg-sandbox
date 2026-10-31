@@ -96,7 +96,7 @@ test("2. English LTR layout", async () => {
 test("2b. Marketing routes render with RTL regardless of locale", async () => {
   // The marketing copy is Persian-only, so these pages force dir="rtl" even
   // under /en — an LTR flip would reorder every layout rule against the text.
-  for (const route of ["home", "providers", "pricing", "login"]) {
+  for (const route of ["home", "providers", "pricing", "login", "docs"]) {
     for (const locale of ["fa", "en"]) {
       const res = await fetch(`${DASHBOARD_URL}/${locale}/${route}`);
       assert.strictEqual(res.status, 200, `Expected 200 on /${locale}/${route}`);
@@ -106,6 +106,15 @@ test("2b. Marketing routes render with RTL regardless of locale", async () => {
         `Expected dir="rtl" on /${locale}/${route}`
       );
     }
+  }
+});
+
+test("2b-2. Docs page renders the integration guide", async () => {
+  const res = await fetch(`${DASHBOARD_URL}/fa/docs`);
+  assert.strictEqual(res.status, 200);
+  const html = await res.text();
+  for (const copy of ["X-Sandbox-Scenario", "sandbox-merchant", "ipg_key_"]) {
+    assert.ok(html.includes(copy), `Expected docs copy: ${copy}`);
   }
 });
 

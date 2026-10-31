@@ -20,12 +20,13 @@ export function MarketingShell({
 }: {
   children: React.ReactNode;
   locale: string;
-  active: "home" | "providers" | "pricing";
+  active: "home" | "providers" | "pricing" | "docs";
 }) {
   const links = [
     { key: "home", href: `/${locale}/home`, label: "خانه" },
     { key: "providers", href: `/${locale}/providers`, label: "درگاه‌ها" },
     { key: "pricing", href: `/${locale}/pricing`, label: "تعرفه‌ها" },
+    { key: "docs", href: `/${locale}/docs`, label: "مستندات" },
     { key: "console", href: `/${locale}/console`, label: "داشبورد تستی" },
   ] as const;
 

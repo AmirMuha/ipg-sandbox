@@ -9,7 +9,7 @@ export function UserMenu({
   active,
 }: {
   locale: string;
-  active: "home" | "providers" | "pricing" | "console";
+  active: "home" | "providers" | "pricing" | "docs" | "console";
 }) {
   const isFa = locale === "fa";
   const [user, setUser] = useState<User | null>(null);

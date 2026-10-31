@@ -13,7 +13,7 @@ export function SiteNav({
   active,
 }: {
   locale: string;
-  active: "home" | "providers" | "pricing" | "console";
+  active: "home" | "providers" | "pricing" | "docs" | "console";
 }) {
   const isFa = locale === "fa";
 
@@ -21,6 +21,7 @@ export function SiteNav({
     { key: "home", href: `/${locale}/home`, label: isFa ? "خانه" : "Home" },
     { key: "providers", href: `/${locale}/providers`, label: isFa ? "درگاه‌ها" : "Gateways" },
     { key: "pricing", href: `/${locale}/pricing`, label: isFa ? "تعرفه‌ها" : "Pricing" },
+    { key: "docs", href: `/${locale}/docs`, label: isFa ? "مستندات" : "Docs" },
   ] as const;
 
   return (
