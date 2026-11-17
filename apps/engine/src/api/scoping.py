@@ -9,7 +9,7 @@ from src.api.db import get_session
 from src.api.errors import ApiError, ErrorCode
 from src.config import Settings
 from src.core.security import hash_api_key
-from src.models import Project, User, UserSession, utcnow
+from src.models import Project, Transaction, User, UserSession, utcnow
 from src.models.api_key import ApiKey
 from src.models.visitor import VisitorSession
 from src.services.auth import hash_session_token
@@ -69,6 +69,20 @@ async def get_current_project(
         project = await db.scalar(stmt)
         if project:
             return project
+
+    # A payment link is opened by the payer's browser, which carries no ipg_session cookie and
+    # no API key, so the token in the path is the only thing identifying the payment. Resolve
+    # it to the transaction's own project, the way a real gateway does — otherwise an
+    # unauthenticated browser fell back to the seed project and every link answered
+    # {"code":"not_found","message":"transaction not found"}.
+    for value in request.path_params.values():
+        if isinstance(value, str) and value:
+            owner_id = await db.scalar(
+                select(Transaction.project_id).where(Transaction.authority == value)
+            )
+            owner = await db.get(Project, owner_id) if owner_id is not None else None
+            if owner is not None:
+                return owner
 
     profile = os.environ.get("ENGINE_PROFILE", "local")
 

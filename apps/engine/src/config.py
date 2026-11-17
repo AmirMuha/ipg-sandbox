@@ -80,10 +80,15 @@ def _default_database_url() -> str:
 def public_base_url() -> str:
     """Origin a *browser* uses to reach this engine, for `checkout_url` in API responses.
 
-    Compose publishes `ENGINE_PORT`, so the two paths have to read the same variable rather
-    than hardcoding 8080 the way the adapter response builders do. Read at call time (not
-    import time) so a test or a remapped port is picked up without a reload.
+    `WEB_URL` wins because behind nginx (the VPS) the engine only sees loopback traffic, so
+    reading the compose port there handed every client a `http://localhost:8080` link no
+    browser could open. A bare local `docker compose`/`pnpm dev` has no `WEB_URL`, so it still
+    falls back to the published `ENGINE_PORT`. Read at call time (not import time) so a test or
+    a remapped port is picked up without a reload.
     """
+    base = os.environ.get("WEB_URL", "").strip()
+    if base:
+        return base.rstrip("/")
     port = os.environ.get("ENGINE_PORT", "").strip() or "8080"
     return f"http://localhost:{port}"
 
