@@ -142,7 +142,10 @@ jobs:
             # job token is the pull credential. `compose images` is the check — it must print
             # the sha tag this run built, proving a pull, not a local build, is running.
             echo "$DEPLOY_GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+            # Only the two images this run built. A bare `pull` also hits docker.io for
+            # postgres:16-alpine, which this box's IP gets 403'd on (anonymous Docker Hub
+            # limit) — that failed the whole deploy while the images were already fine.
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull engine web
             # --remove-orphans drops the caddy container left by earlier deploys.
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait --wait-timeout 300 --remove-orphans
             docker compose -f docker-compose.yml -f docker-compose.prod.yml images
