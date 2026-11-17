@@ -57,7 +57,21 @@ async def get_current_user(
 async def get_current_project(
     request: Request, db: Annotated[AsyncSession, Depends(get_session)]
 ) -> Project:
-    """Resolve current project from authenticated user session, demo session, or local default."""
+    """Resolve the project from a payment token, user session, demo session, or local default."""
+    # A payment link is opened by the payer's browser, and that browser may also be signed in to
+    # the dashboard (as a merchant, possibly with several projects). The token in the path is what
+    # identifies the payment, so it must win over the cookie — otherwise a signed-in payer fell
+    # back to their own project and every link answered
+    # {"code":"not_found","message":"transaction not found"}.
+    for value in request.path_params.values():
+        if isinstance(value, str) and value:
+            owner_id = await db.scalar(
+                select(Transaction.project_id).where(Transaction.authority == value)
+            )
+            owner = await db.get(Project, owner_id) if owner_id is not None else None
+            if owner is not None:
+                return owner
+
     user = await get_current_user(request, db)
     if user:
         stmt = (
@@ -69,20 +83,6 @@ async def get_current_project(
         project = await db.scalar(stmt)
         if project:
             return project
-
-    # A payment link is opened by the payer's browser, which carries no ipg_session cookie and
-    # no API key, so the token in the path is the only thing identifying the payment. Resolve
-    # it to the transaction's own project, the way a real gateway does — otherwise an
-    # unauthenticated browser fell back to the seed project and every link answered
-    # {"code":"not_found","message":"transaction not found"}.
-    for value in request.path_params.values():
-        if isinstance(value, str) and value:
-            owner_id = await db.scalar(
-                select(Transaction.project_id).where(Transaction.authority == value)
-            )
-            owner = await db.get(Project, owner_id) if owner_id is not None else None
-            if owner is not None:
-                return owner
 
     profile = os.environ.get("ENGINE_PROFILE", "local")
 
