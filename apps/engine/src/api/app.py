@@ -141,6 +141,15 @@ def create_app() -> FastAPI:
     app.include_router(fanava_router)
     app.include_router(sarmayeh_router)
     app.include_router(sizpay_router)
+
+    @app.middleware("http")
+    async def no_store(request, call_next):
+        # Payment pages and API answers are live state, and a cached 404 is misinformation: a
+        # browser kept serving "transaction not found" for a link that had already been fixed.
+        response = await call_next(request)
+        response.headers.setdefault("Cache-Control", "no-store")
+        return response
+
     return app
 
 

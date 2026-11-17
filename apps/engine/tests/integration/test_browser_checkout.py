@@ -54,6 +54,8 @@ def test_checkout_link_opens_without_a_session(client: TestClient):
 
     assert resp.status_code == 200, resp.text
     assert "not_found" not in resp.text
+    # A browser must never reuse an earlier 404 (or a stale page) for a live payment link.
+    assert resp.headers["cache-control"] == "no-store"
 
 
 def test_unknown_authority_still_404s(client: TestClient):
